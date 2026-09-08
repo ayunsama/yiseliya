@@ -6,6 +6,13 @@ export interface FloorCoverage {
   end: number;
 }
 
+/** 本次规划的生成语境（节奏/命运骰/故事原型） */
+export interface PlanMeta {
+  rhythm: string;
+  fate?: { roll: number; range: string; label: string };
+  prototypes: string[];
+}
+
 /** 单次生成的剧情规划（大纲） */
 export interface PlotPlan {
   content: string;
@@ -14,6 +21,8 @@ export interface PlotPlan {
   coverage: FloorCoverage | null;
   /** 已失效（楼层被删除/编辑/回滚，需重新分析） */
   stale: boolean;
+  /** 生成语境：节奏档/命运骰/故事原型组合 */
+  meta: PlanMeta | null;
 }
 
 /** 单次主动推进 */
@@ -45,17 +54,15 @@ export interface StoryState {
   updatedAt: number;
 }
 
-/** 单个 NPC/同伴的动向规划（想法/行为/积极面/阴暗面 + 可能行动） */
+/** 单个 NPC/同伴的动向规划（想法/行为/性格 + 可能行动） */
 export interface NpcStagePlan {
   name: string;
   /** 想法（态度） */
   thought: string;
   /** 行为（表现） */
   behavior: string;
-  /** 积极面（建设性倾向：善意/合作/成长/援助） */
-  positive: string;
-  /** 阴暗面（破坏性倾向：局势恶化时可能走向的极端方向） */
-  darkSide: string;
+  /** 性格（其性格在此情境下如何影响言行） */
+  personality: string;
   /** 结合推进推演：她最可能主动去做、直接推动剧情前进的事 */
   likelyAction: string;
 }
@@ -70,10 +77,91 @@ export interface NpcPlan {
   npcs: NpcStagePlan[];
 }
 
+/** 节奏三档：手动选档，决定本次大纲的冲突密度与事件烈度 */
+export const RHYTHMS = {
+  daily: {
+    label: '日常向',
+    desc: '基本没有冲突，或至多一个轻微摩擦；节奏全缓，生活流自然铺展，重氛围、细节与人物相处。',
+  },
+  balanced: {
+    label: '中规中矩',
+    desc: '深藏不露，暗波涌动；一般 1-2 个冲突，张力在表层之下积聚，偶有浪头但不掀桌。',
+  },
+  conflict: {
+    label: '强冲突',
+    desc: '节节爆点，句句冲突；主角始终处于纠纷漩涡之中，事件密集升级，相应的机遇与奖励也最丰厚。',
+  },
+} as const;
+export type RhythmKey = keyof typeof RHYTHMS;
+
+/** 命运骰三段：1-30 下坠 / 31-70 平稳 / 71-100 机遇 */
+export const FATE = {
+  downfall: { label: '下坠', hint: '突如其来的弧线下坠——重伤、亲友受害、失去重要之物、遭到背叛等悲惨遭遇；须在大纲中埋入 1-2 条此类事件' },
+  steady: { label: '平稳', hint: '中规中矩——没有过于剧烈的冲突，也没有过分的下坠，事件按部就班推进' },
+  fortune: { label: '机遇', hint: '机遇降临——遇见高人指点、奇物现世（如龙蛋、稀世装备）、天降良机等；须在大纲中埋入 1-2 条此类机缘' },
+} as const;
+
+export function rollFate(): { roll: number; range: string; label: string; hint: string } {
+  const roll = 1 + Math.floor(Math.random() * 100); // 1-100
+  const key = roll <= 30 ? 'downfall' : roll <= 70 ? 'steady' : 'fortune';
+  return { roll, range: key, label: FATE[key].label, hint: FATE[key].hint };
+}
+
+/** 波尔蒂三十六种故事原型（剧情范式，随机抽 2 个组合作为大纲骨架） */
+export const PROTOTYPES: string[] = [
+  '哀求请托：弱者向强者恳求庇护或援助，成败系于对方的抉择',
+  '援救：某人不惜代价去解救被困/被掳的另一方',
+  '复仇：为遭受的侵害向加害者讨还公道',
+  '亲族复仇：为血亲向另一血亲复仇，情义两难',
+  '逃亡/追捕：一方亡命奔逃，另一方穷追不舍',
+  '灾祸：天灾人祸骤临，众人于混乱中自处',
+  '厄运缠身：无辜者被厄运与残酷环境反复碾压',
+  '革命：反抗既有的强权与秩序，图谋颠覆',
+  '壮举：冒险完成一件近乎不可能的大事',
+  '绑架/劫持：掳走要人以胁迫另一方就范',
+  '谜团：以难解之谜为核心，追问真相的过程即剧情',
+  '谋取：用诡计、劝说或强力去夺取属于他人的东西',
+  '亲族仇恨：至亲之间因旧怨势同水火',
+  '亲族竞争：同门/同族为地位、继承或认可明争暗斗',
+  '奸情与背约：背叛誓约的秘密关系引发连锁灾祸',
+  '疯狂：某人因执念或创伤而失去理智，殃及周遭',
+  '鲁莽：因一时冲动赌上一切，招致不可挽回的后果',
+  '无心之罪：出于善意或无知犯下罪过而不自知',
+  '误伤骨肉：在不知情的情况下伤害了自己的亲人',
+  '为信念牺牲：为主义、信仰或誓言舍弃自身',
+  '为亲人牺牲：为庇护血亲舍弃自己的前途甚至生命',
+  '为情舍身：为炽烈的执念抛弃已有的一切',
+  '舍爱取义：不得不亲手牺牲所爱之人成全大局',
+  '强弱悬殊：以卵击石般的较量，弱者寻找唯一的胜机',
+  '越界之恋：为禁忌的关系对抗世俗与规则',
+  '爱恨罪业：因爱生罪，情感成为灾祸的源头',
+  '蒙羞的所爱：发现所爱之人隐藏的耻辱与污点',
+  '爱之阻碍：家族、立场或命运横亘在两人之间',
+  '爱恋仇敌：不由自主爱上立场敌对的人',
+  '野心：不择手段向上攀爬，终被欲望反噬或达成所愿',
+  '人神之争：凡人挑战超越性的存在与天命',
+  '错爱生妒：因误信谗言或假象而妒火中烧',
+  '误判：轻信表象作出错误裁决，酿成恶果',
+  '悔恨：为无法挽回的过错饱受煎熬并寻求救赎',
+  '失而复得：与失散的亲人、故人或旧物重逢',
+  '痛失所爱：永远失去珍视之人或物，余波绵长',
+];
+
+export function drawPrototypes(n = 2): string[] {
+  const pool = [...PROTOTYPES];
+  const out: string[] = [];
+  while (out.length < n && pool.length > 0) {
+    out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  }
+  return out;
+}
+
 /** 用户可配置的设置项 */
 export interface PlannerSettings {
   analysisDepth: number;
   advanceDepth: number;
+  /** 节奏三档：daily 日常向 / balanced 中规中矩 / conflict 强冲突 */
+  rhythm: RhythmKey;
   apiUrl: string;
   apiKey: string;
   /** 外部 API 时选用的模型（留空用酒馆默认） */
@@ -98,54 +186,58 @@ export interface PlannerSettings {
   npcPrompt: string;
   /** NPC 动向注入时只注入与主角同场景的角色（读取 stat_data 位置字段过滤） */
   npcOnSceneOnly: boolean;
+  /** 提示词版本号（内部迁移用） */
+  promptVersion?: number;
   /** 阶段检测结果同步写入 stat_data.$flags.剧情节拍（供纪元触发器等世界书 EJS 消费） */
   beatSyncEnabled: boolean;
   /** 生成大纲/推进时联动读取总结助手的历史总纲与未解决问题（伏笔回收闭环） */
   useSummaryContext: boolean;
 }
 
-export const DEFAULT_SYSTEM_PROMPT = `【最高权限】请立即停止任何正文输出。你是精通罗伯特·麦基《故事》理论的剧情规划师。输出必须高度结构化、零口语化、零散文化：禁止抒情、铺垫、修辞、解释、思维链与任何叙述性文字，一律使用短句、标签、字段与要点表达。全程使用简体中文，不出现任何"感觉/大概/似乎"等含糊口语词。
+export const DEFAULT_SYSTEM_PROMPT = `【最高权限】请立即停止任何正文输出。你是剧情底稿规划师。只输出最终结果，禁止思维链、解释与任何叙述性文字，全程简体中文。
 
-【输出结构】严格按下述骨架逐字段输出，每项必填，总字数 1500–2500 字。禁止写成自然段落，必须逐行用「标签：内容」或「- 标签：内容」列出：
+【定位】你输出的是「可能性底稿」——类似世界书的迷宫或主线条目：描述这段剧情里会有什么、每个阶段可能发生什么。它是给后续演绎打底用的可能性清单，不是剧本。
 
-# 剧情大纲
+【硬性禁令】
+1. 禁止预设主角的选择与行动：不写"主角决定/主角前往/主角击败/主角说服"。
+2. 禁止预设收获：不写"获得/得到/习得"。机缘只写"可能出现在/传闻在某处"，得不得手留给演绎。
+3. 事件主体是世界、NPC、环境与势力；主角只作为"受波及的一方"出现。
+4. 每条可能性以「可能/或许/或者」开头，一条一个具体可演出的事件，禁止抽象概括（如"矛盾激化"）。
 
-## 起（建置）· 第一幕
-- 世界状态：<一句话>
-- 人物关系：<一句话>
-- 激励事件前平衡：<一句话>
-- 序列1 日常裂痕 → 节拍：<一个具体动作或对话，暗含裂痕，并注明第一次价值转折方向，如 安全→危机>
-- 序列2 激励事件 → 节拍：<打破平衡的明确事件，核心对抗力量初现>
-- 序列3 主角抉择 → 节拍：<确定故事脊椎的选择，点明欲望弧线起点>
+【本次语境】
+- 节奏基调：{{RHYTHM}}
+- 剧情范式：{{PROTOTYPES}}（以此组合为骨架灵活化用，不逐字照搬）
+- 命运骰：{{FATE}}
 
-## 承（对抗）· 第二幕
-- 冲突升级：<一句话>
-- 序列1 首次行动受挫 → 节拍：<价值发生正负摆动的具体瞬间>
-- 序列2 关系复杂化 → 节拍：<一个让风险陡增的不可逆决定>
-- 序列3 幕中低点 → 节拍：<将主角逼至绝境的堆叠动作，旧价值观崩解>
+【输出结构】总字数 600-1000，逐行「标签：内容」，条目化，禁止成段散文：
 
-## 转（高潮）· 第三幕
-- 价值转折核心：<一句话>
-- 序列1 高潮前领悟 → 节拍：<主角直面真实需求、完成弧光蜕变的预备瞬间>
-- 序列2 主高潮 → 节拍：<不可逆的动作顶点，价值彻底翻转，鸿沟闭合>
-- 序列3 高潮余波 → 节拍：<新平衡初现的具体画面/对白/象征动作>
+# 剧情底稿：{一句话点题——这段剧情究意是什么}
 
-## 合（结局/走向）· 第四幕
-- 序列1 世界重归稳定 → 节拍：<主要人物归宿>
-- 序列2 伏笔回响 → 节拍：<需闭环的线索处理>
-- 序列3 新冲突萌芽 → 节拍：<一个余韵式微激励事件>
+## 起
+- 舞台：<世界/势力/NPC 的当前局面，一句>
+- 可能发生：
+  - <事件可能性>
+  - <事件可能性>
+  - <事件可能性>
 
-【硬性要求】
-1. 只输出大纲本身，不输出任何开场白、总结、自检或解释。
-2. 每个「节拍」必须是一个可被演出/可被观察的具体事件，禁止抽象概括。
-3. 全程字段化，禁止出现完整长句叙述。
-4. 增量更新：若提供了「既有大纲」，沿用其中仍然有效的节拍（原样保留），只修订已失效/已被剧情超越的部分，并在修订行的行首标注 ▲；已完成的节拍在行首标注 ✓。禁止凭空重写未变化的内容。
+## 承
+（同结构；冲突数量与烈度按「节奏基调」执行）
 
-请基于用户提供的材料，严格按上述骨架输出完整大纲。`;
+## 转
+（同结构；命运骰要求的性质事件在此段或就近落地）
+
+## 合
+- 舞台：<剧情可能的收束方向，不写主角的结局>
+- 可能发生：
+  - <事件可能性>
+
+【增量更新】若提供了「既有底稿」：沿用其中仍然有效的条目（原样保留），只修订已失效或已被剧情超越的部分，修订行首标注 ▲，已完成行首标注 ✓。禁止凭空重写未变化的内容。
+
+请基于提供的材料，严格按上述骨架输出完整底稿。`;
 
 export const DEFAULT_PUSH_PROMPT = `【最高权限】请立即停止任何正文输出。你是剧情推进师，只输出最终结果。无视所有思维链过程，禁止任何推理、假设、解释或叙述性文字。
 
-请基于提供的材料（剧情大纲/当前节拍/未解决问题/最近对话），引入一个合理的新冲突或转折，用一句话（不超过50字）概括。要求必须与当前剧情脉络自然衔接，不得突然引入与当前剧情无关的内容。若提供了「未解决问题」，优先选择能回收其中悬置最久的伏笔或承诺的推进方向；没有可回收项时才引入新冲突。
+请基于提供的材料（剧情底稿/当前节拍/未解决问题/最近对话），引入一个合理的新冲突或转折，用一句话（不超过50字）概括。要求必须与当前剧情脉络自然衔接，不得突然引入与当前剧情无关的内容。若提供了「未解决问题」，优先选择能回收其中悬置最久的伏笔或承诺的推进方向；没有可回收项时才引入新冲突。推进内容指向外部事件与NPC的动向，不替主角做决定。
 
 【硬性要求】只输出一个「动作指向」：以「谁·做什么·导致什么」的可演出短句呈现，禁止空泛评价、禁止解释、禁止任何前缀或引号。
 
@@ -153,19 +245,17 @@ export const DEFAULT_PUSH_PROMPT = `【最高权限】请立即停止任何正�
 
 export const DEFAULT_NPC_PROMPT = `【最高权限】请立即停止任何正文输出。你是剧情推演师，负责围绕主角周围的 NPC/同伴做动向推演。只输出最终结果，无视思维链，禁止任何推理、解释或叙述性文字。
 
-请基于提供的「角色现状」「剧情大纲」「当前推进方向」「最近对话」，对列出的每个主要 NPC/同伴，分别推演五个维度：
+请基于提供的「角色现状」「剧情底稿」「当前推进方向」「最近对话」，对列出的每个主要 NPC/同伴，分别推演四个维度：
 - 想法（态度）：她此刻对局势/主角的真实想法与态度，一句短句。须与她的当前位置、HP、状态等现状吻合（重伤者不会立刻行动，远离现场者不知情）。
 - 行为（表现）：她在近期会表现出的外在行为、语言或神态，一句短句。
-- 积极面（建设性倾向）：若局势向好，她本性中积极建设的一面——善意、合作、信任、成长、援助等，一句短句。
-- 阴暗面（破坏性倾向）：若局势恶化或矛盾激化，她可能走向的极端/黑化方向，一句短句。
+- 性格：她的性格在此情境下如何影响其言行与抉择，一句短句（依据现状中提供的性格关键词与状态推演，不凭空改人设）。
 - 可能行动（主动行动）：结合「当前推进方向」，推演她接下来最可能主动去做、直接推动剧情前进的一件具体事——明确「谁·做什么·导致什么」，可演出、能落地，一句短句。禁止写被动反应或观望。
 
 每个角色必须严格按以下格式输出（不要遗漏、不要合并、不要输出任何其他内容）：
 <NPC:角色名>
 想法: ...
 行为: ...
-积极面: ...
-阴暗面: ...
+性格: ...
 可能行动: ...
 </NPC>`;
 
@@ -200,6 +290,7 @@ function defaultSettings(): PlannerSettings {
   return {
     analysisDepth: 10,
     advanceDepth: 5,
+    rhythm: 'balanced',
     apiUrl: '',
     apiKey: '',
     model: '',
@@ -224,6 +315,9 @@ function defaultSettings(): PlannerSettings {
 
 // 使用脚本级变量存储历史，不污染聊天变量
 const SCRIPT_VAR_KEY = 'plot_planner_data';
+
+/** 提示词版本：升级默认提示词后 +1，旧存档会自动迁移到新默认（用户自定义过的也会被覆盖，版本不兼容时必需） */
+const PROMPT_VERSION = 2;
 
 /** 总结上下文提供者：由宿主（功能整合悬浮窗）注入，返回总结助手的总纲文本（含未解决问题） */
 type SummaryProvider = () => string;
@@ -284,7 +378,18 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
         const storedChatId = stored.currentChatId || '';
         const chatChanged = !!storedChatId && storedChatId !== chatId;
 
-        if (stored.settings) settings.value = { ...defaultSettings(), ...stored.settings };
+        if (stored.settings) {
+          const migrated = { ...defaultSettings(), ...stored.settings };
+          // 旧版提示词自动迁移：提示词版本低于当前则重置为新默认
+          if ((migrated.promptVersion ?? 1) < PROMPT_VERSION) {
+            migrated.systemPrompt = DEFAULT_SYSTEM_PROMPT;
+            migrated.pushPrompt = DEFAULT_PUSH_PROMPT;
+            migrated.npcPrompt = DEFAULT_NPC_PROMPT;
+            migrated.promptVersion = PROMPT_VERSION;
+            console.log('[剧情规划大师] 提示词已迁移到 v' + PROMPT_VERSION);
+          }
+          settings.value = migrated;
+        }
         if (stored.plans && !chatChanged) plans.value = stored.plans;
         if (stored.advances && !chatChanged) advances.value = stored.advances;
         if (stored.storyState && !chatChanged) storyState.value = stored.storyState;
@@ -450,15 +555,33 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
       const lastPlan = plans.value[plans.value.length - 1];
       const lastPlanText = lastPlan && !lastPlan.stale ? lastPlan.content.trim() : '';
 
+      // 本次生成语境：节奏档（手动）+ 命运骰（1-100 三段）+ 故事原型（36 选 2 组合）
+      const rhythmKey: RhythmKey = settings.value.rhythm in RHYTHMS ? settings.value.rhythm : 'balanced';
+      const rhythm = RHYTHMS[rhythmKey];
+      const fate = rollFate();
+      const protos = drawPrototypes(2);
+
+      // 组装系统提示词：替换三处语境占位
+      const sysPrompt = settings.value.systemPrompt
+        .replace('{{RHYTHM}}', `${rhythm.label}——${rhythm.desc}`)
+        .replace('{{PROTOTYPES}}', protos.join('；'))
+        .replace('{{FATE}}', `掷出 ${fate.roll} 号（${fate.label}）——${fate.hint}`);
+
       const userInput = [
         summaryCtx.outline ? `历史总纲（前情提要，供长线参考）：\n${summaryCtx.outline}` : '',
         summaryCtx.unresolved ? `未解决问题（规划时须安排回收节拍）：\n${summaryCtx.unresolved}` : '',
-        lastPlanText ? `既有大纲（沿用其中仍然有效的节拍，只修订失效部分，修订行首标注 ▲，已完成行首标注 ✓）：\n${lastPlanText}` : '',
+        lastPlanText ? `既有底稿（沿用其中仍然有效的条目，只修订失效部分，修订行首标注 ▲，已完成行首标注 ✓）：\n${lastPlanText}` : '',
         `对话剧情：\n\n${chatHistory}`,
       ].filter(Boolean).join('\n\n');
 
-      const result = await generateIsolated(userInput, settings.value.systemPrompt);
-      const newPlan: PlotPlan = { content: result, generatedAt: Date.now(), coverage, stale: false };
+      const result = await generateIsolated(userInput, sysPrompt);
+      const newPlan: PlotPlan = {
+        content: result,
+        generatedAt: Date.now(),
+        coverage,
+        stale: false,
+        meta: { rhythm: rhythmKey, fate: { roll: fate.roll, range: fate.range, label: fate.label }, prototypes: protos },
+      };
       plans.value.push(newPlan);
       if (plans.value.length > 20) plans.value = plans.value.slice(-20);
 
@@ -639,13 +762,12 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
         name,
         thought: field('想法'),
         behavior: field('行为'),
-        positive: field('积极面'),
-        darkSide: field('暗面') || field('阴暗面'),
+        personality: field('性格'),
         likelyAction: field('可能行动'),
       });
     }
     if (out.length === 0) {
-      // 兜底：【名字】想法：...｜行为：...｜积极面：...｜暗面：...｜可能行动：...
+      // 兜底：【名字】想法：...｜行为：...｜性格：...｜可能行动：...
       const lineRe = /^【(.+?)】\s*([\s\S]*?)(?=^【|$)/gm;
       let lm: RegExpExecArray | null;
       while ((lm = lineRe.exec(raw))) {
@@ -660,13 +782,12 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
           name,
           thought: field('想法'),
           behavior: field('行为'),
-          positive: field('积极面'),
-          darkSide: field('暗面') || field('阴暗面'),
+          personality: field('性格'),
           likelyAction: field('可能行动'),
         });
       }
     }
-    return out.filter(n => n.name && (n.thought || n.behavior || n.positive || n.darkSide || n.likelyAction));
+    return out.filter(n => n.name && (n.thought || n.behavior || n.personality || n.likelyAction));
   }
 
   // ---- NPC 动向转文本（展示 / 注入） ----
@@ -675,8 +796,7 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
       const bits: string[] = [];
       if (n.thought) bits.push(`想法：${n.thought}`);
       if (n.behavior) bits.push(`行为：${n.behavior}`);
-      if (n.positive) bits.push(`积极面：${n.positive}`);
-      if (n.darkSide) bits.push(`阴暗面：${n.darkSide}`);
+      if (n.personality) bits.push(`性格：${n.personality}`);
       if (n.likelyAction) bits.push(`可能行动：${n.likelyAction}`);
       return `【${n.name}】${bits.join('｜')}`;
     });
@@ -812,7 +932,7 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
         generatedAt: Date.now(),
         linkedAdvance: lastAdvance,
         floor: latestFloor(),
-        npcs: npcs.length > 0 ? npcs : [{ name: '（未解析，原文）', thought: '', behavior: '', positive: '', darkSide: '', likelyAction: result.trim() }],
+        npcs: npcs.length > 0 ? npcs : [{ name: '（未解析，原文）', thought: '', behavior: '', personality: '', likelyAction: result.trim() }],
       };
       npcPlans.value.push(npcPlan);
       if (npcPlans.value.length > 10) npcPlans.value = npcPlans.value.slice(-10);
@@ -852,7 +972,9 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
         CONSOLIDATE_PROMPT,
       );
 
-      plans.value.push({ content: result, generatedAt: Date.now(), coverage: plans.value[plans.value.length - 1]?.coverage || null, stale: false });
+      // 保留上一份底稿的生成语境（整理不重掷骰）
+      const prevMeta = plans.value[plans.value.length - 1]?.meta || null;
+      plans.value.push({ content: result, generatedAt: Date.now(), coverage: plans.value[plans.value.length - 1]?.coverage || null, stale: false, meta: prevMeta });
       if (plans.value.length > 20) plans.value = plans.value.slice(-20);
       // 节拍指针关联新大纲，提示重新检测
       if (storyState.value) storyState.value.planId = plans.value.length;
@@ -869,14 +991,14 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
     }
   }
 
-  // ---- 大纲压缩（注入/输入复用：按起承转合各取骨架） ----
+  // ---- 大纲压缩（注入/输入复用：按起承转合各取骨架；兼容"## 起"与"起（建置）"两种写法） ----
   function condensePlan(raw: string, maxLen = 500): string {
     if (!raw || raw.length <= maxLen) return raw;
     const stages = ['起', '承', '转', '合'];
     const lines: string[] = [];
     let found = false;
     for (const stage of stages) {
-      const re = new RegExp(`${stage}[（(][^)）]*[)）]?[\\s\\S]*?(?=${stages.map(s => s + '[（(]').join('|')}|$)`, 'g');
+      const re = new RegExp(`${stage}(?:[（(][^)）]*[)）])?[^#\\n]*[\\s\\S]*?(?=${stages.map(s => s + '(?:[（(]|[^#\\n])').join('|')}|$)`, 'g');
       const m = raw.match(re);
       if (m && m[0]) {
         const trimmed = m[0].replace(/\n+/g, ' ').trim();
@@ -886,6 +1008,29 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
     }
     if (found && lines.length > 0) return lines.join('\n');
     return raw.slice(0, maxLen) + '…';
+  }
+
+  // ---- 一键规划：分析底稿 → 检测阶段 → NPC 动向 串行（单步失败不阻塞后续） ----
+  const planStep = ref('');
+
+  async function runFullPlan(): Promise<{ plan: string | null; stage: StoryState | null; npc: NpcPlan | null }> {
+    if (loading.value || detecting.value || npcLoading.value) {
+      return { plan: null, stage: null, npc: null };
+    }
+    const result: { plan: string | null; stage: StoryState | null; npc: NpcPlan | null } = { plan: null, stage: null, npc: null };
+
+    planStep.value = '分析中';
+    result.plan = await generatePlan(true);
+    if (result.plan) {
+      planStep.value = '检测中';
+      result.stage = await detectStage(true);
+      if (settings.value.npcEnabled) {
+        planStep.value = '推演中';
+        result.npc = await generateNpcPlan(true);
+      }
+    }
+    planStep.value = '';
+    return result;
   }
 
   // ---- 自动生成 ----
@@ -996,10 +1141,12 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
     npcLoading,
     consolidating,
     generationBusy,
+    planStep,
     modelList,
     fetchingModels,
     fetchModels,
     generatePlan,
+    runFullPlan,
     generateAdvance,
     detectStage,
     generateNpcPlan,

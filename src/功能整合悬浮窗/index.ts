@@ -5,7 +5,7 @@
 
 import { createPinia, setActivePinia } from 'pinia';
 import { createApp, reactive } from 'vue';
-import { usePlotPlannerStore } from '../剧情规划大师/store';
+import { RHYTHMS, usePlotPlannerStore } from '../剧情规划大师/store';
 import { useSummaryStore } from '../总结助手/store';
 import { useHeroSpiritStore } from '../英灵功能/store';
 import App from './App.vue';
@@ -290,13 +290,10 @@ $(() => {
       console.warn('[功能整合悬浮窗] summary provider 注册失败', e);
     }
 
-    // ---- 注册脚本按钮（合并三个模块的按钮，去世界书）----
+    // ---- 注册脚本按钮（收敛为四枚：一键规划/推进/总结/英灵技）----
     replaceScriptButtons([
-      { name: '📖 分析剧情', visible: true },
+      { name: '✦ 一键规划', visible: true },
       { name: '🚀 生成推进', visible: true },
-      { name: '🧭 检测阶段', visible: true },
-      { name: '🎭 NPC动向', visible: true },
-      { name: '🧹 整理规划', visible: true },
       { name: '📜 生成总结', visible: true },
       { name: '⚡ 释放英灵技', visible: true },
     ]);
@@ -444,12 +441,20 @@ $(() => {
         if (s.completed?.length) beatParts.push(`已达成：${s.completed.slice(-3).join('；')}`);
         parts.push(beatParts.join('\n'));
       } else if (planner.settings.injectPlanIntoContext) {
-        const plan = [...planner.plans].reverse().find(p => !p.stale)?.content?.trim();
-        if (plan) {
-          const condensed = condensePlanForContext(plan);
+        const planItem = [...planner.plans].reverse().find(p => !p.stale);
+        if (planItem?.content?.trim()) {
+          const condensed = condensePlanForContext(planItem.content.trim());
+          // 生成语境行：节奏/命运骰/范式
+          const m = planItem.meta;
+          const ctxLine = m
+            ? `本次基调：${(RHYTHMS as Record<string, { label: string }>)[m.rhythm]?.label ?? m.rhythm}` +
+              (m.fate ? `｜命运：🎲${m.fate.roll} ${m.fate.label}` : '') +
+              (m.prototypes?.length ? `｜范式：${m.prototypes.join(' + ')}` : '') + '\n'
+            : '';
           parts.push(
-            '【剧情规划 — 隐性走向指引】你是角色扮演 AI。以下规划是当前剧情走向的指引，你的正文必须朝规划中的下一步节拍自然推进，同时保持角色扮演、不输出任何规划/大纲/元文本：\n' +
-            `规划要点：\n${condensed}`
+            '【剧情规划 — 隐性走向指引】你是角色扮演 AI。以下是当前剧情的可能性底稿，你的正文须让剧情朝其中的事件自然推进，保持角色扮演、不输出任何规划/大纲/元文本：\n' +
+            ctxLine +
+            `底稿要点：\n${condensed}`
           );
         }
       }
@@ -472,15 +477,14 @@ $(() => {
             const bits: string[] = [];
             if (n.thought) bits.push(`想法：${n.thought}`);
             if (n.behavior) bits.push(`行为：${n.behavior}`);
-            if (n.positive) bits.push(`积极面：${n.positive}`);
-            if (n.darkSide) bits.push(`阴暗面：${n.darkSide}`);
+            if (n.personality) bits.push(`性格：${n.personality}`);
             if (n.likelyAction) bits.push(`可能行动：${n.likelyAction}`);
             return `【${n.name}】${bits.join('｜')}`;
           }).join('\n')
           : '';
         if (npcLines) {
           parts.push(
-            '【NPC动向 — 周围主要角色当下动态，须按人设体现】以下是主角周围主要 NPC/同伴此刻可能的想法、行为、积极面、阴暗面与走向。请让她们在正文中以符合人设的方式自然体现，尤其是「可能行动」应作为她们主动推动剧情的行动融入发展，不要复述本段：\n' +
+            '【NPC动向 — 周围主要角色当下动态，须按人设体现】以下是主角周围主要 NPC/同伴此刻可能的想法、行为与性格表现。请让她们在正文中以符合人设的方式自然体现，尤其是「可能行动」应作为她们主动推动剧情的行动融入发展，不要复述本段：\n' +
             npcLines
           );
         }
@@ -537,31 +541,22 @@ $(() => {
     });
 
     // ---- 脚本按钮事件 ----
-    eventOn(getButtonEvent('📖 分析剧情'), () => {
-      if (planner.loading) { toastr.info('正在分析中，请稍候...'); return; }
-      planner.generatePlan().then(r => { if (r) toastr.success('剧情规划完成', '剧情规划大师'); });
+    eventOn(getButtonEvent('✦ 一键规划'), () => {
+      if (planner.loading || planner.detecting || planner.npcLoading) { toastr.info('规划进行中，请稍候...'); return; }
+      planner.runFullPlan().then(r => {
+        if (r.plan) {
+          const bits: string[] = ['底稿已生成'];
+          if (r.stage) bits.push(`阶段 ${r.stage.stage}·序列${r.stage.sequence}`);
+          if (r.npc) bits.push(`${r.npc.npcs.length} 个NPC动向`);
+          toastr.success(bits.join('，'), '一键规划');
+        }
+      });
     });
     eventOn(getButtonEvent('🚀 生成推进'), () => {
       if (planner.loading) { toastr.info('正在分析中，请稍候...'); return; }
       planner.generateAdvance().then(r => {
         if (r) toastr.success('推进指令生成完成' + (planner.settings.npcEnabled && planner.settings.npcAutoWithAdvance ? '（已联动 NPC 动向）' : ''), '剧情规划大师');
       });
-    });
-    eventOn(getButtonEvent('🧭 检测阶段'), () => {
-      if (planner.detecting) { toastr.info('正在检测阶段，请稍候...'); return; }
-      planner.detectStage(false).then(r => {
-        if (r) toastr.success(`当前阶段：${r.stage} · 序列${r.sequence}`, '剧情规划大师');
-      });
-    });
-    eventOn(getButtonEvent('🎭 NPC动向'), () => {
-      if (planner.npcLoading) { toastr.info('正在生成NPC动向，请稍候...'); return; }
-      planner.generateNpcPlan(false).then(r => {
-        if (r) toastr.success(`已生成 ${r.npcs.length} 个角色的动向`, '剧情规划大师');
-      });
-    });
-    eventOn(getButtonEvent('🧹 整理规划'), () => {
-      if (planner.loading) { toastr.info('正在处理中，请稍候...'); return; }
-      planner.consolidatePlan(false);
     });
     eventOn(getButtonEvent('📜 生成总结'), () => {
       if (summary.loading) { toastr.info('正在总结中，请稍候...'); return; }

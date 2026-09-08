@@ -32,6 +32,19 @@
       </div>
     </div>
 
+    <!-- 节奏三档选择器 -->
+    <div class="rhythm-row">
+      <button
+        v-for="(r, key) in rhythms"
+        :key="key"
+        type="button"
+        class="rhythm-btn"
+        :class="{ 'rhythm-btn--on': store.settings.rhythm === key }"
+        @click="onRhythm(key as RhythmKey)"
+      >{{ r.label }}</button>
+    </div>
+    <div class="rhythm-desc">{{ rhythms[store.settings.rhythm]?.desc }}</div>
+
     <!-- 当前节拍 hero -->
     <section v-if="store.storyState" class="beat-hero">
       <div class="beat-hero__head">
@@ -52,25 +65,19 @@
       <span>还没有进度指针——先「📖 分析剧情」再「🧭 检测阶段」</span>
     </section>
 
-    <!-- 主操作 -->
+    <!-- 主操作：一键规划 + 生成推进 -->
     <div class="action-grid">
-      <button class="btn btn--primary" type="button" :disabled="store.loading || store.generationBusy" @click="onGeneratePlan">
-        {{ store.loading ? '分析中…' : '📖 分析剧情' }}
+      <button class="btn btn--primary btn--full" type="button" :disabled="planBusy" @click="onRunFullPlan">
+        {{ planBusy ? `✦ ${store.planStep || '规划中'}…` : '✦ 一键规划（底稿→节拍→NPC）' }}
       </button>
       <button class="btn btn--danger" type="button" :disabled="store.loading || store.generationBusy" @click="onGenerateAdvance">
         {{ store.loading ? '生成中…' : '🚀 生成推进' }}
       </button>
-      <button class="btn btn--accent" type="button" :disabled="store.npcLoading || store.generationBusy" @click="onGenerateNpcPlan">
-        {{ store.npcLoading ? '推演中…' : '🎭 NPC 动向' }}
-      </button>
-      <button class="btn btn--slate" type="button" :disabled="store.loading || store.generationBusy" @click="onConsolidate">
-        {{ store.loading ? '处理中…' : '🧹 整理规划' }}
-      </button>
     </div>
 
-    <!-- 高级：区间补跑 + 自动化 -->
+    <!-- 高级：区间补跑 / 自动化 / 整理 / 设置 -->
     <details class="adv-box">
-      <summary class="adv-box__summary">⚙ 高级（区间补跑 / 自动化 / 设置）</summary>
+      <summary class="adv-box__summary">⚙ 高级（区间补跑 / 自动化 / 整理 / 设置）</summary>
       <div class="adv-box__body">
         <div class="adv-sec">
           <div class="adv-sec__title">🔁 区间补跑</div>
@@ -82,19 +89,22 @@
           </div>
         </div>
         <div class="adv-sec">
+          <div class="adv-sec__title">🧹 规划整理</div>
+          <button class="btn btn--ghost btn--sm" type="button" :disabled="store.loading || store.generationBusy" @click="onConsolidate">
+            {{ store.loading ? '处理中…' : '整理当前底稿（合并重复/修正冲突）' }}
+          </button>
+        </div>
+        <div class="adv-sec">
           <div class="adv-sec__title">⚡ 自动化</div>
           <label class="switch-row"><input type="checkbox" :checked="store.settings.autoGenerate" @change="onAutoGenerateToggle" /><span>每 {{ store.settings.autoInterval }} 楼自动规划</span><input v-model.number="store.settings.autoInterval" @change="onSettingsChange" type="number" min="5" max="100" class="inp inp--num inp--tail" /></label>
           <label class="switch-row"><input type="checkbox" :checked="store.settings.autoAdvance" @change="onAutoAdvanceToggle" /><span>每 {{ store.settings.advanceInterval }} 楼自动推进</span><input v-model.number="store.settings.advanceInterval" @change="onSettingsChange" type="number" min="1" max="20" class="inp inp--num inp--tail" /></label>
         </div>
         <div class="adv-sec">
           <div class="adv-sec__title">📥 注入与联动</div>
-          <label class="switch-row"><input type="checkbox" :checked="store.settings.injectPlanIntoContext" @change="onContextInjectToggle" /><span>规划注入上下文</span></label>
-          <label class="switch-row"><input type="checkbox" :checked="store.settings.injectPushIntoContext" @change="onPushInjectToggle" /><span>推进注入上下文</span></label>
-          <label class="switch-row"><input type="checkbox" :checked="store.settings.injectNpcIntoContext" @change="onNpcInjectToggle" /><span>NPC动向注入上下文</span></label>
-          <label class="switch-row"><input type="checkbox" :checked="store.settings.npcOnSceneOnly" @change="onSettingToggle('npcOnSceneOnly', $event)" /><span>只注入同场景 NPC</span></label>
+          <label class="switch-row"><input type="checkbox" :checked="injectAll" @change="onInjectAllToggle" /><span>注入上下文（节拍/底稿/推进/NPC动向）</span></label>
           <label class="switch-row"><input type="checkbox" :checked="store.settings.beatSyncEnabled" @change="onSettingToggle('beatSyncEnabled', $event)" /><span>节拍写入 $flags（纪元触发器联动）</span></label>
           <label class="switch-row"><input type="checkbox" :checked="store.settings.useSummaryContext" @change="onSettingToggle('useSummaryContext', $event)" /><span>联动总结助手（总纲+伏笔回收）</span></label>
-          <label class="switch-row"><input type="checkbox" :checked="store.settings.npcEnabled" @change="onNpcEnabledToggle" /><span>启用 NPC 动向规划</span></label>
+          <label class="switch-row"><input type="checkbox" :checked="store.settings.npcEnabled" @change="onNpcEnabledToggle" /><span>一键规划时推演 NPC 动向</span></label>
           <label class="switch-row"><input type="checkbox" :checked="store.settings.npcAutoWithAdvance" @change="onNpcAutoToggle" /><span>生成推进时联动 NPC 动向</span></label>
         </div>
         <div class="adv-sec">
@@ -151,6 +161,11 @@
       <div v-for="(p, i) in planHistory" :key="p.generatedAt" class="plan-item" :class="{ 'plan-item--stale': p.stale }">
         <div class="plan-item__head" @click="togglePlan(i)">
           <span class="plan-item__badge" :class="p.stale ? 'badge--stale' : 'badge--ok'">{{ p.stale ? '已失效' : coverageText(p) }}</span>
+          <span v-if="p.meta" class="plan-meta">
+            <span v-if="p.meta.rhythm" class="badge badge--rhythm">{{ rhythms[p.meta.rhythm as RhythmKey]?.label ?? p.meta.rhythm }}</span>
+            <span v-if="p.meta.fate" class="badge" :class="p.meta.fate.range === 'fortune' ? 'badge--fortune' : p.meta.fate.range === 'downfall' ? 'badge--downfall' : 'badge--muted'">🎲{{ p.meta.fate.roll }} {{ p.meta.fate.label }}</span>
+            <span v-if="p.meta.prototypes?.length" class="badge badge--proto">{{ p.meta.prototypes.map(x => x.split('：')[0]).join('+') }}</span>
+          </span>
           <span class="plan-item__time">{{ formatTime(p.generatedAt) }}</span>
           <span class="plan-item__toggle">{{ expandedPlan === i ? '收起 ▴' : '展开 ▾' }}</span>
         </div>
@@ -184,8 +199,7 @@
           <div class="npc-card__name">{{ n.name }}</div>
           <div v-if="n.thought" class="npc-field"><span>想法</span>{{ n.thought }}</div>
           <div v-if="n.behavior" class="npc-field"><span>行为</span>{{ n.behavior }}</div>
-          <div v-if="n.positive" class="npc-field npc-field--good"><span>积极</span>{{ n.positive }}</div>
-          <div v-if="n.darkSide" class="npc-field npc-field--dark"><span>阴暗</span>{{ n.darkSide }}</div>
+          <div v-if="n.personality" class="npc-field npc-field--good"><span>性格</span>{{ n.personality }}</div>
           <div v-if="n.likelyAction" class="npc-field npc-field--act"><span>行动</span>{{ n.likelyAction }}</div>
         </div>
       </div>
@@ -195,9 +209,10 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { usePlotPlannerStore } from './store';
+import { RHYTHMS, type RhythmKey, usePlotPlannerStore } from './store';
 
 const store = usePlotPlannerStore();
+const rhythms = RHYTHMS;
 const depthOptions = [5, 10, 20, 50];
 const advanceDepthOptions = [3, 5, 10, 20, 50];
 const rangeFrom = ref<number | null>(null);
@@ -212,8 +227,14 @@ const advanceHistory = computed(() => [...store.advances].reverse());
 const latestNpc = computed(() => store.npcPlans.length ? store.npcPlans[store.npcPlans.length - 1] : null);
 const latestNpcCount = computed(() => latestNpc.value?.npcs.length || 0);
 
+/** 一键规划进行中（分析/检测/推演任一步） */
+const planBusy = computed(() => !!store.planStep || store.loading || store.detecting || store.npcLoading);
+/** 注入总开关：三路全开视为开 */
+const injectAll = computed(() =>
+  store.settings.injectPlanIntoContext && store.settings.injectPushIntoContext && store.settings.injectNpcIntoContext);
+
 const promptTabs = [
-  { key: 'systemPrompt' as const, label: '📖 大纲提示词', reset: () => store.resetSystemPrompt() },
+  { key: 'systemPrompt' as const, label: '📖 底稿提示词', reset: () => store.resetSystemPrompt() },
   { key: 'pushPrompt' as const, label: '🚀 推进提示词', reset: () => store.resetPushPrompt() },
   { key: 'npcPrompt' as const, label: '🎭 NPC动向提示词', reset: () => store.resetNpcPrompt() },
 ];
@@ -225,9 +246,20 @@ function togglePlan(i: number) {
   expandedPlan.value = expandedPlan.value === i ? null : i;
 }
 
-async function onGeneratePlan() {
-  const r = await store.generatePlan();
-  if (r) toastr.success('大纲已生成', '剧情规划大师');
+function onRhythm(key: RhythmKey) {
+  store.updateSettings({ rhythm: key });
+}
+
+async function onRunFullPlan() {
+  const r = await store.runFullPlan();
+  if (r.plan) {
+    const bits: string[] = ['底稿已生成'];
+    if (r.stage) bits.push(`阶段 ${r.stage.stage}·序列${r.stage.sequence}`);
+    if (r.npc) bits.push(`${r.npc.npcs.length} 个NPC动向`);
+    toastr.success(bits.join('，'), '一键规划');
+  } else if (store.error) {
+    toastr.error(store.error, '一键规划失败');
+  }
 }
 async function onRangePlan() {
   if (rangeFrom.value == null || rangeTo.value == null || rangeTo.value < rangeFrom.value) {
@@ -239,7 +271,7 @@ async function onRangePlan() {
 }
 async function onConsolidate() {
   const r = await store.consolidatePlan();
-  if (r) toastr.success('规划已整理', '剧情规划大师');
+  if (r) toastr.success('底稿已整理', '剧情规划大师');
 }
 async function onGenerateAdvance() {
   const r = await store.generateAdvance();
@@ -248,24 +280,24 @@ async function onGenerateAdvance() {
 async function onFetchModels() { await store.fetchModels(); }
 
 function onSettingsChange() { store.updateSettings(); }
-function onSettingToggle(key: 'npcOnSceneOnly' | 'beatSyncEnabled' | 'useSummaryContext', e: Event) {
+function onSettingToggle(key: 'beatSyncEnabled' | 'useSummaryContext', e: Event) {
   store.updateSettings({ [key]: (e.target as HTMLInputElement).checked });
+}
+function onInjectAllToggle(e: Event) {
+  const on = (e.target as HTMLInputElement).checked;
+  store.updateSettings({ injectPlanIntoContext: on, injectPushIntoContext: on, injectNpcIntoContext: on });
 }
 function onAutoGenerateToggle(e: Event) { store.updateSettings({ autoGenerate: (e.target as HTMLInputElement).checked }); }
 function onAutoAdvanceToggle(e: Event) { store.updateSettings({ autoAdvance: (e.target as HTMLInputElement).checked }); }
-function onContextInjectToggle(e: Event) { store.updateSettings({ injectPlanIntoContext: (e.target as HTMLInputElement).checked }); }
-function onPushInjectToggle(e: Event) { store.updateSettings({ injectPushIntoContext: (e.target as HTMLInputElement).checked }); }
-function onNpcInjectToggle(e: Event) { store.updateSettings({ injectNpcIntoContext: (e.target as HTMLInputElement).checked }); }
 function onNpcEnabledToggle(e: Event) { store.updateSettings({ npcEnabled: (e.target as HTMLInputElement).checked }); }
 function onNpcAutoToggle(e: Event) { store.updateSettings({ npcAutoWithAdvance: (e.target as HTMLInputElement).checked }); }
+function onResetPrompt() { store.resetSystemPrompt(); toastr.info('已恢复为默认提示词模板', '剧情规划大师'); }
+function onResetPushPrompt() { store.resetPushPrompt(); toastr.info('已恢复为默认推进提示词', '剧情规划大师'); }
+function onResetNpcPrompt() { store.resetNpcPrompt(); toastr.info('已恢复为默认NPC动向提示词', '剧情规划大师'); }
 
 async function onDetectStage() {
   const r = await store.detectStage();
   if (r) toastr.success(`当前阶段：${r.stage} · 序列${r.sequence}`, '剧情规划大师');
-}
-async function onGenerateNpcPlan() {
-  const r = await store.generateNpcPlan();
-  if (r) toastr.success(`已生成 ${r.npcs.length} 个角色的动向`, '剧情规划大师');
 }
 
 function formatTime(ts: number) {
@@ -274,6 +306,7 @@ function formatTime(ts: number) {
   return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 </script>
+
 
 <style scoped>
 .plot-workbench {
@@ -358,6 +391,38 @@ function formatTime(ts: number) {
 }
 .chip--conflict { background: rgba(220, 90, 60, 0.3); color: #ffd9c9; border: 1px solid rgba(255, 160, 130, 0.4); }
 
+/* ── 节奏三档 ── */
+.rhythm-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.rhythm-btn {
+  padding: 7px 4px;
+  border-radius: 9px;
+  border: 1px solid rgba(122, 90, 44, 0.35);
+  background: rgba(255, 252, 243, 0.7);
+  color: #5d4322;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.rhythm-btn:hover { background: rgba(255, 240, 200, 0.9); }
+.rhythm-btn--on {
+  background: linear-gradient(160deg, #5d4322, #7a5a2c);
+  color: #ffe9b8;
+  border-color: rgba(184, 134, 11, 0.6);
+  box-shadow: 0 2px 6px rgba(90, 62, 20, 0.3), inset 0 1px 0 rgba(255, 235, 180, 0.25);
+}
+.rhythm-desc {
+  margin-top: -4px;
+  padding: 0 2px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(109, 88, 54, 0.85);
+}
+.btn--full { grid-column: 1 / -1; background: linear-gradient(135deg, #b8860b, #d9a83c); color: #2c1e08; }
 /* ── 按钮 ── */
 .action-grid {
   display: grid;
@@ -542,6 +607,11 @@ function formatTime(ts: number) {
 .badge--stale { background: rgba(200, 60, 40, 0.14); color: #a03322; }
 .badge--live { background: rgba(184, 134, 11, 0.18); color: #8a6a10; }
 .badge--muted { background: rgba(122, 90, 44, 0.14); color: rgba(93, 67, 34, 0.8); }
+.badge--rhythm { background: rgba(91, 74, 138, 0.14); color: #5b4a8a; }
+.badge--fortune { background: rgba(184, 134, 11, 0.2); color: #8a6a10; }
+.badge--downfall { background: rgba(200, 60, 40, 0.14); color: #a03322; }
+.badge--proto { background: rgba(70, 130, 120, 0.14); color: #2f6a5e; }
+.plan-meta { display: inline-flex; gap: 4px; flex-wrap: wrap; min-width: 0; }
 
 /* ── 推进历史 ── */
 .adv-item {
