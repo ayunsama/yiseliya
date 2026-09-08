@@ -1,0 +1,51 @@
+/* ============================================================
+   无限回廊 · 悬浮终端 — 全局变量
+   PT 铁锈凝血美学
+   ============================================================ */
+
+:root {
+  --pt-void: #060403;
+  --pt-rust-dark: #1a0a05;
+  --pt-rust: #2a1008;
+  --pt-rust-mid: #3d1a0c;
+  --pt-rust-light: #5a2812;
+  --pt-blood-dry: #2a0808;
+  --pt-blood: #4a1010;
+  --pt-blood-bright: #7a1818;
+  --pt-blood-wet: #a02020;
+  --pt-flesh: #1a0c08;
+  --pt-flesh-light: #2a1510;
+  --pt-iron: #3a3430;
+  --pt-iron-dark: #1a1815;
+  --pt-amber: #e0c080;
+  --pt-amber-dim: #b8a070;
+  --pt-chalk: #ddd5c8;
+  --pt-chalk-dim: #a09080;
+  --pt-emerge: #f0e8d8;
+  --font-display: 'Noto Serif SC', 'SimSun', serif;
+  --font-body: 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
+  --font-mono: 'Courier New', monospace;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  font-family: var(--font-body);
+  color: var(--pt-chalk);
+  overflow: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

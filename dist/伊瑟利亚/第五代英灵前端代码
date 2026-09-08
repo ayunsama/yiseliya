@@ -1,0 +1,506 @@
+
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>第五代英灵 · 表情对话框</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            background: transparent;
+            padding: 10px;
+        }
+
+        /* ===== 公共容器 ===== */
+        .spirit-wrapper {
+            display: flex;
+            align-items: stretch;
+            max-width: 720px;
+            margin: 5px auto;
+            border-radius: 18px;
+            box-shadow: 0 4px 18px rgba(60, 40, 100, 0.25);
+            overflow: hidden;
+            animation: fadeInSpirit 0.5s ease-in-out;
+            gap: 0;
+            transition: box-shadow 0.3s ease;
+        }
+        .spirit-wrapper:hover {
+            box-shadow: 0 6px 28px rgba(60, 40, 100, 0.2);
+        }
+
+        @keyframes fadeInSpirit {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ---- 各英灵主题色 ---- */
+        .spirit-wrapper.theme-erika {
+            background: linear-gradient(145deg, #fdf0ee 0%, #f8e4e0 100%);
+            border: 1px solid #d4a0a0;
+        }
+        .spirit-wrapper.theme-ilya {
+            background: linear-gradient(145deg, #eef4fa 0%, #e0eaf5 100%);
+            border: 1px solid #a0bcd4;
+        }
+        .spirit-wrapper.theme-kori {
+            background: linear-gradient(145deg, #eef6fc 0%, #dceaf5 100%);
+            border: 1px solid #90b8d8;
+        }
+        .spirit-wrapper.theme-lilith {
+            background: linear-gradient(145deg, #f5eef8 0%, #ede0f5 100%);
+            border: 1px solid #c8a8d8;
+        }
+
+        /* ===== 头像区 ===== */
+        .spirit-avatar {
+            flex-shrink: 0;
+            width: 100px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 0 12px 14px;
+            align-self: center;
+        }
+
+        .spirit-avatar .avatar-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 38px;
+            border: 2px solid;
+            transition: transform 0.4s ease, box-shadow 0.3s ease;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .spirit-avatar .avatar-icon img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center top;
+        }
+
+        .spirit-wrapper:hover .avatar-icon {
+            transform: scale(1.06);
+        }
+
+        .avatar-icon.erika {
+            border-color: #c0392b;
+            background: radial-gradient(circle at 35% 30%, rgba(192,57,43,0.15), rgba(192,57,43,0.05));
+            box-shadow: 0 0 16px rgba(192,57,43,0.15);
+        }
+        .avatar-icon.ilya {
+            border-color: #2980b9;
+            background: radial-gradient(circle at 35% 30%, rgba(41,128,185,0.15), rgba(41,128,185,0.05));
+            box-shadow: 0 0 16px rgba(41,128,185,0.15);
+        }
+        .avatar-icon.kori {
+            border-color: #3498db;
+            background: radial-gradient(circle at 35% 30%, rgba(52,152,219,0.15), rgba(52,152,219,0.05));
+            box-shadow: 0 0 16px rgba(52,152,219,0.15);
+        }
+        .avatar-icon.lilith {
+            border-color: #8e44ad;
+            background: radial-gradient(circle at 35% 30%, rgba(142,68,173,0.15), rgba(142,68,173,0.05));
+            box-shadow: 0 0 16px rgba(142,68,173,0.15);
+        }
+
+        /* ===== 对话内容区 ===== */
+        .spirit-dialogue {
+            flex-grow: 1;
+            padding: 18px 22px 18px 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 0;
+        }
+
+        /* 名称行 */
+        .spirit-name-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+            margin-bottom: 10px;
+        }
+
+        .spirit-name {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+        .spirit-name.erika   { color: #c0392b; }
+        .spirit-name.ilya    { color: #2471a3; }
+        .spirit-name.kori    { color: #2e86c1; }
+        .spirit-name.lilith  { color: #76448a; }
+
+        .spirit-title-tag {
+            font-size: 10px;
+            padding: 1px 10px;
+            border-radius: 10px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        .spirit-title-tag.erika   { background: rgba(192,57,43,0.1); color: #a03020; border: 1px solid rgba(192,57,43,0.2); }
+        .spirit-title-tag.ilya    { background: rgba(41,128,185,0.1); color: #1a6080; border: 1px solid rgba(41,128,185,0.2); }
+        .spirit-title-tag.kori    { background: rgba(52,152,219,0.1); color: #1a6a9a; border: 1px solid rgba(52,152,219,0.2); }
+        .spirit-title-tag.lilith  { background: rgba(142,68,173,0.1); color: #6a308a; border: 1px solid rgba(142,68,173,0.2); }
+
+        /* 情绪标签容器 */
+        .spirit-moods {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 8px;
+            align-items: center;
+        }
+
+        /* 情绪标签 */
+        .spirit-mood {
+            display: inline-flex;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 3px 14px;
+            border-radius: 20px;
+            letter-spacing: 0.3px;
+            line-height: 1.5;
+            white-space: nowrap;
+            transition: all 0.25s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .spirit-mood:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+        }
+
+        /* 艾莉卡 — 赤红 */
+        .spirit-mood.mood-erika {
+            background: #fce8e4;
+            border: 1px solid #e0a0a0;
+            color: #a03020;
+        }
+        .spirit-mood.mood-erika:hover {
+            background: #fae0d8;
+        }
+
+        /* 伊利亚 — 苍蓝 */
+        .spirit-mood.mood-ilya {
+            background: #e4eefc;
+            border: 1px solid #90b8d8;
+            color: #1a5a8a;
+        }
+        .spirit-mood.mood-ilya:hover {
+            background: #d8e8f8;
+        }
+
+        /* 科里维坦 — 冰蓝 */
+        .spirit-mood.mood-kori {
+            background: #e4f0fc;
+            border: 1px solid #80b8dc;
+            color: #1a6a9a;
+        }
+        .spirit-mood.mood-kori:hover {
+            background: #d8eaf8;
+        }
+
+        /* 莉莉丝 — 暗紫 */
+        .spirit-mood.mood-lilith {
+            background: #f0e8f4;
+            border: 1px solid #c8a8d8;
+            color: #6a308a;
+        }
+        .spirit-mood.mood-lilith:hover {
+            background: #e8dcf0;
+        }
+
+        /* 对话文本 */
+        .spirit-text {
+            font-size: 15px;
+            line-height: 1.8;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .spirit-text.erika   { color: #5a2820; }
+        .spirit-text.ilya    { color: #203850; }
+        .spirit-text.kori    { color: #1a3a50; }
+        .spirit-text.lilith  { color: #382840; }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 540px) {
+            .spirit-wrapper {
+                margin: 5px 0;
+                border-radius: 14px;
+                flex-wrap: nowrap;
+            }
+            .spirit-avatar {
+                width: 72px;
+                min-height: 72px;
+                padding: 8px 0 8px 10px;
+            }
+            .spirit-avatar .avatar-icon {
+                width: 56px;
+                height: 56px;
+                font-size: 30px;
+            }
+            .spirit-dialogue {
+                padding: 14px 16px 14px 10px;
+            }
+            .spirit-name {
+                font-size: 13px;
+            }
+            .spirit-mood {
+                font-size: 11px;
+                padding: 2px 12px;
+            }
+            .spirit-text {
+                font-size: 14px;
+                line-height: 1.7;
+            }
+            .spirit-title-tag {
+                font-size: 9px;
+                padding: 0 8px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .spirit-avatar {
+                width: 56px;
+                min-height: 56px;
+                padding: 6px 0 6px 6px;
+            }
+            .spirit-avatar .avatar-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 24px;
+            }
+            .spirit-dialogue {
+                padding: 10px 12px 10px 8px;
+            }
+            .spirit-name {
+                font-size: 12px;
+            }
+            .spirit-mood {
+                font-size: 10px;
+                padding: 1px 10px;
+            }
+            .spirit-text {
+                font-size: 13px;
+                line-height: 1.6;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="main-container"></div>
+
+    <script>
+        /* ============================================================
+         *  1. 英灵数据库
+         * ============================================================ */
+        var SPIRIT_META = {
+            '英灵艾莉卡': {
+                key: 'erika',
+                icon: '⚔',
+                avatar: 'https://zora404.dpdns.org/file/1784749418390_ComfyUI_00173_.jpg',
+                name: '断钢的勇者·艾莉卡',
+                title: '第五代勇者',
+                moods: {
+                    '冷酷': 'erika',
+                    '严肃': 'erika',
+                    '杀意': 'erika',
+                    '死寂': 'erika',
+                    '战意': 'erika',
+                    '决绝': 'erika',
+                    '愤怒': 'erika',
+                    '冷静': 'erika',
+                    '坚定': 'erika',
+                    '悲壮': 'erika',
+                    '沉默': 'erika'
+                }
+            },
+            '英灵伊利亚': {
+                key: 'ilya',
+                icon: '🔮',
+                avatar: 'https://zora404.dpdns.org/file/1784749414890_ComfyUI_00107_.png',
+                name: '燃尽的贤者·伊利亚',
+                title: '第五代贤者',
+                moods: {
+                    '傲慢': 'ilya',
+                    '睿智': 'ilya',
+                    '漠然': 'ilya',
+                    '平静': 'ilya',
+                    '毒舌': 'ilya',
+                    '尖刻': 'ilya',
+                    '嘲讽': 'ilya',
+                    '理智': 'ilya',
+                    '疲惫': 'ilya',
+                    '怀念': 'ilya',
+                    '深邃': 'ilya'
+                }
+            },
+            '英灵科里维坦': {
+                key: 'kori',
+                icon: '🐉',
+                avatar: 'https://zora404.dpdns.org/file/1784749979790_image__79_.png',
+                name: '末代的神龙·科里维坦',
+                title: '第五代神龙',
+                moods: {
+                    '威严': 'kori',
+                    '悲怆': 'kori',
+                    '沉默': 'kori',
+                    '面瘫': 'kori',
+                    '温和': 'kori',
+                    '守护': 'kori',
+                    '孤寂': 'kori',
+                    '沉重': 'kori',
+                    '远古': 'kori',
+                    '叹息': 'kori',
+                    '冰冷': 'kori'
+                }
+            },
+            '英灵莉莉丝': {
+                key: 'lilith',
+                icon: '🌑',
+                avatar: 'https://zora404.dpdns.org/file/1784749418390_ComfyUI_00173_.jpg',
+                name: '被夺的魔女·莉莉丝',
+                title: '第五代魔女',
+                moods: {
+                    '狂热': 'lilith',
+                    '诱惑': 'lilith',
+                    '癫狂': 'lilith',
+                    '愉悦': 'lilith',
+                    '戏谑': 'lilith',
+                    '恶意': 'lilith',
+                    '残酷': 'lilith',
+                    '病态': 'lilith',
+                    '占有': 'lilith',
+                    '悲愤': 'lilith',
+                    '憎恨': 'lilith'
+                }
+            }
+        };
+
+        /* 标签前缀 → 英灵键名 */
+        var TAG_MAP = {
+            '英灵艾莉卡': '英灵艾莉卡',
+            '英灵伊利亚': '英灵伊利亚',
+            '英灵科里维坦': '英灵科里维坦',
+            '英灵莉莉丝': '英灵莉莉丝'
+        };
+
+        /* ============================================================
+         *  2. 分割多个情绪词
+         * ============================================================ */
+        function splitEmotions(raw) {
+            if (!raw || typeof raw !== 'string') return [];
+            var parts = raw.split(/[,，、\/\s|]+/);
+            var result = [];
+            for (var i = 0; i < parts.length; i++) {
+                var s = parts[i].trim();
+                if (s.length > 0) result.push(s);
+            }
+            return result;
+        }
+
+        /* ============================================================
+         *  3. 主渲染逻辑
+         *     标签格式: <英灵艾莉卡|冷酷>对话文本</英灵艾莉卡>
+         *     正则: /<英灵\/?(艾莉卡|伊利亚|科里维坦|莉莉丝)(?:\|([^>]*))?>([\s\S]*?)<\/英灵\/?\1>/g
+         *     $1 = "艾莉卡"（英灵名，无前缀）
+         *     $2 = "冷酷"（情绪，可空）
+         *     $3 = "对话文本"（内容）
+         * ============================================================ */
+        function init() {
+            try {
+                var spiritInput = '$1';     // 英灵名: "艾莉卡"
+                var emotionRaw = '$2';      // 情绪: "冷酷"
+                var textRaw = '$3';         // 对话内容
+
+                var text = (textRaw || '').trim();
+                if (!text || text === '$3') return;
+
+                // 补全为完整键名
+                var spiritTagName = '英灵' + spiritInput;
+                var dbKey = TAG_MAP[spiritTagName];
+                var meta = SPIRIT_META[dbKey];
+                if (!meta) {
+                    // 未匹配到已知英灵时输出纯文本
+                    document.getElementById('main-container').innerHTML =
+                        '<div style="color:#7f8c8d;padding:12px;font-family:sans-serif;">' + text + '</div>';
+                    return;
+                }
+
+                var k = meta.key;
+
+                // 解析情绪列表
+                var emotionList = splitEmotions(emotionRaw);
+                if (emotionList.length === 0) {
+                    // 未指定情绪，根据英灵默认
+                    if (k === 'erika') emotionList = ['冷静'];
+                    else if (k === 'ilya') emotionList = ['平静'];
+                    else if (k === 'kori') emotionList = ['沉默'];
+                    else if (k === 'lilith') emotionList = ['愉悦'];
+                }
+
+                // 取情绪对应的颜色主题（默认为英灵自身主题）
+                function getMoodTheme(emotion) {
+                    var moodMap = meta.moods || {};
+                    return moodMap[emotion] || k;
+                }
+
+                /* 构建情绪标签 HTML */
+                var moodsHtml = '';
+                for (var i = 0; i < emotionList.length; i++) {
+                    var em = emotionList[i];
+                    var theme = getMoodTheme(em);
+                    var delay = i * 50;
+                    moodsHtml += '<span class="spirit-mood mood-' + theme + '" style="animation: fadeInSpirit 0.4s ease ' + delay + 'ms both;">' + em + '</span>';
+                }
+
+                var html = '';
+                html += '<div class="spirit-wrapper theme-' + k + '">';
+                html += '  <div class="spirit-avatar" id="avatar-container">';
+                html += '    <div class="avatar-icon ' + k + '">';
+                html += '      <img src="' + meta.avatar + '" alt="' + meta.name + '" loading="lazy" onerror="this.parentElement.textContent=\'' + meta.icon + '\';">';
+                html += '    </div>';
+                html += '  </div>';
+                html += '  <div class="spirit-dialogue">';
+                html += '    <div class="spirit-name-row">';
+                html += '      <span class="spirit-name ' + k + '">✦ ' + meta.name + '</span>';
+                html += '      <span class="spirit-title-tag ' + k + '">' + meta.title + '</span>';
+                html += '      <div class="spirit-moods">' + moodsHtml + '</div>';
+                html += '    </div>';
+                html += '    <div class="spirit-text ' + k + '">' + text + '</div>';
+                html += '  </div>';
+                html += '</div>';
+
+                document.getElementById('main-container').innerHTML = html;
+
+            } catch (error) {
+                console.error('[第五代英灵渲染] 错误:', error);
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
+```

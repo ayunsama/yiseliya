@@ -47,6 +47,48 @@ function clamp(v: number, min: number, max: number) {
   return Math.min(Math.max(v, min), max);
 }
 
+// ---- 窗口布局：尺寸/最大化持久化（用户可拉伸窗口，重开保留） ----
+const LAYOUT_KEY = 'iseria_hub_layout_v1';
+type HubLayout = { w: number; h: number; maximized: boolean };
+function loadLayout(): HubLayout {
+  try {
+    const raw = (OUTER as any).localStorage?.getItem(LAYOUT_KEY);
+    if (raw) {
+      const o = JSON.parse(raw);
+      return { w: clamp(+o.w || 480, 380, 4000), h: clamp(+o.h || 640, 460, 4000), maximized: !!o.maximized };
+    }
+  } catch { /* ignore */ }
+  return { w: 480, h: 640, maximized: false };
+}
+const layout = reactive<HubLayout>(loadLayout());
+function saveLayout(patch: Partial<HubLayout>) {
+  try { (OUTER as any).localStorage?.setItem(LAYOUT_KEY, JSON.stringify({ ...layout, ...patch })); } catch { /* ignore */ }
+}
+function appliedSize() {
+  const vp = getViewport();
+  return layout.maximized
+    ? { w: Math.max(320, vp.w - 16), h: Math.max(380, vp.h - 16) }
+    : { w: clamp(layout.w, 380, Math.max(380, vp.w - 16)), h: clamp(layout.h, 460, Math.max(460, vp.h - 16)) };
+}
+function applySizeToHost() {
+  if (!hostEl) return;
+  const s = appliedSize();
+  hostEl.style.width = `${s.w}px`;
+  hostEl.style.height = `${s.h}px`;
+}
+function requestResize(w: number, h: number) {
+  layout.maximized = false;
+  layout.w = Math.round(w);
+  layout.h = Math.round(h);
+  saveLayout({});
+  applySizeToHost();
+}
+function requestToggleMaximize() {
+  layout.maximized = !layout.maximized;
+  saveLayout({});
+  applySizeToHost();
+}
+
 const FLOATING_WINDOW_SINGLETON_KEY = '__WXHL_INTEGRATED_FLOATING_WINDOW_SINGLETON__';
 const FLOATING_WINDOW_HOST_ATTR = 'data-integrated-float-root';
 const FLOATING_WINDOW_HOST_SELECTOR = `[${FLOATING_WINDOW_HOST_ATTR}="1"]`;
@@ -145,12 +187,13 @@ function togglePanel() {
   panelState.collapsed = panelState.expanded ? false : true;
   if (!hostEl) return;
   if (panelState.expanded) {
-    // 按视口动态计算面板尺寸（适配桌面 / 移动端）
+    applySizeToHost();
+    // 展开时贴边内收，避免超出视口
     const vp = getViewport();
-    const panelW = Math.min(460, Math.max(320, vp.w - 24));
-    const panelH = Math.min(640, vp.h - 40);
-    hostEl.style.width = `${panelW}px`;
-    hostEl.style.height = `${panelH}px`;
+    const curLeft = parseFloat(hostEl.style.left) || 0;
+    const curTop = parseFloat(hostEl.style.top) || 0;
+    hostEl.style.left = `${clamp(curLeft, 0, Math.max(0, vp.w - hostEl.offsetWidth))}px`;
+    hostEl.style.top = `${clamp(curTop, 0, Math.max(0, vp.h - hostEl.offsetHeight))}px`;
   } else {
     hostEl.style.width = '56px';
     hostEl.style.height = '56px';
@@ -277,6 +320,9 @@ $(() => {
       const app = createApp(App as any, {
         panelState,
         requestCollapse: () => togglePanel(),
+        requestResize,
+        requestToggleMaximize,
+        winLayout: layout,
       }).use(pinia);
       app.mount(hostEl);
       singletonState.mounted = true;
@@ -346,9 +392,10 @@ $(() => {
       pointerDownOnHandle = false;
     });
 
-    // ---- resize 时确保不超出边界 ----
+    // ---- resize 时确保不超出边界（最大化时随视口重算尺寸） ----
     const repositionOnResize = () => {
       if (!hostEl) return;
+      if (panelState.expanded) applySizeToHost();
       const vpNow = getViewport();
       const pw = hostEl.offsetWidth;
       const ph = hostEl.offsetHeight;

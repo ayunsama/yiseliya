@@ -1,0 +1,442 @@
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>权能觉醒</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: transparent; display: flex; justify-content: center; align-items: flex-start; padding: 8px; font-family: "Noto Serif SC", "Source Han Serif SC", "华文中宋", "楷体", serif; font-weight: 600; overflow-x: hidden; }
+
+        .stage { width: 100%; max-width: 760px; }
+        .aura { position: relative; padding: 18px 14px 22px; border-radius: 14px; background: radial-gradient(ellipse at 50% 0%, rgba(142,68,173,.14), transparent 58%), linear-gradient(165deg, #1a1424, #120d1a 45%, #0e0a15); border: 1px solid rgba(168,110,200,.32); box-shadow: 0 14px 34px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06), inset 0 0 60px rgba(142,68,173,.06); animation: auraIn .6s ease-out; }
+        @keyframes auraIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+        .aura::before { content: "✦"; position: absolute; top: 8px; right: 14px; font-size: 15px; color: rgba(180,140,220,.55); }
+        .aura::after { content: ""; position: absolute; left: 8%; right: 8%; bottom: -1px; height: 1px; background: linear-gradient(90deg, transparent, rgba(168,110,200,.55), transparent); }
+
+        /* ===== 题头 ===== */
+        .head { text-align: center; margin-bottom: 16px; }
+        .head-orn { color: #b48cdc; letter-spacing: 8px; font-size: .9em; }
+        .head-title { font-size: 1.7em; font-weight: 800; letter-spacing: 12px; color: #e8d0ff; text-shadow: 0 0 14px rgba(160,100,220,.6), 0 1px 2px rgba(0,0,0,.8); }
+        .head-sub { font-size: .78em; color: #a48ac0; letter-spacing: 2px; margin-top: 6px; }
+        .head-rule { height: 2px; margin: 12px auto 0; width: 82%; background: linear-gradient(90deg, transparent, #8a5ab0 20%, #c89ae0 50%, #8a5ab0 80%, transparent); }
+
+        /* ===== 权能卡 ===== */
+        .power-card { position: relative; margin: 12px 0 18px; padding: 14px 16px 16px; background: linear-gradient(145deg, rgba(60,40,86,.5), rgba(30,20,46,.55)); border: 1px solid rgba(168,110,200,.30); border-left: 4px solid #9a5ac0; border-radius: 10px; box-shadow: inset 0 1px 10px rgba(0,0,0,.35), 0 3px 10px rgba(0,0,0,.3); overflow: hidden; opacity: 0; }
+        .power-card.power-pre { animation: powerRise .7s cubic-bezier(.22,.9,.26,1) forwards; }
+        @keyframes powerRise { from { opacity: 0; transform: translateY(22px) scale(.98); } to { opacity: 1; transform: none; } }
+        /* 装饰层：背光晕 + 金饰外缘 */
+        .pc-glow { position: absolute; top: -40%; right: -30%; width: 70%; height: 120%; background: radial-gradient(circle, rgba(168,110,200,.16), transparent 66%); filter: blur(6px); pointer-events: none; z-index: 0; }
+        .power-card.field .pc-glow { background: radial-gradient(circle, rgba(90,140,220,.18), transparent 66%); }
+        .power-card.personal .pc-glow { background: radial-gradient(circle, rgba(212,175,55,.16), transparent 66%); }
+        .pc-rim { position: absolute; inset: 0; pointer-events: none; z-index: 0; border-radius: 10px; padding: 1px; background: linear-gradient(135deg, transparent 30%, rgba(199,150,230,.35) 50%, transparent 70%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: rimSweep 4s linear infinite; }
+        @keyframes rimSweep { 0% { background-position: 300% 0; } 100% { background-position: -300% 0; } }
+        .power-field-orb { position: absolute; z-index: 0; }
+
+        /* ===== 权能卡·字段区块 ===== */
+        .tsplit { height: 1px; margin: 6px 0 8px; background: linear-gradient(90deg, transparent, rgba(168,110,200,.35), transparent); }
+        .power-card.field .tsplit { background: linear-gradient(90deg, transparent, rgba(90,140,220,.4), transparent); }
+        .power-card.personal .tsplit { background: linear-gradient(90deg, transparent, rgba(212,175,55,.45), transparent); }
+
+        /* ===== meta 小标题条（发动/代价/持续/限制）· ◈ 前缀 + 彩色标注 ===== */
+        .sec-title.costsec { margin-top: 10px; }
+        .sec-title.costsec::after { opacity: .7; }
+        .p-val.costbody { font-weight: 600; }
+        /* 发动 = 金橙 */
+        .sec-title.costsec.pull { color: #f0c88a !important; }
+        .sec-title.costsec.pull::before { color: #e0a030 !important; text-shadow: 0 0 8px rgba(224,160,48,.65); }
+        .sec-title.costsec.pull::after { background: linear-gradient(90deg, rgba(224,160,48,.45), transparent) !important; }
+        .p-val.costbody.pull { background: linear-gradient(180deg, rgba(224,160,48,.12), rgba(224,160,48,.04)); border-color: rgba(224,160,48,.30); }
+        /* 代价 = 猩红 */
+        .sec-title.costsec.toll { color: #f0a8a0 !important; }
+        .sec-title.costsec.toll::before { color: #e05a50 !important; text-shadow: 0 0 8px rgba(220,90,80,.6); }
+        .sec-title.costsec.toll::after { background: linear-gradient(90deg, rgba(220,90,90,.45), transparent) !important; }
+        .p-val.costbody.toll { background: linear-gradient(180deg, rgba(200,70,70,.12), rgba(200,70,70,.03)); border-color: rgba(220,90,90,.34); color: #f0c8c0; }
+        /* 持续 = 淡青 */
+        .sec-title.costsec.dur { color: #b0d8e8 !important; }
+        .sec-title.costsec.dur::before { color: #5aa0b4 !important; text-shadow: 0 0 8px rgba(90,160,180,.6); }
+        .sec-title.costsec.dur::after { background: linear-gradient(90deg, rgba(90,160,180,.45), transparent) !important; }
+        .p-val.costbody.dur { background: linear-gradient(180deg, rgba(90,160,180,.12), rgba(90,160,180,.03)); border-color: rgba(120,180,200,.34); color: #d0e8f0; }
+        /* 限制 = 灰锁 */
+        .sec-title.costsec.lim { color: #c8c8d0 !important; }
+        .sec-title.costsec.lim::before { color: #9a9aa6 !important; text-shadow: 0 0 6px rgba(150,150,160,.5); }
+        .sec-title.costsec.lim::after { background: linear-gradient(90deg, rgba(170,170,180,.4), transparent) !important; }
+        .p-val.costbody.lim { background: linear-gradient(180deg, rgba(150,150,160,.10), rgba(150,150,160,.02)); border-color: rgba(180,180,190,.32); color: #d8d8e0; }
+        .power-card.field { border-left-color: #7a9ae0; }
+        .power-card.field .card-title { color: #a8c8f8; text-shadow: 0 0 10px rgba(90,140,220,.5); }
+        .power-card.personal { border-left-color: #d4af37; }
+        .power-card.personal .card-title { color: #f0d48a; text-shadow: 0 0 10px rgba(212,175,55,.45); }
+
+        .card-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 10px; }
+        .card-title { font-size: 1.22em; font-weight: 800; letter-spacing: 2px; color: #d8b8f0; }
+        .type-tag { display: inline-block; padding: 2px 12px; border-radius: 999px; font-size: .78em; letter-spacing: 1px; border: 1px solid; }
+        .type-tag.field { color: #9ec4ff; background: rgba(90,140,220,.16); border-color: rgba(90,140,220,.5); }
+        .type-tag.personal { color: #ffe2a0; background: rgba(212,175,55,.16); border-color: rgba(212,175,55,.5); }
+        .holder-tag { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .76em; color: #e0d0f0; background: rgba(168,110,200,.18); border: 1px solid rgba(168,110,200,.4); }
+        .job-tag { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .76em; color: #c8d8c0; background: rgba(120,160,100,.16); border: 1px solid rgba(120,160,100,.4); }
+
+        .p-row { display: flex; flex-wrap: wrap; gap: 6px 10px; padding: 4px 0; font-size: .95em; }
+        .p-key { color: #b48cdc; flex-shrink: 0; letter-spacing: 1px; }
+        .p-key::after { content: "："; }
+        .p-val { color: #e6dcf4; word-break: break-word; overflow-wrap: anywhere; flex: 1 1 auto; min-width: 60%; }
+        .p-val.desc { background: linear-gradient(180deg, rgba(168,110,200,.10), rgba(168,110,200,.04)); border: 1px solid rgba(168,110,200,.22); border-radius: 8px; padding: 6px 12px; font-weight: 600; }
+        .p-val .up { color: #9ee0b8; font-weight: 800; }
+        .p-val .down { color: #f0a0a0; font-weight: 800; }
+
+        /* ===== 领域效果专属（领域型）===== */
+        .field-box { margin-top: 8px; padding: 8px 12px; border-radius: 8px; background: linear-gradient(135deg, rgba(90,140,220,.12), rgba(90,140,220,.05)); border: 1px solid rgba(90,140,220,.30); }
+        .field-box .fb-title { color: #a8c8f8; font-size: .84em; letter-spacing: 2px; margin-bottom: 4px; }
+        .field-box .fb-body { color: #d0dff0; font-weight: 600; }
+        /* 通用小节标题条（◈ 前缀）——描述/领域法则 统一风格 */
+        .sec-title { display: flex; align-items: center; gap: 8px; margin: 8px 0 4px; font-size: .9em; font-weight: 800; letter-spacing: 2px; color: #d8b8f0; position: relative; z-index: 1; }
+        .sec-title::before { content: "◈"; color: #9a5ac0; text-shadow: 0 0 8px rgba(154,90,192,.6); }
+        .sec-title::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(168,110,200,.35), transparent); }
+        .power-card.field .sec-title { color: #a8c8f8; }
+        .power-card.field .sec-title::before { color: #7a9ae0; text-shadow: 0 0 8px rgba(122,154,224,.6); }
+        .power-card.field .sec-title::after { background: linear-gradient(90deg, rgba(90,140,220,.4), transparent); }
+        .power-card.personal .sec-title { color: #f0d48a; }
+        .power-card.personal .sec-title::before { color: #d4af37; text-shadow: 0 0 8px rgba(212,175,55,.6); }
+        .power-card.personal .sec-title::after { background: linear-gradient(90deg, rgba(212,175,55,.45), transparent); }
+        body.theme-royal .sec-title { color: #e8d5a8; }
+        body.theme-royal .sec-title::before { color: #d4af37; }
+        body.theme-royal .sec-title::after { background: linear-gradient(90deg, rgba(212,175,55,.5), transparent); }
+        body.theme-holy .sec-title { color: #c8d8f0; }
+        body.theme-holy .sec-title::before { color: #9ab4dc; }
+        body.theme-holy .sec-title::after { background: linear-gradient(90deg, rgba(160,190,235,.45), transparent); }
+
+        /* ===== 四大职业系别 · 主色调（作用于卡片/标题/徽章/分割线）===== */
+        /* 武技系 = 赤铁红 */
+        .power-card.sys-martial { border-left-color: #d0604a; }
+        .power-card.sys-martial .card-title { color: #f0b0a0; text-shadow: 0 0 10px rgba(208,96,74,.5); }
+        .power-card.sys-martial .pc-glow { background: radial-gradient(circle, rgba(208,96,74,.18), transparent 66%); }
+        .power-card.sys-martial .pc-rim { background: linear-gradient(135deg, transparent 30%, rgba(208,96,74,.4) 50%, transparent 70%); }
+        .power-card.sys-martial .tsplit { background: linear-gradient(90deg, transparent, rgba(208,96,74,.45), transparent); }
+        .power-card.sys-martial .sec-title { color: #f0b0a0; }
+        .power-card.sys-martial .sec-title::before { color: #d0604a; text-shadow: 0 0 8px rgba(208,96,74,.6); }
+        .power-card.sys-martial .sec-title::after { background: linear-gradient(90deg, rgba(208,96,74,.4), transparent); }
+        .sys-tag.sys-martial { color: #f0b0a0; background: rgba(208,96,74,.18); border-color: rgba(208,96,74,.5); }
+        /* 魔法系 = 森蓝紫 */
+        .power-card.sys-arcane { border-left-color: #7a6ae0; }
+        .power-card.sys-arcane .card-title { color: #b8a8f0; text-shadow: 0 0 10px rgba(122,106,224,.5); }
+        .power-card.sys-arcane .pc-glow { background: radial-gradient(circle, rgba(122,106,224,.18), transparent 66%); }
+        .power-card.sys-arcane .pc-rim { background: linear-gradient(135deg, transparent 30%, rgba(122,106,224,.42) 50%, transparent 70%); }
+        .power-card.sys-arcane .tsplit { background: linear-gradient(90deg, transparent, rgba(122,106,224,.45), transparent); }
+        .power-card.sys-arcane .sec-title { color: #b8a8f0; }
+        .power-card.sys-arcane .sec-title::before { color: #7a6ae0; text-shadow: 0 0 8px rgba(122,106,224,.6); }
+        .power-card.sys-arcane .sec-title::after { background: linear-gradient(90deg, rgba(122,106,224,.4), transparent); }
+        .sys-tag.sys-arcane { color: #b8a8f0; background: rgba(122,106,224,.18); border-color: rgba(122,106,224,.5); }
+        /* 神术系 = 圣金 */
+        .power-card.sys-divine { border-left-color: #d4af37; }
+        .power-card.sys-divine .card-title { color: #f0d48a; text-shadow: 0 0 10px rgba(212,175,55,.5); }
+        .power-card.sys-divine .pc-glow { background: radial-gradient(circle, rgba(212,175,55,.18), transparent 66%); }
+        .power-card.sys-divine .pc-rim { background: linear-gradient(135deg, transparent 30%, rgba(212,175,55,.42) 50%, transparent 70%); }
+        .power-card.sys-divine .tsplit { background: linear-gradient(90deg, transparent, rgba(212,175,55,.45), transparent); }
+        .power-card.sys-divine .sec-title { color: #f0d48a; }
+        .power-card.sys-divine .sec-title::before { color: #d4af37; text-shadow: 0 0 8px rgba(212,175,55,.6); }
+        .power-card.sys-divine .sec-title::after { background: linear-gradient(90deg, rgba(212,175,55,.4), transparent); }
+        .sys-tag.sys-divine { color: #f0d48a; background: rgba(212,175,55,.18); border-color: rgba(212,175,55,.5); }
+        /* 混合系 = 夏紫（魔剑士） */
+        .power-card.sys-mixed { border-left-color: #e06aa0; }
+        .power-card.sys-mixed .card-title { color: #f0a0c8; text-shadow: 0 0 10px rgba(224,106,160,.5); }
+        .power-card.sys-mixed .pc-glow { background: radial-gradient(circle, rgba(224,106,160,.18), transparent 66%); }
+        .power-card.sys-mixed .pc-rim { background: linear-gradient(135deg, transparent 30%, rgba(224,106,160,.42) 50%, transparent 70%); }
+        .power-card.sys-mixed .tsplit { background: linear-gradient(90deg, transparent, rgba(224,106,160,.45), transparent); }
+        .power-card.sys-mixed .sec-title { color: #f0a0c8; }
+        .power-card.sys-mixed .sec-title::before { color: #e06aa0; text-shadow: 0 0 8px rgba(224,106,160,.6); }
+        .power-card.sys-mixed .sec-title::after { background: linear-gradient(90deg, rgba(224,106,160,.4), transparent); }
+        .sys-tag.sys-mixed { color: #f0a0c8; background: rgba(224,106,160,.18); border-color: rgba(224,106,160,.5); }
+        /* 未知系 = 中性 */
+        .power-card.sys-unknown { border-left-color: #9a8ac0; }
+        .sys-tag.sys-unknown { color: #c8bce0; background: rgba(154,138,192,.18); border-color: rgba(154,138,192,.5); }
+        .sys-tag { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .74em; letter-spacing: 1px; border: 1px solid; }
+
+        /* ===== 内容层级（盖过装饰光晕）===== */
+        .power-card > .card-head, .power-card > .tsplit, .power-card > .p-row, .power-card > .field-box, .power-card > .sec-title { position: relative; z-index: 1; }
+
+        /* ===== 题头扫光 ===== */
+        .head-title { position: relative; display: inline-block; }
+        .head-title::after { content: ""; position: absolute; top: 0; left: -30%; width: 24%; height: 100%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.28), transparent); animation: headSweep 3.2s ease-in-out infinite; }
+        @keyframes headSweep { 0% { left: -30%; } 55% { left: 110%; } 100% { left: 110%; } }
+        .aura { overflow: hidden; }
+
+        /* ===== 主题·皇权（金）· meta 适配 ===== */
+        body.theme-royal .power-card { overflow: hidden; }
+        body.theme-royal .tsplit { background: linear-gradient(90deg, transparent, rgba(212,175,55,.5), transparent); }
+        body.theme-royal .pc-rim { background: linear-gradient(135deg, transparent 30%, rgba(212,175,55,.4) 50%, transparent 70%); }
+        body.theme-royal .pc-glow { background: radial-gradient(circle, rgba(212,175,55,.15), transparent 66%); }
+        body.theme-royal .sec-title.costsec.pull { color: #f0d89a; }
+        body.theme-royal .sec-title.costsec.pull::before { color: #d4af37; text-shadow: 0 0 8px rgba(212,175,55,.6); }
+        body.theme-royal .p-val.costbody.pull { background: linear-gradient(180deg, rgba(212,175,55,.12), rgba(212,175,55,.03)); border-color: rgba(212,175,55,.32); color: #e8dcbc; }
+        body.theme-royal .p-val.costbody.toll { background: linear-gradient(180deg, rgba(200,70,70,.14), rgba(200,70,70,.03)); border-color: rgba(220,90,90,.36); color: #f0c8c0; }
+        body.theme-royal .p-val.costbody.dur { background: linear-gradient(180deg, rgba(90,160,180,.14), rgba(90,160,180,.03)); border-color: rgba(120,180,200,.36); color: #d0e8f0; }
+        body.theme-royal .p-val.costbody.lim { background: linear-gradient(180deg, rgba(160,160,170,.10), rgba(160,160,170,.02)); border-color: rgba(180,180,190,.34); color: #d8d8e0; }
+
+        /* ===== 主题·圣辉（白）· meta 适配 ===== */
+        body.theme-holy .power-card { overflow: hidden; }
+        body.theme-holy .tsplit { background: linear-gradient(90deg, transparent, rgba(160,190,235,.45), transparent); }
+        body.theme-holy .pc-rim { background: linear-gradient(135deg, transparent 30%, rgba(200,220,245,.4) 50%, transparent 70%); }
+        body.theme-holy .pc-glow { background: radial-gradient(circle, rgba(170,200,240,.16), transparent 66%); }
+        body.theme-holy .sec-title.costsec.pull { color: #d8e6fa; }
+        body.theme-holy .sec-title.costsec.pull::before { color: #9ab4dc; text-shadow: 0 0 8px rgba(154,180,220,.6); }
+        body.theme-holy .p-val.costbody.pull { background: linear-gradient(180deg, rgba(160,190,235,.12), rgba(160,190,235,.03)); border-color: rgba(160,190,235,.32); color: #dce6f6; }
+        body.theme-holy .p-val.costbody.toll { background: linear-gradient(180deg, rgba(200,70,70,.14), rgba(200,70,70,.03)); border-color: rgba(220,90,90,.36); color: #f0c8c0; }
+        body.theme-holy .p-val.costbody.dur { background: linear-gradient(180deg, rgba(90,160,180,.14), rgba(90,160,180,.03)); border-color: rgba(120,180,200,.36); color: #d0e8f0; }
+        body.theme-holy .p-val.costbody.lim { background: linear-gradient(180deg, rgba(160,160,170,.10), rgba(160,160,170,.02)); border-color: rgba(180,180,190,.34); color: #d8d8e0; }
+
+        /* ===== 底部 ===== */
+        .foot { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 14px; font-size: .8em; color: #8a74a0; letter-spacing: 1px; }
+        .foot-orn { color: #a88ac0; }
+        .foot-seal { width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; color: #efe2ff; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #a04ad0, #6a209a 70%); box-shadow: inset 0 2px 6px rgba(255,255,255,.25), 0 2px 5px rgba(0,0,0,.4); }
+
+        /* ===== 主题切换 ===== */
+        .theme-bar { position: absolute; top: 8px; right: 12px; z-index: 9; display: flex; gap: 4px; }
+        .theme-btn { padding: 2px 9px; font-size: .72em; font-weight: 700; letter-spacing: 1px; border: 1px solid rgba(168,110,200,.5); border-radius: 999px; cursor: pointer; background: rgba(30,20,45,.8); color: #d8c0ee; transition: all .2s; }
+        .theme-btn.active { background: linear-gradient(180deg,#9a5ac0,#7a3aa0); color: #fff0ff; border-color: #9a5ac0; box-shadow: 0 0 8px rgba(154,90,192,.5); }
+
+        /* ===== 主题·皇权（金）===== */
+        body.theme-royal .aura { background: radial-gradient(ellipse at 50% 0%, rgba(212,175,55,.16), transparent 58%), linear-gradient(165deg, #241d12, #17110a 45%, #120d08); border-color: rgba(212,175,55,.35); box-shadow: 0 14px 34px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.05), inset 0 0 60px rgba(212,175,55,.06); }
+        body.theme-royal .head-title { color: #f0d48a; text-shadow: 0 0 14px rgba(212,175,55,.55), 0 1px 2px rgba(0,0,0,.8); }
+        body.theme-royal .head-sub, body.theme-royal .head-orn { color: #c9a86a; }
+        body.theme-royal .head-rule { background: linear-gradient(90deg, transparent, #8a6a20 20%, #d4af37 50%, #8a6a20 80%, transparent); }
+        body.theme-royal .power-card { background: linear-gradient(145deg, rgba(80,60,24,.5), rgba(40,28,10,.55)); border-color: rgba(212,175,55,.32); border-left-color: #c9a227; }
+        body.theme-royal .power-card.field { border-left-color: #8aa0e0; }
+        body.theme-royal .power-card.field .card-title { color: #a8c8f8; }
+        body.theme-royal .power-card.personal { border-left-color: #d4af37; }
+        body.theme-royal .power-card.personal .card-title { color: #f0d48a; }
+        body.theme-royal .card-title { color: #e8d5a8; }
+        body.theme-royal .p-key { color: #d4af37; }
+        body.theme-royal .p-val { color: #e8dcbc; }
+        body.theme-royal .p-val.desc { background: linear-gradient(180deg, rgba(212,175,55,.10), rgba(212,175,55,.04)); border-color: rgba(212,175,55,.24); }
+        body.theme-royal .field-box { background: linear-gradient(135deg, rgba(90,140,220,.14), rgba(90,140,220,.05)); border-color: rgba(90,140,220,.32); }
+        body.theme-royal .foot { color: #c9a86a; }
+        body.theme-royal .foot-orn { color: #c9a86a; }
+        body.theme-royal .theme-btn { background: rgba(40,28,10,.85); color: #e0c890; border-color: rgba(212,175,55,.45); }
+        body.theme-royal .theme-btn.active { background: linear-gradient(180deg,#b8902a,#8a6a1c); }
+
+        /* ===== 主题·圣辉（白）===== */
+        body.theme-holy .aura { background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.18), transparent 58%), linear-gradient(165deg, #2a2e38, #1c2029 45%, #151820); border-color: rgba(210,220,235,.32); box-shadow: 0 14px 34px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.07), inset 0 0 60px rgba(210,225,245,.06); }
+        body.theme-holy .head-title { color: #f0f6ff; text-shadow: 0 0 14px rgba(200,220,250,.5), 0 1px 2px rgba(0,0,0,.8); }
+        body.theme-holy .head-sub, body.theme-holy .head-orn { color: #a8bcd8; }
+        body.theme-holy .head-rule { background: linear-gradient(90deg, transparent, #6a8ab8 20%, #c0d4f0 50%, #6a8ab8 80%, transparent); }
+        body.theme-holy .power-card { background: linear-gradient(145deg, rgba(60,80,120,.4), rgba(35,48,76,.5)); border-color: rgba(190,210,235,.28); border-left-color: #7a9ae0; }
+        body.theme-holy .power-card.field { border-left-color: #7a9ae0; }
+        body.theme-holy .power-card.field .card-title { color: #bcd8ff; }
+        body.theme-holy .power-card.personal { border-left-color: #d4af37; }
+        body.theme-holy .power-card.personal .card-title { color: #f0d48a; }
+        body.theme-holy .card-title { color: #d8e4f8; }
+        body.theme-holy .p-key { color: #9ab4dc; }
+        body.theme-holy .p-val { color: #dce6f6; }
+        body.theme-holy .p-val.desc { background: linear-gradient(180deg, rgba(140,170,220,.10), rgba(140,170,220,.04)); border-color: rgba(140,170,220,.22); }
+        body.theme-holy .field-box { background: linear-gradient(135deg, rgba(122,154,224,.14), rgba(122,154,224,.05)); border-color: rgba(122,154,224,.30); }
+        body.theme-holy .foot { color: #8aa0c0; }
+        body.theme-holy .foot-orn { color: #a0b8d8; }
+        body.theme-holy .theme-btn { background: rgba(30,42,66,.85); color: #c0d4f0; border-color: rgba(140,170,220,.45); }
+        body.theme-holy .theme-btn.active { background: linear-gradient(180deg,#6a8ab8,#4a6a98); }
+
+        .err-msg { color: #d88; text-align: center; font-weight: 600; padding: 20px; letter-spacing: 2px; }
+        .raw { display: none; }
+        @media (max-width: 560px) { .aura { padding: 28px 12px 32px; } .head-title { font-size: 1.25em; letter-spacing: 7px; } .p-val { min-width: 100%; } }
+    </style>
+</head>
+
+<body class="theme-violet">
+    <div class="stage">
+        <div class="aura">
+            <div class="theme-bar">
+                <button class="theme-btn active" data-theme="violet">🔮 灵辉紫</button>
+                <button class="theme-btn" data-theme="royal">👑 皇权金</button>
+                <button class="theme-btn" data-theme="holy">✨ 圣辉白</button>
+            </div>
+            <div class="head">
+                <div class="head-orn">─ ✦ ─</div>
+                <div class="head-title">权能觉醒</div>
+                <div class="head-sub" id="headSub">传说级 · 自悟之力</div>
+                <div class="head-rule"></div>
+            </div>
+            <div id="powerContent"></div>
+            <div class="foot"><span class="foot-orn">─ ✦ ─</span><span>权能之卷 · 本源刻印</span><span class="foot-orn">─ ✦ ─</span><span class="foot-seal">权</span></div>
+        </div>
+    </div>
+    <div id="rawData" style="display:none;">$1</div>
+
+    <script>
+        // ===== 工具 =====
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+        function firstLine(v) { return String(v == null ? '' : v).split(/\r?\n/)[0].trim(); }
+        // ===== 职业系别识别（武技/魔法/神术/混合）=====
+        // 按"基础职业名"归属；用包含匹配 + 优先级，避免 圣光法师/圣殿骑士/魔剑士 被误判
+        var SYS_RULES = [
+            // 混合系（优先，避免被误判为武技/魔法）
+            ['mixed', ['魔剑士']],
+            // 神术系（含"法师/骑士/神官/祭司"的高优先级，避免被武技/"法师"吸走）
+            ['divine', ['圣光法师', '神官', '圣殿骑士', '祭司']],
+            // 武技系
+            ['martial', ['战士', '骑士', '猎人', '斥候', '狂战士', '猎手']],
+            // 魔法系
+            ['arcane', ['元素法师', '符文师', '塑能师', '死灵法师', '召唤师', '魔导技师', '德鲁伊', '邪术师', '精灵术士', '魔兽使', '魔兽师', '魔兽']]
+        ];
+        function detectSys(jobRaw) {
+            var j = String(jobRaw || '').replace(/[（(【\[].*?[)）】\]]/g, ''); // 去括号后缀（Lv.17 / 火 / 乌尔坎）
+            for (var si = 0; si < SYS_RULES.length; si++) {
+                var sys = SYS_RULES[si][0], keys = SYS_RULES[si][1];
+                for (var ki = 0; ki < keys.length; ki++) {
+                    if (j.indexOf(keys[ki]) !== -1) return sys;
+                }
+            }
+            return 'unknown';
+        }
+        var SYS_LABEL = { martial: '武技系', arcane: '魔法系', divine: '神术系', mixed: '混合系', unknown: '' };
+        function detectSysLabel(jobRaw) {
+            var s = detectSys(jobRaw);
+            return SYS_LABEL[s] || '';
+        }
+
+        // ===== 解析 <权能> 文本 → 数组 =====
+        // 每条含：权能名/持有者/类型/来源职业/描述/领域效果/发动/代价
+        function parsePowers(text) {
+            var out = [];
+            if (!text) return out;
+            var parts = String(text).split(/<权能>\s*/);
+            if (parts.length === 1 && String(text).trim()) parts = ['', String(text)];
+            for (var pi = 1; pi < parts.length; pi++) {
+                var chunk = parts[pi].replace(/<\/权能>\s*/g, '');
+                // 提取键值行（键: 值）
+                var rec = {};
+                chunk.split(/\r?\n/).forEach(function (line) {
+                    line = line.trim();
+                    if (!line) return;
+                    var ci = line.search(/[:：]\s*/);
+                    if (ci <= 0) return;
+                    var k = line.slice(0, ci).trim();
+                    var v = line.slice(ci + 1).trim();
+                    if (k && v) rec[k] = v;
+                });
+                if (rec['权能名'] || rec['描述'] || Object.keys(rec).length) out.push(rec);
+            }
+            return out;
+        }
+
+        // ===== 键值渲染：领域效果/描述多行合并 =====
+        function smartVal(v) {
+            v = String(v == null ? '' : v).replace(/\r?\n/g, ' ');
+            v = esc(v);
+            // 数值增量 +N / -N 高亮
+            v = v.replace(/(^|[\s（(；;，,、])([+-]\s*\d+)(?=$|[\s）)；;，,、])/g, function (m, pre, num) {
+                return pre + '<span class="' + (/^-\s*/.test(num) ? 'down' : 'up') + '">' + esc(num) + '</span>';
+            });
+            return v;
+        }
+
+        // ===== 渲染 =====
+        function buildHeadSub() {
+            try {
+                var stat = null;
+                if (typeof Mvu !== 'undefined' && Mvu.getMvuData) stat = (Mvu.getMvuData({ type: 'message', message_id: 'latest' }) || {}).stat_data;
+                var w = (stat && stat.世界) || {};
+                var parts = [];
+                if (w.日期) parts.push(String(w.日期));
+                var loc = w.当前地点 || w.当前位置;
+                if (loc) parts.push(String(loc));
+                return parts.join(' · ') || '传说级 · 自悟之力';
+            } catch (e) { return '传说级 · 自悟之力'; }
+        }
+        function renderPowers(text) {
+            var list = parsePowers(text);
+            if (!list.length) return '<div class="err-msg">※ 尚未有传说级权能显现 ※</div>';
+            var html = '';
+            list.forEach(function (rec, idx) {
+                var name = rec['权能名'] || rec['名称'] || '无名权能';
+                var holder = rec['持有者'] || rec['拥有者'] || '';
+                var type = rec['类型'] || rec['权能类型'] || '';
+                var isField = /领域/.test(type);
+                var job = rec['来源职业'] || rec['职业'] || '';
+                var sys = detectSys(job);
+                var css = 'power-card ' + (isField ? 'field' : 'personal') + ' sys-' + sys + ' power-pre';
+                var delay = Math.min(idx * 0.16, 0.8).toFixed(2) + 's';
+                var sysTag = SYS_LABEL[sys] ? '<span class="sys-tag sys-' + sys + '">◈ ' + SYS_LABEL[sys] + '</span>' : '';
+                var typeTag = '<span class="type-tag ' + (isField ? 'field' : 'personal') + '">' + (isField ? '◎ 领域型' : '✦ 个体能力') + '</span>';
+                html += '<div class="' + css + '" style="animation-delay:' + delay + '"><div class="pc-glow"></div><div class="pc-rim"></div>';
+                html += '<div class="card-head"><span class="card-title">' + esc(name) + '</span>' + typeTag + sysTag;
+                if (holder) html += '<span class="holder-tag">👤 ' + esc(firstLine(holder)) + '</span>';
+                if (job) html += '<span class="job-tag">🎖 ' + esc(firstLine(job)) + '</span>';
+                html += '</div><div class="tsplit"></div>';
+                // 描述（◈ 小标题条）
+                var desc = rec['描述'] || rec['效果'] || '';
+                if (desc) html += '<div class="sec-title">描述</div><div class="p-val desc">' + smartVal(desc) + '</div>';
+                // 领域效果（领域型专属，◈ 小标题条）
+                var fb = rec['领域效果'] || rec['领域'] || '';
+                if (fb) html += '<div class="sec-title">领域法则</div><div class="field-box"><div class="fb-body">' + smartVal(fb) + '</div></div>';
+                // 发动 / 代价 / 持续时间 / 限制 → ◈ 前缀花纹标题条 + 彩色标注
+                var META = {
+                    '发动': { cls: 'sec-title costsec pull', body: 'p-val desc costbody pull', tag: '发动' },
+                    '代价': { cls: 'sec-title costsec toll', body: 'p-val desc costbody toll', tag: '代价' },
+                    '持续时间': { cls: 'sec-title costsec dur', body: 'p-val desc costbody dur', tag: '持续时间' },
+                    '限制': { cls: 'sec-title costsec lim', body: 'p-val desc costbody lim', tag: '限制' }
+                };
+                ['发动', '代价', '持续时间', '限制'].forEach(function (k) {
+                    var v = rec[k] || '';
+                    if (!v) return;
+                    var m = META[k] || { cls: 'sec-title costsec', body: 'p-val desc costbody', tag: k };
+                    html += '<div class="' + m.cls + '">' + esc(m.tag) + '</div><div class="' + m.body + '">' + smartVal(v) + '</div>';
+                });
+                html += '</div>';
+            });
+            return html;
+        }
+
+        // ===== 演示数据 =====
+        var DEMO_TEXT = '<权能>\n  权能名: 万象真理·贤者领域\n  持有者: 伊利亚·艾尔诺尔\n  类型: 领域\n  来源职业: 元素法师\n  描述: 以自身为中心展开半径50尺的贤者领域，领域内敌方所有增益状态被强制中止，并暴露法则级弱点，友方施法消耗减半、法术穿透+3。\n  领域效果: 敌方增益失效 / 友方施法减半 / 法则弱点暴露\n  发动: 每场战斗限1次，需消耗全部MP上限的30%\n  代价: 结束后进入魔力枯竭状态，且每次全力展开生理年龄跃升五年\n  持续时间: 5轮\n</权能>\n<权能>\n  权能名: 勇者权能·不屈\n  持有者: 主角\n  类型: 个体能力\n  来源职业: 骑士\n  描述: 每日1次HP归零时自动恢复至50%最大HP，并获得1轮完全无敌与额外完整回合，是濒死之际逆转战局的绝境之力。\n  发动: 自动触发，无需消耗\n  代价: 每次触发后24小时内体力恢复减半\n</权能>\n';
+
+        // ===== 读取注入数据（裸标签 / 实体转义兼容）=====
+        function readRawText() {
+            var el = document.getElementById('rawData');
+            if (!el) return '';
+            var h = (el.innerHTML || '').trim();
+            if (!h) return '';
+            if (h.indexOf('&lt;') !== -1) {
+                var t = (el.innerText || h).trim();
+                return t || h;
+            }
+            return h;
+        }
+
+        // ===== 主题切换 =====
+        function applyTheme(theme) {
+            document.body.className = 'theme-' + (theme || 'violet');
+            document.querySelectorAll('.theme-btn').forEach(function (btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-theme') === (theme || 'violet'));
+            });
+        }
+        function init() {
+            try {
+                var savedTheme = 'violet';
+                try { savedTheme = localStorage.getItem('isuria_power_theme') || 'violet'; } catch (e) {}
+                applyTheme(savedTheme);
+                document.getElementById('headSub').textContent = buildHeadSub();
+                var raw = readRawText();
+                // 判断占位符必须用 \x241（运行时即 美元符+1），若写成字面量会被酒馆正则当捕获组替换
+                if (!raw || raw === '\x241') {
+                    if (location.hash === '#demo') raw = DEMO_TEXT;
+                    else { document.getElementById('powerContent').innerHTML = '<div style="text-align:center; color:#a48ac0; font-weight:600; letter-spacing:3px; padding:30px 0;">─ 权能尚未显现 ─</div>'; return; }
+                }
+                document.getElementById('powerContent').innerHTML = renderPowers(raw);
+            } catch (e) {
+                document.getElementById('powerContent').innerHTML = '<div class="err-msg">※ 权能之卷破损，无法解读 ※</div>';
+            }
+        }
+        document.addEventListener('click', function (ev) {
+            var btn = ev.target && ev.target.closest ? ev.target.closest('.theme-btn') : null;
+            if (!btn) return;
+            var theme = btn.getAttribute('data-theme');
+            try { localStorage.setItem('isuria_power_theme', theme); } catch (e) {}
+            applyTheme(theme);
+        });
+        function boot() { init(); }
+        if (typeof $ !== 'undefined' && $.fn) { $(function () { boot(); }); }
+        else if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', boot); }
+        else { boot(); }
+    </script>
+</body>
+</html>
+```

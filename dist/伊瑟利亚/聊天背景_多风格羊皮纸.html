@@ -1,0 +1,361 @@
+<div data-parchment style="
+  width: 100%;
+  max-width: 100%;
+  min-height: 160px;
+  margin: 16px auto;
+  position: relative;
+  overflow: hidden;
+  contain: layout paint;
+  padding: 18px;
+  box-sizing: border-box;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      var(--pt-haze, rgba(226, 196, 130, 0.035)) 2px,
+      var(--pt-haze, rgba(226, 196, 130, 0.035)) 4px
+    ),
+    linear-gradient(165deg, var(--pt-bg1) 0%, var(--pt-bg2) 30%, var(--pt-bg3) 60%, var(--pt-bg4) 100%);
+  border: 2px solid var(--pt-border);
+  border-radius: 3px;
+  box-shadow:
+    0 6px 24px var(--pt-shadow),
+    inset 0 0 40px var(--pt-shadow),
+    0 0 0 1px var(--pt-ring);
+  font-family: 'ZhuqueFangsong', 'Noto Serif SC', serif;
+  color: var(--pt-text);
+">
+
+  <!-- ⚙ 风格设置开关（checkbox hack，纯 CSS，无需 JS 即可开合） -->
+  <label class="pt-cfg-btn" title="切换背景风格">
+    <input type="checkbox" class="pt-toggle">
+    <span class="pt-cfg-icon">⚙</span>
+  </label>
+
+  <!-- 风格面板 -->
+  <div class="pt-cfg-panel">
+    <div class="pt-cfg-title">◈ 背景风格 ◈</div>
+    <div class="pt-chips">
+      <label class="pt-chip"><input type="radio" name="pt-theme" value="parchment" checked>暗色羊皮纸</label>
+      <label class="pt-chip"><input type="radio" name="pt-theme" value="simple">简约羊皮纸</label>
+      <label class="pt-chip"><input type="radio" name="pt-theme" value="royal">王室暗金</label>
+      <label class="pt-chip"><input type="radio" name="pt-theme" value="dawn">晨曦黎明</label>
+      <label class="pt-chip"><input type="radio" name="pt-theme" value="night">苍蓝夜曲</label>
+    </div>
+    <div class="pt-cfg-divider"></div>
+    <div class="pt-cfg-sub">字 号</div>
+    <div class="pt-chips">
+      <label class="pt-chip pt-font-chip"><input type="radio" name="pt-font" value="f13">小</label>
+      <label class="pt-chip pt-font-chip"><input type="radio" name="pt-font" value="f14" checked>标准</label>
+      <label class="pt-chip pt-font-chip"><input type="radio" name="pt-font" value="f16">大</label>
+      <label class="pt-chip pt-font-chip"><input type="radio" name="pt-font" value="f18">特大</label>
+    </div>
+  </div>
+
+  <!-- 边缘做旧（暗色下更深的暗角） -->
+  <div data-edge style="
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 15% at 50% 0%, var(--pt-edge-top), transparent 70%),
+      radial-gradient(ellipse 60% 12% at 50% 100%, var(--pt-edge-bottom), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  "></div>
+
+  <!-- 四角铁质包边 -->
+  <div style="position:absolute;top:-1px;left:-1px;width:44px;height:44px;border-top:3px solid var(--pt-corner);border-left:3px solid var(--pt-corner);opacity:var(--pt-corner-op);z-index:1;border-radius:2px 0 0 0;"></div>
+  <div style="position:absolute;top:-1px;right:-1px;width:44px;height:44px;border-top:3px solid var(--pt-corner);border-right:3px solid var(--pt-corner);opacity:var(--pt-corner-op);z-index:1;border-radius:0 2px 0 0;"></div>
+  <div style="position:absolute;bottom:-1px;left:-1px;width:44px;height:44px;border-bottom:3px solid var(--pt-corner);border-left:3px solid var(--pt-corner);opacity:var(--pt-corner-op);z-index:1;border-radius:0 0 0 2px;"></div>
+  <div style="position:absolute;bottom:-1px;right:-1px;width:44px;height:44px;border-bottom:3px solid var(--pt-corner);border-right:3px solid var(--pt-corner);opacity:var(--pt-corner-op);z-index:1;border-radius:0 0 2px 0;"></div>
+
+  <!-- 顶部双线装饰 -->
+  <div style="position:absolute;top:14px;left:55px;right:55px;height:1px;background:linear-gradient(90deg,transparent,var(--pt-accent),transparent);opacity:0.5;z-index:1;"></div>
+  <div style="position:absolute;top:18px;left:55px;right:55px;height:1px;background:linear-gradient(90deg,transparent,var(--pt-accent),transparent);opacity:0.3;z-index:1;"></div>
+
+  <!-- 标题栏 -->
+  <div data-title style="
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 12px 0 2px 0;
+  ">
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px;">
+      <span style="color:var(--pt-accent);font-size:11px;opacity:0.7;">✧</span>
+      <div style="width:50px;height:1px;background:linear-gradient(90deg,transparent,var(--pt-accent));opacity:0.4;"></div>
+      <span style="color:var(--pt-accent);font-size:10px;letter-spacing:3px;text-transform:uppercase;opacity:0.8;">The Elder Scroll</span>
+      <div style="width:50px;height:1px;background:linear-gradient(-90deg,transparent,var(--pt-accent));opacity:0.4;"></div>
+      <span style="color:var(--pt-accent);font-size:11px;opacity:0.7;">✧</span>
+    </div>
+
+    <span style="
+      display: block;
+      font-size: var(--pt-title-size, clamp(18px, 3.5vw, 22px));
+      color: var(--pt-title);
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+      font-weight: 500;
+      letter-spacing: 10px;
+      line-height: 1.2;
+      font-family: 'ZhuqueFangsong', 'Noto Serif SC', serif;
+    ">◈ 伊 瑟 利 亚 ◈</span>
+  </div>
+
+  <!-- 分隔宝剑纹章 -->
+  <div style="
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 4px 0 10px 0;
+    opacity: 0.5;
+  ">
+    <span style="font-size:12px;color:var(--pt-accent2);">⚔</span>
+    <div style="width:30px;height:1px;background:var(--pt-accent);"></div>
+    <span style="font-size:10px;color:var(--pt-accent2);">❖</span>
+    <div style="width:30px;height:1px;background:var(--pt-accent);"></div>
+    <span style="font-size:12px;color:var(--pt-accent2);">⚔</span>
+  </div>
+
+  <!-- 正文内容 -->
+  <div data-content style="
+    position: relative;
+    z-index: 2;
+    padding: 0 10px;
+    line-height: 2.6;
+    font-size: var(--pt-font, 14px);
+    color: var(--pt-text);
+    letter-spacing: 0.04em;
+    white-space: pre-line;
+  ">
+    $1
+  </div>
+
+  <!-- 底部纹章 -->
+  <div style="
+    position: relative;
+    z-index: 2;
+    margin-top: 10px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--pt-accent);
+    opacity: 0.35;
+    letter-spacing: 14px;
+    font-family: serif;
+  ">✧ ◈ ✦ ◈ ✧</div>
+
+  <style>
+    /* ===== 默认主题：暗色羊皮纸（伊瑟利亚） ===== */
+    [data-parchment] {
+      --pt-bg1: #2a2016;
+      --pt-bg2: #3a2b1c;
+      --pt-bg3: #312417;
+      --pt-bg4: #241a10;
+      --pt-haze: rgba(226, 196, 130, 0.035);
+      --pt-border: #b8956a;
+      --pt-text: #e8d5a8;
+      --pt-title: #f0d48a;
+      --pt-accent: #d4b478;
+      --pt-accent2: #c9a86a;
+      --pt-corner: #9a7a45;
+      --pt-corner-op: 0.6;
+      --pt-shadow: rgba(0,0,0,0.45);
+      --pt-ring: rgba(60, 40, 20, 0.5);
+      --pt-edge-top: rgba(0,0,0,0.35);
+      --pt-edge-bottom: rgba(0,0,0,0.30);
+      --pt-quote: #c9a86a;
+      --pt-em: #f0d48a;
+      --pt-link: #e0b96f;
+      --pt-code-bg: rgba(0, 0, 0, 0.35);
+      --pt-font: 14px;      /* 正文默认字号，随右上面板调节 */
+      --pt-title-size: clamp(18px, 3.5vw, 22px);
+    }
+
+    /* ===== 字号调节：纯 CSS（:has 监听 radio → 覆盖 --pt-font 与标题字号） ===== */
+    [data-parchment]:has(input[value="f13"]:checked) { --pt-font: 13px; --pt-title-size: clamp(16px, 3.2vw, 20px); }
+    [data-parchment]:has(input[value="f16"]:checked) { --pt-font: 16px; --pt-title-size: clamp(20px, 3.8vw, 24px); }
+    [data-parchment]:has(input[value="f18"]:checked) { --pt-font: 18px; --pt-title-size: clamp(22px, 4.2vw, 27px); }
+
+    /* ===== 主题切换：纯 CSS（:has 监听 radio 选中 → 覆盖本容器变量） ===== */
+    [data-parchment]:has(input[value="simple"]:checked) {
+      --pt-bg1: #f2e6c8; --pt-bg2: #ecdcb8; --pt-bg3: #e6d3a8; --pt-bg4: #dcc79a;
+      --pt-haze: rgba(140, 110, 60, 0.06);
+      --pt-border: #b89a6a; --pt-text: #4a3a22; --pt-title: #7a5a28;
+      --pt-accent: #8a6a38; --pt-accent2: #7a5a30; --pt-corner: #8a6a45; --pt-corner-op: 0.35;
+      --pt-shadow: rgba(80, 60, 30, 0.18); --pt-ring: rgba(120, 90, 50, 0.35);
+      --pt-edge-top: rgba(60, 40, 20, 0.12); --pt-edge-bottom: rgba(60, 40, 20, 0.10);
+      --pt-quote: #7a5a30; --pt-em: #6a4a20; --pt-link: #7a4a1a; --pt-code-bg: rgba(90, 70, 40, 0.08);
+    }
+    [data-parchment]:has(input[value="royal"]:checked) {
+      --pt-bg1: #1b1626; --pt-bg2: #2a2140; --pt-bg3: #221a34; --pt-bg4: #150f22;
+      --pt-haze: rgba(212, 175, 55, 0.05);
+      --pt-border: #c9a227; --pt-text: #f2e3b3; --pt-title: #ffd75e;
+      --pt-accent: #d4af37; --pt-accent2: #c9a227; --pt-corner: #c9a227; --pt-corner-op: 0.75;
+      --pt-shadow: rgba(0,0,0,0.55); --pt-ring: rgba(201, 162, 39, 0.5);
+      --pt-edge-top: rgba(0,0,0,0.45); --pt-edge-bottom: rgba(0,0,0,0.4);
+      --pt-quote: #d4af37; --pt-em: #ffd75e; --pt-link: #ffd75e; --pt-code-bg: rgba(0,0,0,0.4);
+    }
+    [data-parchment]:has(input[value="dawn"]:checked) {
+      --pt-bg1: #3a2c1c; --pt-bg2: #56402a; --pt-bg3: #493520; --pt-bg4: #2e2113;
+      --pt-haze: rgba(255, 220, 150, 0.06);
+      --pt-border: #e8c078; --pt-text: #f5e6c4; --pt-title: #ffe9b0;
+      --pt-accent: #f0c870; --pt-accent2: #e0b96f; --pt-corner: #d8a860; --pt-corner-op: 0.6;
+      --pt-shadow: rgba(20,10,5,0.4); --pt-ring: rgba(232, 192, 120, 0.5);
+      --pt-edge-top: rgba(30,15,5,0.25); --pt-edge-bottom: rgba(30,15,5,0.22);
+      --pt-quote: #f0c870; --pt-em: #ffe9b0; --pt-link: #ffe0a0; --pt-code-bg: rgba(0,0,0,0.3);
+    }
+    [data-parchment]:has(input[value="night"]:checked) {
+      --pt-bg1: #101c2e; --pt-bg2: #1a2b44; --pt-bg3: #152438; --pt-bg4: #0b1522;
+      --pt-haze: rgba(140, 190, 255, 0.045);
+      --pt-border: #5a8ab8; --pt-text: #cfe0f2; --pt-title: #a8d0f0;
+      --pt-accent: #7ab0dc; --pt-accent2: #6a9ecf; --pt-corner: #6a8ab0; --pt-corner-op: 0.6;
+      --pt-shadow: rgba(0,0,0,0.5); --pt-ring: rgba(90, 138, 184, 0.5);
+      --pt-edge-top: rgba(0,0,0,0.4); --pt-edge-bottom: rgba(0,0,0,0.35);
+      --pt-quote: #7ab0dc; --pt-em: #a8d0f0; --pt-link: #9fc4ec; --pt-code-bg: rgba(0,0,0,0.35);
+    }
+
+    /* ===== 设置开关（右上角 ⚙，纯 CSS 开合） ===== */
+    .pt-cfg-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      z-index: 3;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid rgba(212, 180, 120, 0.5);
+      background: rgba(30, 22, 14, 0.82);
+      color: #e8d5a8;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.45);
+      transition: transform 0.2s, background 0.2s;
+      user-select: none;
+    }
+    .pt-cfg-btn:hover { background: rgba(52, 38, 22, 0.92); }
+    .pt-toggle { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+    .pt-cfg-btn:has(.pt-toggle:checked) { transform: rotate(45deg); }
+    .pt-cfg-icon { pointer-events: none; }
+    .pt-cfg-btn:has(.pt-toggle:checked) .pt-cfg-icon { transform: rotate(-45deg); }
+
+    /* ===== 风格面板（依赖 .pt-toggle:checked 的兄弟选择器） ===== */
+    .pt-cfg-panel {
+      position: absolute;
+      top: 46px;
+      right: 6px;
+      z-index: 3;
+      display: none;
+      background: rgba(26, 19, 12, 0.94);
+      border: 1px solid var(--pt-border, #b8956a);
+      border-radius: 8px;
+      padding: 10px 12px;
+      box-shadow: 0 10px 36px rgba(0,0,0,0.6);
+      color: #e8d5a8;
+      max-width: 240px;
+      min-width: 180px;
+    }
+    .pt-cfg-btn:has(.pt-toggle:checked) + .pt-cfg-panel { display: block; }
+    .pt-cfg-title { font-size: 12px; letter-spacing: 4px; color: #f0d48a; text-align: center; margin-bottom: 8px; }
+    .pt-cfg-divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(212, 180, 120, 0.4), transparent); margin: 8px 0; opacity: 0.6; }
+    .pt-cfg-sub { font-size: 11px; letter-spacing: 2px; color: #c9a86a; text-align: center; margin-bottom: 6px; opacity: 0.85; }
+    .pt-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+    .pt-chip {
+      border: 1px solid #d4b478;
+      background: transparent;
+      color: #e8d5a8;
+      font-family: 'ZhuqueFangsong', 'Noto Serif SC', serif;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.18s;
+      letter-spacing: 1px;
+      user-select: none;
+    }
+    .pt-chip:hover { background: rgba(212, 180, 120, 0.16); }
+    .pt-chip input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+    .pt-chip:has(input:checked) {
+      background: linear-gradient(135deg, #d4b478, #f0d48a);
+      color: #2a2016;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(212, 180, 120, 0.4);
+    }
+
+    /* ===== 正文样式覆盖（随主题变量变色） ===== */
+    [data-parchment] .mes_quote,
+    [data-parchment] .quote {
+      color: var(--pt-quote) !important;
+      font-style: italic;
+      border-left: 2px solid var(--pt-accent);
+      padding-left: 10px;
+      background: color-mix(in srgb, var(--pt-accent) 8%, transparent);
+      display: block;
+      margin: 4px 0;
+    }
+    [data-parchment] q {
+      color: var(--pt-quote) !important;
+      font-style: italic;
+      border-bottom: 1px solid color-mix(in srgb, var(--pt-accent) 35%, transparent);
+    }
+    [data-parchment] span[style*="color"] { color: var(--pt-text) !important; }
+    [data-parchment] .hljs-string { color: var(--pt-accent) !important; }
+    [data-parchment] .hljs-keyword { color: var(--pt-quote) !important; font-weight: 600; }
+    [data-parchment] a {
+      color: var(--pt-link) !important;
+      text-decoration: underline;
+      text-decoration-color: color-mix(in srgb, var(--pt-accent) 40%, transparent);
+    }
+    [data-parchment] a:hover { color: var(--pt-title) !important; }
+    [data-parchment] em, [data-parchment] i { font-style: normal; font-weight: 700; color: var(--pt-em); }
+    [data-parchment] strong, [data-parchment] b { font-weight: 700; font-style: italic; color: var(--pt-em); }
+    [data-parchment] code {
+      background: var(--pt-code-bg);
+      color: var(--pt-text);
+      padding: 1px 5px;
+      border-radius: 2px;
+      border: 1px solid color-mix(in srgb, var(--pt-accent) 25%, transparent);
+      font-size: 0.9em;
+    }
+    [data-parchment] p { margin: 8px 0; }
+    [data-parchment] ul, [data-parchment] ol { padding-left: 1.6em; color: var(--pt-text); }
+    [data-parchment] li { margin: 2px 0; }
+    [data-parchment] hr {
+      border: none; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--pt-accent), transparent);
+      margin: 8px 0; opacity: 0.4;
+    }
+  </style>
+
+  <script>
+    (function () {
+      // 纯 CSS 已保证"能点开 + 能切换 + 能改字号"；本脚本仅做持久化记忆。
+      // ⚠️ 注意：本文件作为世界书/正则 HTML 注入消息时，<script> 会被
+      // SillyTavern 净化器剥离，此段不会执行 —— 那是"每层楼回到默认"的原因。
+      // 持久化已由「核心\状态栏」脚本内置的《正文美化持久化补丁》负责：
+      // 它安装于宿主页面，监听主题/字号修改写入 localStorage，并对新楼层自动回放。
+      // 本段仅当脚本意外可执行时兜底（逻辑与补丁一致，幂等互不冲突）。
+      var radios = document.querySelectorAll('[data-parchment] input[name="pt-theme"]');
+      var fonts = document.querySelectorAll('[data-parchment] input[name="pt-font"]');
+      var saved = null, savedFont = null;
+      try { saved = localStorage.getItem('pt_theme'); } catch (e) {}
+      try { savedFont = localStorage.getItem('pt_font'); } catch (e) {}
+      if (saved) {
+        for (var i = 0; i < radios.length; i++) if (radios[i].value === saved) { radios[i].checked = true; break; }
+      }
+      if (savedFont) {
+        for (var j = 0; j < fonts.length; j++) if (fonts[j].value === savedFont) { fonts[j].checked = true; break; }
+      }
+      for (var a = 0; a < radios.length; a++) {
+        radios[a].addEventListener('change', function () { try { localStorage.setItem('pt_theme', this.value); } catch (e) {} });
+      }
+      for (var b = 0; b < fonts.length; b++) {
+        fonts[b].addEventListener('change', function () { try { localStorage.setItem('pt_font', this.value); } catch (e) {} });
+      }
+    })();
+  </script>
+</div>

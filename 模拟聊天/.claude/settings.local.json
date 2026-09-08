@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git ls-tree *)",
+      "Bash(git checkout *)",
+      "PowerShell(git restore *)",
+      "Bash(mkdir -p /tmp/restore_模拟聊天)",
+      "Bash(git archive *)",
+      "Bash(tar -x -C /tmp/restore_模拟聊天)",
+      "Read(//tmp/**)",
+      "Bash(mkdir -p /tmp/backup_current)",
+      "Bash(cp -r . /tmp/backup_current/)",
+      "Bash(cp *)"
+    ]
+  }
+}

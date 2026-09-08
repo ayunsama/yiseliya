@@ -1,0 +1,379 @@
+
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>莉耶芙表情对话框 · 妖精绿主题版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            background: transparent;
+            padding: 10px;
+        }
+
+        .liyev-wrapper {
+            display: flex;
+            align-items: stretch;
+            max-width: 720px;
+            margin: 5px auto;
+            background: linear-gradient(145deg, #f8fdf5 0%, #f0fae8 100%);
+            border: 1px solid #c8e0b0;
+            border-radius: 18px;
+            box-shadow: 0 4px 18px rgba(160, 200, 120, 0.3);
+            overflow: hidden;
+            animation: fadeInLiyev 0.5s ease-in-out;
+            gap: 0;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .liyev-wrapper:hover {
+            box-shadow: 0 6px 28px rgba(130, 180, 90, 0.25);
+        }
+
+        @keyframes fadeInLiyev {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== 头像区 ===== */
+        .liyev-avatar {
+            flex-shrink: 0;
+            width: 110px;
+            min-height: 110px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 0 12px 14px;
+            align-self: center;
+            transition: all 0.3s ease;
+        }
+
+        .liyev-avatar img {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 130px;
+            object-fit: contain;
+            object-position: center;
+            border-radius: 10px;
+            transition: transform 0.4s ease, opacity 0.5s ease;
+            opacity: 0;
+            filter: drop-shadow(0 2px 6px rgba(80, 140, 50, 0.15));
+        }
+
+        .liyev-avatar img.img-loaded {
+            opacity: 1;
+        }
+
+        .liyev-wrapper:hover .liyev-avatar img {
+            transform: scale(1.04);
+        }
+
+        .liyev-avatar.img-error {
+            display: none;
+        }
+
+        /* ===== 对话内容区 ===== */
+        .liyev-dialogue {
+            flex-grow: 1;
+            padding: 18px 22px 18px 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 0;
+        }
+
+        /* 名称行：名字 + 情绪标签组 */
+        .liyev-name-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+            margin-bottom: 10px;
+        }
+
+        .liyev-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #6a9e3a;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        /* ---- 情绪标签容器 ---- */
+        .liyev-moods {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 8px;
+            align-items: center;
+        }
+
+        /* 单个情绪标签 —— 仅显示文字，无 emoji */
+        .liyev-mood {
+            display: inline-flex;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 3px 14px;
+            border-radius: 20px;
+            border: 1px solid #c8e0b0;
+            background: #eef8e0;
+            color: #5a7a3a;
+            letter-spacing: 0.3px;
+            line-height: 1.5;
+            white-space: nowrap;
+            transition: all 0.25s ease;
+            box-shadow: 0 1px 3px rgba(100, 160, 60, 0.06);
+        }
+
+        /* ---------- 情绪颜色主题 ---------- */
+        /* 表层伪装·天真无害 : 嫩绿 / 薄荷色系 */
+        .liyev-mood.mood-innocent {
+            background: #f2fce8;
+            border-color: #b8e090;
+            color: #5a8a30;
+        }
+
+        /* 表层伪装·关心担忧 : 浅绿带一点柔软暖色 */
+        .liyev-mood.mood-worried {
+            background: #fafdf5;
+            border-color: #d0e0b8;
+            color: #7a9060;
+        }
+
+        /* 里层暴露·愉悦恶趣味 : 深绿色带危险暗调 */
+        .liyev-mood.mood-amused {
+            background: #e8f5d8;
+            border-color: #80a050;
+            color: #3d5a18;
+        }
+
+        /* 里层暴露·狂热病态 : 暗绿混合暗红 */
+        .liyev-mood.mood-dangerous {
+            background: #f5f0ed;
+            border-color: #c0a090;
+            color: #7a4030;
+        }
+
+        /* 里层完全暴露·纯粹恶意 : 黑紫绿混合 */
+        .liyev-mood.mood-dark {
+            background: #f2eef4;
+            border-color: #b0a0c0;
+            color: #4a3058;
+        }
+
+        .liyev-mood:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(100, 150, 50, 0.1);
+        }
+
+        /* ===== 对话文本 ===== */
+        .liyev-text {
+            font-size: 15px;
+            color: #3d5030;
+            line-height: 1.8;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 540px) {
+            .liyev-wrapper {
+                margin: 5px 0;
+                border-radius: 14px;
+                flex-wrap: nowrap;
+            }
+
+            .liyev-avatar {
+                width: 78px;
+                min-height: 78px;
+                padding: 8px 0 8px 10px;
+            }
+
+            .liyev-avatar img {
+                max-height: 88px;
+                border-radius: 8px;
+            }
+
+            .liyev-dialogue {
+                padding: 14px 16px 14px 10px;
+            }
+
+            .liyev-name {
+                font-size: 13px;
+            }
+
+            .liyev-mood {
+                font-size: 11px;
+                padding: 2px 12px;
+            }
+
+            .liyev-text {
+                font-size: 14px;
+                line-height: 1.7;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .liyev-avatar {
+                width: 60px;
+                min-height: 60px;
+                padding: 6px 0 6px 6px;
+            }
+
+            .liyev-avatar img {
+                max-height: 68px;
+                border-radius: 6px;
+            }
+
+            .liyev-dialogue {
+                padding: 10px 12px 10px 8px;
+            }
+
+            .liyev-name {
+                font-size: 12px;
+            }
+
+            .liyev-mood {
+                font-size: 10px;
+                padding: 1px 10px;
+            }
+
+            .liyev-text {
+                font-size: 13px;
+                line-height: 1.6;
+            }
+        }
+
+        .liyev-moods {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="main-container"></div>
+
+    <script>
+        /* ============================================================
+         *  1. 情绪 → 颜色主题分类（莉耶芙专属）
+         * ============================================================ */
+        function getMoodTheme(emotion) {
+            /* 表层伪装 — 天真无害 */
+            var innocent = ['天真', '纯真', '元气', '活泼', '撒娇', '黏人'];
+            /* 表层伪装 — 关心担忧 */
+            var worried = ['担忧', '关心', '不安', '胆小', '自责'];
+            /* 里层暴露 — 愉悦恶趣味 */
+            var amused = ['愉悦', '恶趣味', '阴阳怪气', '戏谑', '嘻嘻'];
+            /* 里层暴露 — 狂热病态 */
+            var dangerous = ['狂热', '病态', '兴奋', '疯狂', '占有'];
+            /* 完全暴露 — 纯粹恶意 */
+            var dark = ['漠然', '冷漠', '残酷', '黑化'];
+
+            if (dark.includes(emotion)) return 'dark';
+            if (dangerous.includes(emotion)) return 'dangerous';
+            if (amused.includes(emotion)) return 'amused';
+            if (worried.includes(emotion)) return 'worried';
+            if (innocent.includes(emotion)) return 'innocent';
+            return 'innocent';
+        }
+
+        /* ============================================================
+         *  2. 分割多个情绪词
+         * ============================================================ */
+        function splitEmotions(raw) {
+            if (!raw || typeof raw !== 'string') return [];
+            var parts = raw.split(/[,，、\/\s|]+/);
+            var result = [];
+            for (var i = 0; i < parts.length; i++) {
+                var s = parts[i].trim();
+                if (s.length > 0) {
+                    result.push(s);
+                }
+            }
+            return result;
+        }
+
+        /* ============================================================
+         *  3. 主渲染逻辑（纯文字标签）
+         * ============================================================ */
+        function init() {
+            try {
+                var emotionRaw = '$1';
+                var textRaw = '$2';
+
+                var emotionList = splitEmotions(emotionRaw);
+                var finalEmotions = emotionList.length > 0 ? emotionList : ['天真'];
+
+                var text = textRaw.trim();
+                if (!text || text === '$2') {
+                    return;
+                }
+
+                var avatarDefault = 'https://zora404.dpdns.org/file/1784747096865_ComfyUI_temp_nxilb_00002_.png';
+                var avatarShy = 'https://zora404.dpdns.org/file/1784747649999_人物差分修改__1_.png';
+                var avatarSurprise = 'https://zora404.dpdns.org/file/1784747647044_人物差分修改.png';
+                var avatarMorbid = 'https://zora404.dpdns.org/file/1784747958614_去掉对话框.png';
+
+                // 根据第一情绪选择对应头像
+                var avatarUrl = avatarDefault;
+                var primaryEmotion = finalEmotions[0] || '';
+                if (primaryEmotion.indexOf('羞涩') !== -1 || primaryEmotion.indexOf('害羞') !== -1) {
+                    avatarUrl = avatarShy;
+                } else if (primaryEmotion.indexOf('惊讶') !== -1 || primaryEmotion.indexOf('担忧') !== -1 || primaryEmotion.indexOf('震惊') !== -1) {
+                    avatarUrl = avatarSurprise;
+                } else if (primaryEmotion.indexOf('病态') !== -1 || primaryEmotion.indexOf('残酷') !== -1 || primaryEmotion.indexOf('愉悦') !== -1 || primaryEmotion.indexOf('狂热') !== -1) {
+                    avatarUrl = avatarMorbid;
+                }
+
+                /* 构建情绪标签 HTML */
+                var moodsHtml = '';
+                for (var i = 0; i < finalEmotions.length; i++) {
+                    var emotion = finalEmotions[i];
+                    var theme = getMoodTheme(emotion);
+                    var delay = i * 50;
+                    moodsHtml += '<span class="liyev-mood mood-' + theme + '" style="animation: fadeInLiyev 0.4s ease ' + delay + 'ms both;">' + emotion + '</span>';
+                }
+
+                var html = '';
+                html += '<div class="liyev-wrapper">';
+                html += '  <div class="liyev-avatar" id="liyev-avatar-container">';
+                html += '    <img src="' + avatarUrl + '" alt="莉耶芙" loading="lazy" onerror="document.getElementById(\'liyev-avatar-container\').classList.add(\'img-error\');" onload="this.classList.add(\'img-loaded\');">';
+                html += '  </div>';
+                html += '  <div class="liyev-dialogue">';
+                html += '    <div class="liyev-name-row">';
+                html += '      <span class="liyev-name">✦ 指引妖精莉耶芙</span>';
+                html += '      <div class="liyev-moods">' + moodsHtml + '</div>';
+                html += '    </div>';
+                html += '    <div class="liyev-text">' + text + '</div>';
+                html += '  </div>';
+                html += '</div>';
+
+                document.getElementById('main-container').innerHTML = html;
+
+            } catch (error) {
+                console.error('[莉耶芙渲染] 错误:', error);
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
+```

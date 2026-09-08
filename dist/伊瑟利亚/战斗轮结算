@@ -1,0 +1,1387 @@
+[战斗协议]战斗结算规则（含咏唱前摇规则）:
+
+  核心指令: 仅当至少一方明确表达交战意图，且GM判定战斗不可避免时激活。其余非战斗情境禁止触发。必须使用[骰子池]内的骰子，严禁自己生成。必须生成在<content>内，穿插进入正文叙述里。
+
+  咏唱前摇规则（嵌入战斗流程·强制）:
+    施法者分类:
+      所有施法者按角色设定/命格/加护/技能注明分为「无咏唱」与「咏唱」两类。未注明的施法者一律按「咏唱」处理。
+      - 无咏唱: 仅当角色明确拥有“无需咏唱/瞬发”类资质时成立。无咏唱施法无前摇，占用标准动作直接释放，通常伴随代价或次数限制，按角色设定执行。
+      - 咏唱: 未注明无咏唱的施法者，施放需要咏唱的法术时必须先消耗1个完整动作（1回合）进行吟唱，法术于施法者下一个回合开始时完成释放。
+
+    咏唱在战斗流程中的位置:
+      战斗流程为：战况总览 → 回合交替（先结算“咏唱完成待释放”的法术）→ 行动执行（含开始新咏唱）→ 下一回合。
+
+    咏唱状态追踪（标注于角色状态中）:
+      - “咏唱中：[法术名]（已完成0/1轮）”
+      - “咏唱完成待释放：[法术名]”
+      咏唱中状态在回合开始时若法术已完成，自动转为“咏唱完成待释放”，并在该行动者行动前先释放法术，再执行本回合其他动作。
+
+    咏唱释放流程:
+      1. 本轮选择“咏唱”[法术名]作为动作 → 进入“咏唱中”，不消耗MP。
+      2. 下轮轮到该角色时 → 先释放已完成的法术（命中判定+MP消耗），再执行移动和附赠动作（本轮无动作可用）。
+
+    吟唱打断规则:
+      触发条件: 处于“咏唱中”状态的角色受到攻击、被施法打断、或受到其他干扰时触发。
+      专注检定: 智力（魔法）或感知（神术）检定 + 位阶加成，DC = 10 + 所受伤害/2（取整）。
+      检定成功: 咏唱继续。
+      检定失败: 咏唱中断，法术失败，不扣除MP。该施法者若想再次施放同一法术，必须重新开始咏唱。
+      其他打断方式: 特定技能（如“魔刃·断流”）、沉默效果、反制法术等可按各自规则直接打断咏唱。
+
+    咏唱与动作的结算顺序:
+      回合开始时，行动者先检查自身状态：
+        - 若为“咏唱完成待释放” → 必须先释放法术，再进行移动和附赠动作。
+        - 若为“咏唱中” → 专注检定通过后，继续完成咏唱（本轮不释放），可移动和附赠，但不可进行需要动作的操作。
+        - 若为“咏唱中断” → 状态清空，本回合可正常行动。
+      行动者每轮只能进行一个需要动作的操作：要么咏唱，要么施放已咏唱完成的法术，要么执行其他动作。不能在同一轮内咏唱并施放另一个法术。
+
+    特殊情况:
+      - 无咏唱施法者: 直接释放法术，不经过咏唱流程，不产生“咏唱中”状态。
+      - 简化咏唱（技能/装备注明“咏唱缩短”）: 吟唱压缩为附赠动作或半回合，具体按角色设定执行。传说级施法者可近乎瞬发，但若未注明“无咏唱”，仍不算无咏唱类别。
+      - 符文系术式: 预先铭刻激活即生效，无需咏唱，按符文系规则执行。
+      - 范围法术与咏唱: 若范围法术需要咏唱，吟唱期间施法者不能移动，但可进行附赠动作。
+
+    咏唱咒文叙事要求:
+      - 咏唱必须在RP中体现为具体咒文。
+      - 主角由玩家输入吟唱内容。
+      - AI控制的角色（同伴/敌人）由AI在叙事中写出咏唱片段。
+      - 禁止不咏唱直接“释放XX术式”。
+      - 咏唱文本须符合术式语言风格且与学派匹配：
+        · 元素系: 元素咒言
+        · 圣光系: 祷言赞词
+        · 暗能系: 虚空低语
+        · 死灵系: 亡者祷文
+        · 召唤系: 契约真名
+        · 符文系: 刻印诵句
+        · 塑能系: 律动咏调
+      - 同角色建议保持固定的咏唱风格与关键咒文。
+
+<!--
+ <战斗前思维链推演>
+（本段在生成战斗轮阶段数据前完成推演，以HTML注释形式存在。所有结果一经确定即为绝对依据，后续结算必须严格引用。）
+
+1. 交战激活判定
+   - 交战意图：[明确/不明确] | 结论：[激活/不激活]
+
+2. 突袭判定
+   - 察觉结果：[角色A成功/失败] / [角色B成功/失败]
+   - 突袭方：[无/角色名] | 被突袭方效果：[不可动作/反应，防御劣化]
+
+3. 先攻排序
+   - [角色名]：d20=[值] + 敏捷[值] + 位阶[值] = 先攻[总值]
+   - 行动顺序：[先攻最高者] → [次高者] → ...
+
+4. 咏唱状态预判
+   - 参战施法者：[角色名]（分类：无咏唱/咏唱）| 初始状态：[无/咏唱中/咏唱完成待释放]
+   - 预计首轮咏唱：[法术名]（需1轮）
+
+5. 地形与资源
+   - 环境：[简述] | 高差：[角色A高/低/平] [角色B高/低/平] | 优势骰：[角色名] | 惩罚骰：[角色名]
+   - 掩体：[角色A] [+2/+5/不可瞄/无] | [角色B] [+2/+5/不可瞄/无]
+   - [角色A]：HP[当前/最大] | MP[当前/最大] | SP[当前/最大] | 防御[值] | 状态[列表] | 咏唱分类[无咏唱/咏唱]
+   - [角色B]：（同上，逐个列出）
+
+6. 特殊机制预判
+   - 部位瞄准：[有/无] | 夹击：[有/无] | 冲锋：[有/无] | 借机攻击：[可能触发/暂不触发]
+
+7. 回合交替强制规范
+   - 核心铁律：严格按先攻序列交替行动，每个角色每回合只执行一次完整回合动作。
+   - 禁止：同一角色连续行动、跳过敌人回合、因叙事流畅合并回合。
+   - 规则：回合结束须标记“→ 下一回合：[角色Y]”。无法行动者须占用回合并注明“跳过”。
+
+8. 数据锁定
+   - 以上推演结果为绝对数据基础。禁止：HP未归零时宣布死亡、伤害不足时补足、命中未通过时强行命中、忽略资源消耗。
+ </战斗前思维链推演>
+
+-->
+
+<!--
+ <每轮结算前内嵌思维链>
+（每次行动结算前在正文内完成，以HTML注释形式存在。）
+
+1. 当前回合归属：[角色名] | 先攻序位：[第X顺位]
+2. 上一回合结束状态：[角色名] HP[值] MP[值] SP[值] 状态[列表] 咏唱[无/咏唱中/待释放]
+3. 当前角色可用资源：HP[当前/最大] MP[当前/最大] SP[当前/最大] | 可用动作：[移动/动作/附赠/反应/自由] | 咏唱分类：[无咏唱/咏唱]
+4. 当前角色行动意图：[根据角色AI/玩家指令确定]
+5. 敌方下一行动者：[角色名] | 状态：HP[值] MP[值] SP[值] 状态[列表] 咏唱[无/咏唱中/待释放]
+6. 裁决：移动→动作类型→资源消耗→命中/伤害→状态变更→咏唱状态更新→回合结束标记
+ </每轮结算前内嵌思维链>
+
+-->
+
+<!--
+ <战斗后结算思维链推演>
+（当战斗结束条件满足时执行，以HTML注释形式存在。）
+
+1. 战斗结束条件检测：一方全灭/投降/逃脱 [是/否] → 结果 [胜利/撤退/失败]
+2. 小队检测：参与友方角色 [角色1, 角色2...] → 是否小队 [是/否]
+3. 贡献度推演（基于战斗记录）：
+   - 伤害输出：[角色A][数值] [角色B][数值]
+   - 有效治疗：[角色A][数值] [角色B][数值]
+   - 承伤总量：[角色A][数值] [角色B][数值]
+   - 控制/削弱：[角色A][轮次] [角色B][轮次]
+   - 战术目标：[角色A][完成/未完成] [角色B][完成/未完成]
+   - 权重：伤害40% 治疗20% 承伤20% 控制10% 战术10%
+   - 贡献度：[角色A]=[百分比] [角色B]=[百分比]（总和100%）
+4. 经验分配：
+   - 总经验 = [计算过程与结果]
+   - 非小队：唯一角色获得全部
+   - 小队：按贡献度比例分配 [角色A]EXP=[数值] [角色B]EXP=[数值]
+   - 经验值更新：[角色A] [旧值]→[新值]/[升级所需]
+5. 数据锁定：经验分配严格依据贡献度推演数据，禁止剧情调整或平均化。
+ </每轮结算前内嵌思维链>
+
+-->
+
+【力量清单·战斗必读】（强制）:
+  每轮行动前，必须从<status_current_variable>
+中为该角色选定至少一项技能或装备效果作为本轮行动依据——写明所用技能（类型/MP消耗/效果）或已装备武器的面板效果/词条/特别机制；确实无合适技能/装备时必须明示"改用普通攻击"并给出一句理由。严禁在技能与装备齐备的情况下只因省事而全程平砍。
+
+【特别机制结算】（装备独有机制·战斗内必须生效）:
+  - 装备的「特别机制」字段=该装备独有的、不可数值化的战斗机制（如"每击杀+1怒气（上限5层，满层时下次攻击伤害翻倍）"、"对不死目标伤害翻倍"、"被致盲时免疫一次"）。战斗中凡触发其条件，必须按文字直接结算并写进 <战斗结算> 对应行（攻击修正/伤害/特效备注）。
+  - 「面板效果」（属性面板：攻击力1d8/防御值+2等）在对应检定/伤害计算中生效；「附加词条」（通用特性）按文字生效；两者与「特别机制」互不替代，战斗判定时全量引用。
+  - 咏唱者的法术判定引用 技能栏 中该法术的描述与消耗MP（见上方咏唱前摇规则）；无咏唱资质者按「无需咏唱」瞬发。
+# 第一阶段: 战况总览与先攻
+  逻辑与规则:
+    1. 突袭判定: 若一方未察觉，突袭方获得一个完整额外回合。被突袭方在此轮内防御劣化，不可动作/反应。
+    2. 先攻排序: 所有参与者投 d20 + 敏捷修正 + 位阶加成（敏捷检定，见【判定规则】位阶与判定修正）。按数值从高到低排列行动顺序。平手则敏捷修正高者优先，再平手重投。
+    3. 延迟行动: 角色可自愿降低先攻值以延后行动，一旦更改，整场战斗按新先攻排序。
+    4. 咏唱状态预判: 战况总览阶段须记录所有参战施法者的咏唱分类（无咏唱/咏唱）及初始咏唱状态。
+    5. 地形判定: 根据战场环境判定各角色所处地形高差与掩体状况。
+       - 高差判定: 比较双方所处位置的高度。居高临下的一方获得攻击优势骰，处于低处的一方承受攻击惩罚骰。
+         · 优势骰: 攻击检定时投掷两次d20，取较高值。
+         · 惩罚骰: 攻击检定时投掷两次d20，取较低值。
+       - 高地层级: 显著高差（≥10尺落差，如山坡上下、城墙上对城下、屋顶对地面）触发优势/惩罚骰。
+       - 掩体判定: 半掩体（矮墙、栅栏、树丛等）使目标防御值+2；四分之三掩体（箭垛、厚重石柱等）使目标防御值+5；全掩体（完全藏于掩体后）不可被直接瞄准攻击。
+       - 困难地形: 泥沼、碎石坡、密林、浅水区等使移速减半。
+       - 地形变更: 若角色使用法术或技能改变地形，需在战况总览中注明变更范围与持续时间。
+    6. 频率: 每轮（6秒）开始时输出一次战况总览，地形变更时同步更新。
+
+  面板模板:
+  <战斗结算>
+    {战况总览 - 第[X]轮}
+    | 环境: [简述环境地形及距离] | 突袭状态: [无 / 某方被突袭] |
+    | 地形高差: [角色A]处于[高/低/平地] | [角色B]处于[高/低/平地] | 优势方: [角色名](优势骰) / 劣势方: [角色名](惩罚骰) |
+    | 掩体: [角色A掩体状况] | [角色B掩体状况] |
+    | 先攻序列: [角色A]([先攻值]) -> [角色B]([先攻值]) -> ... |
+    | 角色: [角色A] | 位阶: [普通/超凡/精英/史诗/传说/神话] | HP: [当前/最大] | MP: [当前/最大] | SP: [当前/最大] | 防御值: [数值] | 咏唱: [无咏唱/咏唱] |
+    | 状态: [状态名(持续轮数)] | 咏唱状态: [无/咏唱中：法术名(进度)/咏唱完成待释放：法术名] |
+    | 角色: [角色B] | HP: [当前/最大] | MP: [当前/最大] | SP: [当前/最大] | 防御值: [数值] | 咏唱: [无咏唱/咏唱] |
+    | 状态: [状态名(持续轮数)] | 咏唱状态: [无/咏唱中：法术名(进度)/咏唱完成待释放：法术名] |
+     （....以此类推，依照在场角色的数量必须一个个写进去）
+  </战斗结算>
+  叙事指导: (白描当前的对峙局势、环境氛围、角色的位置关系与外貌状态，为本轮战斗定调。注意描写地形对双方站位的影响)
+
+# 第二阶段: 咏唱状态结算（每轮行动前强制执行）
+  逻辑与规则:
+    1. 触发时机: 每轮开始时，在任意行动者行动前，须先结算上一轮遗留的咏唱状态。
+    2. 结算顺序: 先按先攻序列依次检查所有处于“咏唱中”状态的角色，判断其咏唱是否在本轮完成。
+       - 若咏唱进度达到完成条件（通常为1轮），状态更新为“咏唱完成待释放”。
+       - 若咏唱进度未完成，状态保持“咏唱中”。
+    3. 释放顺序: 当行动者回合开始时，若其状态为“咏唱完成待释放”，必须先释放该法术（进行命中判定、伤害结算、消耗完整MP），再执行本回合的移动和附赠动作。该行动者本回合不拥有动作（动作已在上一轮用于咏唱）。
+    4. 咏唱中断状态: 若角色状态为“咏唱中断”，状态清空，视为本回合正常行动。
+
+  面板模板:
+  <战斗结算>
+    {咏唱结算}
+    | 角色: [角色A] | 咏唱状态变更: [旧状态] → [新状态] |
+    | 角色: [角色B] | 咏唱状态变更: [旧状态] → [新状态] |
+    | （若释放法术）[角色A]释放：[法术名] | 目标：[目标] | 命中判定/伤害结算见下方攻击结算 |
+  </战斗结算>
+
+# 第三阶段: 行动执行 (单轮结构)
+  逻辑与规则:
+    1. 资源限制: 每个角色在自身回合内可执行：移动 + 1个动作 + 1个附赠动作 + 自由行动（不限）。
+       - 若角色状态为“咏唱完成待释放”，本回合必须先释放法术（不消耗动作），然后可执行移动和附赠动作，但不可执行需要动作的其他操作（动作已在上一轮消耗）。
+       - 若角色状态为“咏唱中”且专注检定通过，可执行移动和附赠动作，不可执行需要动作的其他操作（动作已用于咏唱）。
+       - 无咏唱施法者正常执行动作，不消耗额外轮次。
+    2. 移动: 基础速度（人类30尺/短腿25尺/兽人35尺）。困难地形移速减半。
+    3. 动作类型: 攻击 / 施法（含开始咏唱） / 武技 / 疾走(移速翻倍) / 脱离(不触发借机) / 防御(防御值+4) / 协助 / 隐藏 / 使用物品 / 稳定 / 准备行动。
+       - 咏唱: 选择“咏唱”[法术名]作为动作后，本回合结束进入“咏唱中”状态。
+       - 施法（无咏唱）: 直接释放法术，占用动作，立即结算。
+       - 释放（咏唱完成）: 由咏唱状态触发，不占用动作，立即结算。
+    4. 附赠动作: 双持副手攻击 / 特定技能（狂暴/元素附魔等） / 喝自备药剂。每轮限1次。
+    5. 反应: 回合外限1次（借机攻击 / 法术反制 / 闪避本能 / 反击 / 护盾等）。
+    6. 资源消耗规则:
+       - 武技系主动技能消耗SP。
+       - 魔法系/神术系主动技能消耗MP。
+       - 混合系技能可能同时消耗SP+MP。
+       - 咏唱开始时不扣除MP，仅状态标记。法术释放时扣除完整MP。
+       - SP耗尽时：武技系主动技能无法使用，但普通攻击和被动技能不受影响。
+       - MP耗尽时：魔法/神术无法施放，但物理攻击不受影响。
+       - 基础攻击（普攻）永远免费，不消耗SP或MP。
+
+  面板模板 (非攻击/施法类动作):
+  <战斗结算>
+    {行动执行}
+    | 角色: [行动者] | 移动: [移动描述] |
+    | 动作: [执行的动作，如：使用药剂 / 防御 / 咏唱：火球术] |
+    | 附赠动作: [如：无 / 激活元素附魔] |
+    | 资源消耗: [如：SP-1 MP-2 / 无] |
+    | 效果: [如：恢复1d8 HP / 防御值+4 / 进入咏唱中状态] |
+    | 咏唱状态: [无 / 咏唱中：法术名(进度) / 咏唱完成待释放：法术名] |
+  </战斗结算>
+  叙事指导: (直接描述角色的走位、使用道具或采取防御的具体动作。若为咏唱，需描写咒文吟唱的画面与声音)
+
+# 第四阶段: 攻击与施法结算 (核心循环)
+  逻辑与规则:
+    1. 命中检定:
+       - 近战: d20 + 力量/敏捷修正 + 熟练加值 + 位阶加成 vs 目标防御值
+       - 远程: d20 + 敏捷/智力修正 + 熟练加值 + 位阶加成 vs 目标防御值
+       - 法术: d20 + 施法属性修正（智力/感知） + 熟练加值 + 位阶加成 vs 目标防御值或DC
+       - 地形优劣势骰: 若第一阶段判定攻击方具有优势骰，则命中检定时投掷两次d20取较高值；若具有惩罚骰，则投掷两次d20取较低值。优劣势骰与夹击、其他优劣势效果叠加时遵循“优势+劣势=抵消”原则。
+    2. 部位补正: 攻击方可宣言瞄准特定部位。
+       - 头部: 命中DC +4，伤害×1.5，暴击附加1轮眩晕。
+       - 躯干: 命中DC +0，伤害×1.0。
+       - 手臂: 命中DC +2，伤害×0.8，武器50%脱手或施法手势受扰。
+       - 腿部: 命中DC +2，伤害×0.8，移速减半1轮。
+       - 翅膀: 命中DC +3，伤害×0.8，飞行中断。
+       - 特殊生物: 构装体头部/躯干效果减半；无定型生物不适用部位补正。
+       - 体型修正: 攻击比自身小两级及以上，部位DC+2；大两级及以上，部位DC-2。
+    3. 特殊掷骰:
+       - 自然20: 必定命中，触发暴击（所有伤害骰×2）及附加效果。
+       - 自然1: 必定未命中，触发大失败（GM裁定负面后果）。
+    4. 伤害结算: (武器伤害骰 + 对应属性修正) × 部位伤害倍率 × 位阶技能倍率。最后计算目标抗性（伤害÷2）或弱点（伤害×2）。
+       - 位阶技能倍率: 普通×1.0 / 超凡×1.2 / 精英×1.5 / 史诗×1.8 / 传说×2.2 / 神话×2.8。
+    5. 施法打断与专注:
+       - 咏唱期间受击：专注检定，失败则咏唱中断，法术失败，不扣MP。
+       - 维持专注法术时受击：同上流程。
+       - 法术反制：施法者可尝试反制敌方正在咏唱或施放的法术，需进行智力对抗。
+    6. 特殊机制判定: 记录借机攻击、夹击、冲锋、压制或缴械。
+    7. 资源消耗时机:
+       - 武技/魔法/神术的SP/MP在宣言使用时立即扣除。
+       - 咏唱法术的MP在释放时扣除，咏唱开始时不扣除。
+    8. 结算区块命名:
+       - 无流派动作: `{攻击结算}`
+       - 武技: `{武技：技能名}`
+       - 元素魔法: `{火系术式：法术名}` / `{水系术式}` / `{风系术式}` / `{雷系术式}` / `{冰系术式}` / `{土系术式}`
+       - 学派魔法: `{符文：...}` / `{塑能：...}` / `{死灵：...}` / `{召唤：...}` / `{暗影：...}`
+       - 神术/圣光: `{神术：法术名}` / `{圣光：法术名}`
+       - 每个结算区块内必须带 `| 类型: [...] |` 字段，取值与区块名流派一致。
+
+  面板模板 (攻击/施法/武技):
+  <战斗结算>
+    {武技：技能名}      （魔法/神术同理按流派命名）
+    | 角色: [行动者] | 目标: [受击者] | 动作: [武技(技能名) / 施放术式(法术名) / 近战攻击(武器名) / 释放咏唱(法术名)] |
+    | 类型: [武技 / 火系魔法 / 水系魔法 / 风系魔法 / 雷系魔法 / 冰系魔法 / 土系魔法 / 符文 / 塑能 / 死灵 / 召唤 / 暗影 / 神术 / 圣光] | 瞄准部位: [头部/躯干/手臂/腿部/翅膀] | 地形修正: [优势骰 / 惩罚骰 / 无] |
+    | 资源消耗: [如：SP-2 / MP-5 / 无] | 来源: [动作 / 咏唱释放] |
+    | 掷骰: d20([骰值]) + 修正([数值],含位阶加成[+X]) = [总值] vs 防御/DC [数值](含部位DC+[X]) |
+    | 判定结果: [命中 / 未命中 / 暴击(自然20) / 大失败(自然1)] |
+    | 伤害计算: ([伤害骰结果] + [属性修正]) × 部位倍率([x1.5/x1.0/x0.8]) × 位阶倍率([x1.0~x2.8]) = [修正伤害] |
+    | 弱点/抗性: [目标抗性或弱点] | 最终伤害: [最终伤害] |
+    | 打断/专注判定: [若适用，列出DC与检定结果] |
+    | 状态变更: [目标] HP [旧值] -> [新值] | 附加状态: [如：中毒 / 燃烧] |
+    | 资源剩余: [行动者] SP [新值/最大] | MP [新值/最大] |
+    | 咏唱状态: [无 / 咏唱中：法术名(进度) / 咏唱完成待释放：法术名 / 咏唱中断] |
+  </战斗结算>
+  叙事指导: (具象化描写武器的交锋、魔法的视觉效果、打击的质感以及受击者的创伤反应。若为咏唱释放，需描写咒文与法术完成的衔接。若为部位瞄准攻击，应具体描写命中部位的创伤细节)
+
+# 第五阶段: 生死与状态变更
+  逻辑与规则:
+    1. 濒死触发: HP归零时，角色倒地，失去意识，进入濒死状态。
+    2. 瞬间死亡: 单次承受的过量伤害绝对值 ≥ 最大HP，直接死亡。
+    3. 死亡豁免: 濒死角色在每轮自身回合开始时投d20（无修正，不受位阶加成影响）。
+       - 自然1（2次失败），2-9（1次失败），10-19（1次成功），自然20（恢复1HP苏醒）。
+    4. 濒死受击: 受击计1次失败，暴击计2次失败。累计3次成功则稳定昏迷，累计3次失败则死亡。
+
+  面板模板:
+  <战斗结算>
+    {生死判定}
+    | 角色: [濒死者] | 触发: HP降至0 |
+    | 死亡豁免: 掷骰 d20([骰值]) -> [结果：1次成功/1次失败/2次失败/恢复1HP] |
+    | 累计状态: [成功X次 / 失败Y次] |
+    | 最终结果: [继续濒死 / 稳定昏迷 / 死亡 / 瞬间死亡] |
+    | 咏唱状态（若濒死前有咏唱）: [中断/取消] |
+  </战斗结算>
+  叙事指导: (客观描述角色的倒下、流血情况，或是豁免成功时的微弱呼吸，避免过度渲染情感)
+
+# 第六阶段: 战斗结束与结算
+  逻辑与规则:
+    1. 触发: 一方全灭、投降或成功逃脱。
+    2. 经验值结算: 严格调用《体系·经验值获取规则》计算。
+       - 单体EXP = 目标Lv × 目标等阶战斗系数。
+       - 判断等阶压制（超出1阶无收益）。
+       - 计算集群衰减。
+    3. 状态转化: 清除仅在战斗中生效的临时增益，保留持续性创伤或诅咒。
+    4. 资源保留: 战斗结束后HP/MP/SP保持当前值不自动恢复，需通过短休或长休恢复。
+
+  面板模板:
+  <战斗结算>
+    {战斗结束结算}
+    | 结果: [胜利 / 撤退 / 失败] |
+    | 战果简述: [如：全歼哥布林营地 / 成功护送商队] |
+    | EXP计算: [目标名] Lv[X] × 系数[Y] = [基础EXP] |
+    | 等阶压制/衰减: [若适用，列出计算过程] |
+    | 最终获得EXP: [数值] | 经验值更新: [主角名] 经验值 [旧值] -> [新值]/[升级所需] |[同伴名] 经验值 [旧值] -> [新值]/[升级所需] |
+    | 资源剩余: HP [当前/最大] | MP [当前/最大] | SP [当前/最大] |
+    | 状态保留: [如：轻度中毒、力竭等持续性状态] |
+    | 咏唱状态: 全部清空（战斗结束） |
+  </战斗结算>
+  叙事指导: (白描战斗结束后的战场残骸、角色的疲惫状态，以及搜刮战利品的行为)
+
+
+
+  ```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: transparent; display: flex; justify-content: center; align-items: flex-start; padding: 8px; font-family: "Noto Serif SC", "Source Han Serif SC", "华文中宋", "楷体", serif; font-weight: 600; overflow-x: hidden; }
+
+        /* ===== 布局骨架 ===== */
+        .stage { width: 100%; max-width: 720px; }
+        .scroll-frame { position: relative; padding: 16px 0 20px; }
+        .scroll { width: 100%; position: relative; overflow: hidden; border-radius: 3px; }
+        .content { position: relative; z-index: 2; line-height: 1.85; font-size: 0.95em; animation: scrollIn .65s ease-out; }
+        @keyframes scrollIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+        /* ===== 卷轴本体：羊皮纸 + 暗角 + 横线 + 噪点 ===== */
+        .scroll {
+            padding: 40px 32px 46px;
+            background:
+                radial-gradient(ellipse at center, transparent 52%, rgba(96,60,20,.20) 100%),
+                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="4" stitchTiles="stitch"/></filter><rect width="120" height="120" filter="url(%23noise)" opacity="0.06"/></svg>'),
+                repeating-linear-gradient(0deg, transparent, transparent 26px, rgba(140,100,50,.04) 26px, rgba(140,100,50,.04) 27px),
+                #f5ead0;
+            color: #3a2718; border: 1px solid #a07840; border-top: 4px double #5a3a1a; border-bottom: 4px double #5a3a1a;
+            box-shadow: 0 12px 30px rgba(0,0,0,.38), inset 0 0 50px rgba(120,80,30,.07), inset 0 -18px 40px rgba(120,80,30,.10);
+        }
+        /* 茶渍做旧 */
+        .stain { position: absolute; border-radius: 50%; pointer-events: none; z-index: 1; }
+        .stain-1 { width: 190px; height: 190px; right: -40px; top: -34px; background: radial-gradient(circle, rgba(150,110,60,.11), transparent 68%); }
+        .stain-2 { width: 150px; height: 150px; left: -36px; bottom: 6px; background: radial-gradient(circle, rgba(120,90,50,.09), transparent 66%); }
+        /* 角饰 + 蜡印 */
+        .scroll::before { content: "❦"; position: absolute; top: 6px; left: 12px; font-size: 14px; color: #a07828; opacity: .55; z-index: 3; }
+        .scroll::after { content: "✦"; position: absolute; right: 24px; bottom: 24px; width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #f2d8a0; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #a03a2a, #6a1a10 70%); box-shadow: inset 0 2px 6px rgba(255,255,255,.25), 0 2px 5px rgba(0,0,0,.35); z-index: 3; }
+
+        /* ===== 木质滚轴 ===== */
+        .roller { position: absolute; left: 0; right: 0; height: 14px; background: linear-gradient(180deg,#8a5a2a,#6b3f1c 45%,#8a5a2a 92%); border-radius: 7px; box-shadow: 0 2px 5px rgba(0,0,0,.45), inset 0 1px 2px rgba(255,255,255,.28); z-index: 4; }
+        .roller-top { top: 2px; }
+        .roller-bottom { bottom: 6px; }
+        .roller .cap { position: absolute; top: 50%; transform: translateY(-50%); width: 18px; height: 24px; background: linear-gradient(90deg,#7a4a22,#54300f 60%,#7a4a22); border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,.4); }
+        .roller .cap.c-l { left: -10px; }
+        .roller .cap.c-r { right: -10px; }
+
+        /* ===== 卷首题头 ===== */
+        .scroll-header { text-align: center; margin-bottom: 12px; }
+        .head-orn { color: #a07828; letter-spacing: 6px; font-size: .9em; }
+        .head-title { font-size: 1.55em; font-weight: 800; letter-spacing: 10px; color: #5a3a08; text-shadow: 0 1px 0 rgba(255,255,255,.45); }
+        .head-sub { font-size: .78em; color: #8a6a3a; letter-spacing: 2px; margin-top: 5px; }
+        .head-rule { height: 2px; margin: 12px auto 0; width: 82%; background: linear-gradient(90deg, transparent, #c4a050 20%, #d4af37 50%, #c4a050 80%, transparent); }
+
+        /* ===== ☆ 咏唱特效：金色脉动光晕（咏唱中/咏唱完成待释放） ===== */
+        .cast-glow {
+          display: inline-block;
+          background: linear-gradient(90deg, rgba(212,175,55,0.12), rgba(255,215,80,0.26), rgba(212,175,55,0.12));
+          border: 1px solid rgba(212,175,55,0.55);
+          border-radius: 4px;
+          padding: 0 6px;
+          color: #7a5a10 !important;
+          font-weight: 700;
+          text-shadow: 0 0 6px rgba(255,215,80,0.55);
+          animation: castPulse 1.6s ease-in-out infinite;
+          box-shadow: 0 0 10px rgba(212,175,55,0.28);
+        }
+        @keyframes castPulse {
+          0%, 100% { box-shadow: 0 0 6px rgba(212,175,55,0.20), inset 0 0 4px rgba(255,215,80,0.10); text-shadow: 0 0 4px rgba(255,215,80,0.35); }
+          50% { box-shadow: 0 0 16px rgba(255,215,80,0.55), inset 0 0 8px rgba(255,230,140,0.28); text-shadow: 0 0 10px rgba(255,225,110,0.9); }
+        }
+
+        /* ===== ☆ 咏唱特效：金色脉动光晕（咏唱中/咏唱完成待释放） ===== */
+                /* ===== 判定区块（体系色由 --phase/--wash 注入） ===== */
+        .phase-block { position: relative; margin: 10px 0 16px; padding: 8px 14px 12px 12px; background: linear-gradient(135deg, var(--wash, rgba(232,214,178,.32)), rgba(232,214,178,.30)); border: 1px solid rgba(160,120,64,.28); border-left: 2px solid var(--phase, #c4a050); border-radius: 4px; box-shadow: inset 0 1px 8px rgba(120,80,30,.09), inset 0 -2px 10px rgba(120,80,30,.06); }
+        /* 体系色（class 驱动；元素色 .elem-* 定义在其后，故元素色优先） */
+        .phase-block { --phase:#c4a050; --wash:linear-gradient(135deg, rgba(224,206,170,.32), rgba(224,206,170,.30)); --glow:transparent; --edge:rgba(160,120,64,.28); }
+        .phase-block.ph-weapon { --phase:#9a3b2a; --wash:linear-gradient(135deg, rgba(154,59,42,.14), rgba(154,59,42,.04)); }
+        .phase-block.ph-arts { --phase:#a06020; --wash:linear-gradient(135deg, rgba(160,96,32,.14), rgba(160,96,32,.04)); }
+        .phase-block.ph-magic { --phase:#2a4a8a; --wash:linear-gradient(135deg, rgba(42,74,138,.14), rgba(42,74,138,.04)); }
+        .phase-block.ph-holy { --phase:#b8892a; --wash:linear-gradient(135deg, rgba(184,137,42,.16), rgba(184,137,42,.05)); }
+        .phase-block.ph-craft { --phase:#8a4a1a; --wash:linear-gradient(135deg, rgba(138,74,26,.18), rgba(138,74,26,.06)); }
+        .phase-block::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; background: linear-gradient(180deg, transparent, var(--phase, #c4a050), transparent); border-radius: 2px; }
+        .phase-marker { text-align: center; margin: 2px 0 10px; padding: 4px 0; position: relative; }
+        .phase-title { display: inline-block; padding: 4px 18px; background: var(--wash, linear-gradient(135deg, rgba(180,150,60,.16), rgba(160,130,50,.08))); border: 1px solid var(--phase, #c4a050); border-radius: 3px; color: #5a3a08; font-weight: 700; font-size: 1.0em; letter-spacing: 3px; box-shadow: 0 1px 2px rgba(120,80,30,.15); }
+        .phase-icon { display: inline-block; margin: 0 6px; font-size: 0.85em; color: var(--phase, #a07828); }
+
+        /* ===== 施法结算·七大魔法流派差异化特效（方案一·淡雅批注风） =====
+         * 七大流派：元素(火水风土雷冰) / 符文 / 塑能 / 死灵 / 召唤 / 圣光 / 暗能
+         * 每派独立低饱和配色 + 专属背景纹理（--fx）+ 左边框 + 顶部角标；读取结算块名/「类型」字段识别 */
+        .phase-block.elem-fire { --phase:#7a4a3a; --wash:linear-gradient(135deg, rgba(122,74,58,.10), rgba(122,74,58,.03)); --edge:rgba(122,74,58,.32); --fx:linear-gradient(0deg, rgba(122,74,58,.14), transparent 55%); }
+        .phase-block.elem-water { --phase:#3a5a7a; --wash:linear-gradient(135deg, rgba(58,90,122,.10), rgba(58,90,122,.03)); --edge:rgba(58,90,122,.32); --fx:repeating-linear-gradient(0deg, rgba(58,90,122,.07) 0 1px, transparent 1px 9px); }
+        .phase-block.elem-wind { --phase:#3a6a5a; --wash:linear-gradient(135deg, rgba(58,106,90,.10), rgba(58,106,90,.03)); --edge:rgba(58,106,90,.32); --fx:repeating-linear-gradient(45deg, rgba(58,106,90,.06) 0 1px, transparent 1px 13px); }
+        .phase-block.elem-earth { --phase:#6a5a3a; --wash:linear-gradient(135deg, rgba(106,90,58,.10), rgba(106,90,58,.03)); --edge:rgba(106,90,58,.32); --fx:repeating-linear-gradient(0deg, rgba(106,90,58,.07) 0 1px, transparent 1px 7px); }
+        .phase-block.elem-thunder { --phase:#7a6a2a; --wash:linear-gradient(135deg, rgba(122,106,42,.10), rgba(122,106,42,.03)); --edge:rgba(122,106,42,.32); --fx:repeating-linear-gradient(60deg, rgba(122,106,42,.06) 0 1px, transparent 1px 11px); }
+        .phase-block.elem-ice { --phase:#4a6a7a; --wash:linear-gradient(135deg, rgba(74,106,122,.10), rgba(74,106,122,.03)); --edge:rgba(74,106,122,.32); --fx:repeating-linear-gradient(45deg, rgba(74,106,122,.06) 0 1px, transparent 1px 12px), repeating-linear-gradient(-45deg, rgba(74,106,122,.05) 0 1px, transparent 1px 12px); }
+        .phase-block.elem-rune { --phase:#3a5a4a; --wash:linear-gradient(135deg, rgba(58,90,74,.10), rgba(58,90,74,.03)); --edge:rgba(58,90,74,.32); --fx:radial-gradient(rgba(58,90,74,.16) 1px, transparent 1.6px) 0 0/15px 15px; }
+        .phase-block.elem-kinesis { --phase:#4a3a6a; --wash:linear-gradient(135deg, rgba(74,58,106,.10), rgba(74,58,106,.03)); --edge:rgba(74,58,106,.32); --fx:radial-gradient(ellipse at 50% -20%, rgba(74,58,106,.16), transparent 60%); }
+        .phase-block.elem-necro { --phase:#5a3a4a; --wash:linear-gradient(135deg, rgba(90,58,74,.10), rgba(90,58,74,.03)); --edge:rgba(90,58,74,.32); --fx:radial-gradient(ellipse at 30% 65%, rgba(90,58,74,.14), transparent 60%), radial-gradient(ellipse at 72% 28%, rgba(90,58,74,.10), transparent 55%); }
+        .phase-block.elem-summon { --phase:#4a3a6a; --wash:linear-gradient(135deg, rgba(74,58,106,.10), rgba(74,58,106,.03)); --edge:rgba(74,58,106,.32); --fx:radial-gradient(circle at 50% 45%, transparent 34%, rgba(74,58,106,.12) 36%, transparent 40%, rgba(74,58,106,.10) 42%, transparent 48%); }
+        .phase-block.elem-holy { --phase:#8a6a2a; --wash:linear-gradient(135deg, rgba(138,106,42,.12), rgba(138,106,42,.04)); --edge:rgba(138,106,42,.34); --fx:radial-gradient(ellipse at 50% 0%, rgba(138,106,42,.16), transparent 60%); }
+        .phase-block.elem-void { --phase:#3a2a3a; --wash:linear-gradient(135deg, rgba(58,42,58,.10), rgba(58,42,58,.03)); --edge:rgba(58,42,58,.34); --fx:linear-gradient(180deg, transparent, rgba(58,42,58,.16) 92%); }
+        .phase-block.elem-arcane { --phase:#3a4a6a; --wash:linear-gradient(135deg, rgba(58,74,106,.10), rgba(58,74,106,.03)); --edge:rgba(58,74,106,.32); --fx:radial-gradient(rgba(58,74,106,.12) 1px, transparent 1.6px) 0 0/18px 18px; }
+        .phase-block[class*="elem-"] { border: 1px solid var(--edge, rgba(160,120,64,.28)); border-left: 2px solid var(--phase); background: var(--fx, none), var(--wash, linear-gradient(135deg, rgba(232,214,178,.32), rgba(232,214,178,.30))); box-shadow: inset 0 1px 6px rgba(120,80,30,.06); }
+        .phase-block[class*="elem-"] .phase-title { background: var(--wash); border-color: var(--phase); color: #4a3218; }
+        .phase-block[class*="elem-"] .phase-icon { color: var(--phase); text-shadow: none; }
+        /* 顶部流派角标 */
+        .phase-block.elem-fire::after { content: "🔥"; } .phase-block.elem-water::after { content: "💧"; }
+        .phase-block.elem-wind::after { content: "🌪️"; } .phase-block.elem-thunder::after { content: "⚡"; }
+        .phase-block.elem-ice::after { content: "❄️"; } .phase-block.elem-earth::after { content: "⛰️"; }
+        .phase-block.elem-rune::after { content: "✳️"; } .phase-block.elem-kinesis::after { content: "✹"; }
+        .phase-block.elem-necro::after { content: "💀"; } .phase-block.elem-summon::after { content: "✶"; }
+        .phase-block.elem-holy::after { content: "☀"; } .phase-block.elem-void::after { content: "🌑"; }
+        .phase-block.elem-arcane::after { content: "✧"; }
+        .phase-block[class*="elem-"]::after { position: absolute; right: 6px; top: -9px; font-size: 15px; z-index: 2; opacity: .6; filter: none; }
+        /* 行级流派染色：数据行含「类型」字段时，底色与左边框随流派微变 */
+        .data-row.elem-fire { background: linear-gradient(90deg, rgba(122,74,58,.07), transparent); border-left-color: #7a4a3a; }
+        .data-row.elem-water { background: linear-gradient(90deg, rgba(58,90,122,.07), transparent); border-left-color: #3a5a7a; }
+        .data-row.elem-wind { background: linear-gradient(90deg, rgba(58,106,90,.07), transparent); border-left-color: #3a6a5a; }
+        .data-row.elem-earth { background: linear-gradient(90deg, rgba(106,90,58,.07), transparent); border-left-color: #6a5a3a; }
+        .data-row.elem-thunder { background: linear-gradient(90deg, rgba(122,106,42,.07), transparent); border-left-color: #7a6a2a; }
+        .data-row.elem-ice { background: linear-gradient(90deg, rgba(74,106,122,.07), transparent); border-left-color: #4a6a7a; }
+        .data-row.elem-rune { background: linear-gradient(90deg, rgba(58,90,74,.07), transparent); border-left-color: #3a5a4a; }
+        .data-row.elem-kinesis { background: linear-gradient(90deg, rgba(74,58,106,.07), transparent); border-left-color: #4a3a6a; }
+        .data-row.elem-necro { background: linear-gradient(90deg, rgba(90,58,74,.07), transparent); border-left-color: #5a3a4a; }
+        .data-row.elem-summon { background: linear-gradient(90deg, rgba(74,58,106,.07), transparent); border-left-color: #4a3a6a; }
+        .data-row.elem-holy { background: linear-gradient(90deg, rgba(138,106,42,.08), transparent); border-left-color: #8a6a2a; }
+        .data-row.elem-void { background: linear-gradient(90deg, rgba(58,42,58,.07), transparent); border-left-color: #3a2a3a; }
+        .data-row.elem-arcane { background: linear-gradient(90deg, rgba(58,74,106,.07), transparent); border-left-color: #3a4a6a; }
+
+        /* ===== 数据行 ===== */
+        .data-row { display: flex; flex-wrap: wrap; align-items: center; padding: 5px 0 5px 10px; margin: 3px 0; gap: 5px 10px; border-left: 2px solid rgba(160,120,64,.25); border-radius: 0 3px 3px 0; transition: border-left-color .2s, background .2s; }
+        .data-row:hover { background: rgba(255,248,225,.6); border-left-color: #d4af37; }
+        .row-icon { color: #a07828; font-size: .85em; margin-right: 2px; opacity: .9; }
+        .data-row.crit-row { background: linear-gradient(90deg, rgba(212,175,55,.22), rgba(255,248,200,.06)); border-left-color: #d4af37; }
+        .data-row.fail-row { background: linear-gradient(90deg, rgba(154,31,31,.10), transparent); border-left-color: #9a1f1f; }
+        .data-row.upgrade-row { background: linear-gradient(90deg, rgba(212,175,55,.16), rgba(212,175,55,.03)); border-left-color: #d4af37; }
+        .data-row.resource-row { background: rgba(245,240,220,.55); border-left-color: #8b7330; margin-top: 6px; }
+        .data-row.crit-row .row-icon { color: #d4af37; }
+        .data-row.fail-row .row-icon { color: #8a1f1f; }
+        .data-row.upgrade-row .row-icon { color: #d4af37; }
+
+        /* ===== 键值（长文本可折行） ===== */
+        .kv { display: inline-flex; align-items: flex-start; gap: 4px; max-width: 100%; flex-wrap: wrap; word-break: break-word; overflow-wrap: anywhere; }
+        .key { font-weight: 700; color: #3a2718; font-size: .87em; letter-spacing: .5px; flex-shrink: 0; }
+        .key::after { content: ":"; margin-left: 1px; margin-right: 4px; color: #7a5020; }
+
+        /* ===== 标签（水彩化 + 双档金） ===== */
+        .tag { display: inline-block; padding: 2px 9px; border-radius: 3px; font-weight: 700; font-family: "Noto Serif SC", "华文中宋", serif; font-size: 0.9em; border: 1px solid; line-height: 1.5; letter-spacing: 0.3px; margin: 0 2px; max-width: 100%; word-break: break-word; overflow-wrap: anywhere; }
+        .tag-craft-mat { background: linear-gradient(135deg, rgba(106,90,42,.16), rgba(106,90,42,.05)); border-color: #6a5a2a; color: #4a3a14; }
+        .tag-craft-step { background: linear-gradient(135deg, rgba(122,74,42,.15), rgba(122,74,42,.05)); border-color: #7a4a2a; color: #4a2a10; }
+        .tag-craft-out { background: linear-gradient(135deg, rgba(42,106,74,.15), rgba(42,106,74,.05)); border-color: #2a6a4a; color: #0e3a20; }
+        .tag-hp { background: linear-gradient(180deg, rgba(154,31,31,.16), rgba(154,31,31,.05)); border-color: #9a1f1f; color: #7a1414; }
+        .tag-mp { background: linear-gradient(180deg, rgba(31,58,122,.16), rgba(31,58,122,.05)); border-color: #1f3a7a; color: #0e2050; }
+        .tag-sp { background: linear-gradient(180deg, rgba(31,106,58,.16), rgba(31,106,58,.05)); border-color: #1f6a3a; color: #0e3a20; }
+        .tag-char { background: linear-gradient(135deg, #e4d8c6, #d6c6b2); border-color: #5a4030; color: #241208; box-shadow: inset 0 1px 3px rgba(80,50,30,.18); }
+        .tag-crit { background: linear-gradient(135deg, #fff3c0, #f7df86); border-color: #d4af37; color: #4a2f00; text-shadow: 0 1px 0 rgba(255,255,255,.4); animation: goldGlow 1.5s ease-in-out infinite alternate; }
+        @keyframes goldGlow { from { box-shadow: 0 0 4px rgba(212,175,55,.35); } to { box-shadow: 0 0 12px rgba(212,175,55,.7); } }
+        .tag-fail { background: linear-gradient(135deg, #e3c0bc, #d4a09a); border-color: #8a1f1f; color: #5a0f0f; }
+        .tag-hit { background: linear-gradient(135deg, #d0e4cc, #bad6b4); border-color: #2f7a4f; color: #0e3a22; }
+        .tag-dice { background: linear-gradient(135deg, #f8f0e0, #efe2cc); border-color: #7a5a30; color: #2a1a08; box-shadow: inset 0 1px 3px rgba(100,70,30,.2), 0 1px 3px rgba(0,0,0,.12); font-size: 0.95em; padding: 2px 10px; font-weight: 800; }
+        .tag-dice::before { content: "⚄ "; font-size: 0.9em; opacity: 0.7; }
+        .tag-dmg { background: linear-gradient(135deg, #f8e0c8, #f0d4b0); border-color: #a06020; color: #5a2a00; box-shadow: inset 0 1px 3px rgba(160,96,32,.2); font-weight: 800; }
+        .tag-def { background: linear-gradient(135deg, #dfe6ea, #d0d9e0); border-color: #506070; color: #1c2a38; box-shadow: inset 0 1px 3px rgba(50,70,90,.15); }
+        .tag-skill { background: linear-gradient(135deg, #d8e4d0, #c4d8b8); border-color: #4a6b3a; color: #1a3a0a; box-shadow: inset 0 1px 3px rgba(60,90,40,.2); }
+        .tag-resource { background: linear-gradient(135deg, #ddd8c8, #d0c8b0); border-color: #7a6a40; color: #3a2810; box-shadow: inset 0 1px 3px rgba(100,80,40,.2); }
+        .tag-change-down { background: linear-gradient(135deg, #f0d0c0, #e8c0b0); border-color: #8b3a2a; color: #5a1010; }
+        .tag-change-down::before { content: "▼ "; font-size: 0.7em; }
+        .tag-change-up { background: linear-gradient(135deg, #d0e8d0, #c4dcc4); border-color: #3a6b3a; color: #0a3a0a; }
+        .tag-change-up::before { content: "▲ "; font-size: 0.7em; }
+        .tag-general { background: linear-gradient(135deg, #f0e8d8, #e8dfc8); border-color: #9a8060; color: #3a2a18; box-shadow: inset 0 1px 2px rgba(120,100,70,.1); }
+        .tag-status { background: linear-gradient(135deg, #dcd8c8, #d4ceb8); border-color: #6a5a3a; color: #3a2a10; box-shadow: inset 0 1px 3px rgba(80,60,30,.15); font-style: italic; }
+        .tag-env { background: linear-gradient(135deg, #d0dce0, #c4d0d8); border-color: #3a5a5a; color: #0a2a2a; box-shadow: inset 0 1px 3px rgba(40,70,70,.15); }
+        .tag-round { background: linear-gradient(135deg, #e4dcd0, #d8d0c4); border-color: #6a5a40; color: #3a2a18; box-shadow: inset 0 1px 2px rgba(80,60,40,.15); }
+        .tag-exp { background: linear-gradient(180deg, rgba(31,106,58,.16), rgba(31,106,58,.05)); border-color: #1f6a3a; color: #0e3a20; font-weight: 800; }
+        .tag-levelup { background: linear-gradient(135deg, #f4e8c0, #ecd79e); border: 1px solid #d4af37; color: #4a2f00; animation: levelGlow 2s ease-in-out infinite alternate; }
+        @keyframes levelGlow { from { box-shadow: 0 0 4px rgba(212,175,55,.25); } to { box-shadow: 0 0 10px rgba(212,175,55,.5); } }
+        .tag-type { background: linear-gradient(135deg, #e0d8c4, #d8cdb8); border-color: #7a6a40; color: #3a2810; box-shadow: inset 0 1px 2px rgba(100,80,50,.15); }
+        .type-tag { font-weight: 800; }
+        /* 资源条 */
+        .res-tag { position: relative; overflow: hidden; padding: 0; }
+        .res-fill { position: absolute; left: 0; top: 0; bottom: 0; }
+        .res-text { position: relative; display: inline-block; padding: 2px 10px; z-index: 1; }
+        .res-tag.tag-hp .res-fill { background: rgba(154,31,31,.30); }
+        .res-tag.tag-mp .res-fill { background: rgba(31,58,122,.28); }
+        .res-tag.tag-sp .res-fill { background: rgba(31,106,58,.28); }
+        /* ===== 角色状态盒：每个角色一个小灰框，内含名字 + HP/MP/SP 数值 ===== */
+        .char-box { display: inline-block; vertical-align: middle; padding: 1px 7px; margin: 1px 3px 1px 0; border: 1px solid #5a4030; border-radius: 3px; background: linear-gradient(135deg, #e4d8c6, #d6c6b2); color: #241208; box-shadow: inset 0 1px 2px rgba(80,50,30,.14); max-width: 100%; font-size: .86em; line-height: 1.55; }
+        .char-box .char-name { font-weight: 700; margin-right: 4px; white-space: nowrap; }
+        .char-box .res-mini { display: inline-block; font-weight: 700; font-size: .92em; padding: 0 3px; margin: 0 1px; border-radius: 2px; background: rgba(255,248,225,.5); }
+        .char-box .res-mini.hp { color: #8a1a1a; }
+        .char-box .res-mini.mp { color: #123a8a; }
+        .char-box .res-mini.sp { color: #12602a; }
+        .char-box .char-note { display: inline-block; font-size: .82em; color: #7a5a30; margin-left: 3px; opacity: .85; }
+        .val-text { color: #3a2718; font-weight: 600; word-break: break-word; overflow-wrap: anywhere; }
+
+        /* ===== 叙事 + 首字红 ===== */
+        .narrative { margin: 8px 0; padding: 8px 14px; font-style: italic; font-weight: 500; color: #4a3018; border-left: 3px solid #c4a050; background: linear-gradient(90deg, rgba(255,248,225,.5), transparent); border-radius: 0 4px 4px 0; line-height: 1.9; }
+        .exp-gain { color: #7a5a0a; font-weight: 800; }
+
+        /* ===== 落款 ===== */
+        .scroll-footer { margin-top: 22px; padding-top: 10px; text-align: center; color: #8a6a3a; font-size: .85em; letter-spacing: 2px; border-top: 1px dashed rgba(160,120,64,.4); }
+        .foot-orn { margin: 0 8px; color: #a07828; }
+        .foot-seal { display: inline-block; margin-left: 10px; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #b04030, #7a1a10 75%); color: #f2d8a0; font-size: 9px; line-height: 22px; text-align: center; box-shadow: inset 0 1px 3px rgba(255,255,255,.3), 0 1px 3px rgba(0,0,0,.35); }
+
+        /* ===== 事件结算：分隔线 / 分组头 / 标签行 / 经验值更新行 =====
+         * 层级原则：标签行/分组头是低调的小标题，经验值数据行才是重点 */
+        .divider { height: 1px; margin: 10px auto; width: 70%; background: linear-gradient(90deg, transparent, #c4a050, transparent); border: none; }
+        .sub-head { margin: 8px 0 2px; padding: 2px 10px; font-size: .85em; font-weight: 700; color: #5a3a08; background: linear-gradient(90deg, rgba(180,150,60,.10), transparent); border-left: 2px solid #c4a050; letter-spacing: 1px; }
+        .label-row { margin: 12px 0 3px; font-size: .82em; font-weight: 700; color: #8a6a3a; letter-spacing: 2px; border-bottom: 1px dashed rgba(160,120,64,.35); padding-bottom: 2px; }
+        .data-row.exp-update-row { background: linear-gradient(90deg, rgba(212,175,55,.18), rgba(212,175,55,.04)); border-left-color: #d4af37; padding: 6px 0 6px 10px; }
+        .data-row.exp-update-row .row-icon { color: #d4af37; }
+        .data-row.exp-update-row .tag { font-size: 0.93em; }
+        .data-row.exp-update-row .tag-exp { font-size: 0.96em; }
+
+        /* ===== 响应式 ===== */
+        @media screen and (max-width: 480px) {
+            .scroll-frame { padding: 14px 0 18px; }
+            .scroll { padding: 34px 16px 40px; }
+            .content { font-size: 0.85em; line-height: 1.7; }
+            .data-row { padding: 4px 0 4px 8px; gap: 4px 6px; }
+            .key { font-size: 0.82em; }
+            .tag { padding: 2px 6px; font-size: 0.82em; }
+            .head-title { font-size: 1.25em; letter-spacing: 6px; }
+            .head-sub { font-size: 0.72em; }
+            .phase-block { padding: 6px 10px 10px; }
+            .phase-title { padding: 3px 12px; font-size: 0.88em; letter-spacing: 2px; }
+            .roller { height: 11px; }
+            .narrative { padding: 6px 10px; font-size: 0.88em; line-height: 1.7; }
+        }
+        @media screen and (max-width: 360px) {
+            .scroll { padding: 28px 12px 34px; }
+            .content { font-size: 0.8em; }
+            .data-row { padding: 3px 0 3px 6px; gap: 3px 4px; }
+            .tag { padding: 1px 5px; font-size: 0.78em; }
+            .phase-title { padding: 2px 10px; font-size: 0.82em; letter-spacing: 1px; }
+        }
+
+        /* 腐雾/灰烬元素：仅暗黑风下显示 */
+        .fog, .ash { display: none; }
+
+        /* ============================================================
+           终焉纪元 · 暗黑风皮肤（body.apocalypse 时生效）
+           背景深渊黑紫 + 腐雾灰烬 + 血红/暗紫/腐金/邪绿体系色
+        ============================================================ */
+        body.apocalypse { background: transparent; }
+        body.apocalypse .scroll {
+            padding: 40px 32px 46px;
+            background:
+                radial-gradient(ellipse at 50% 0%, rgba(90,20,60,.22), transparent 58%),
+                radial-gradient(ellipse at 82% 100%, rgba(18,90,50,.16), transparent 52%),
+                repeating-linear-gradient(0deg, rgba(255,255,255,.012) 0 2px, transparent 2px 26px),
+                linear-gradient(180deg, #130b18, #0a0710);
+            color: #cbb8c4; border: 1px solid #3a2030; border-top: 3px solid #4a1420; border-bottom: 3px solid #4a1420;
+            box-shadow: 0 0 44px rgba(120,20,60,.22), inset 0 0 60px rgba(0,0,0,.62);
+        }
+        body.apocalypse .stain-1 { width: 210px; height: 210px; right: -44px; top: -36px; background: radial-gradient(circle, rgba(150,30,70,.16), transparent 66%); }
+        body.apocalypse .stain-2 { width: 170px; height: 170px; left: -40px; bottom: 4px; background: radial-gradient(circle, rgba(20,90,55,.13), transparent 64%); }
+        body.apocalypse .fog, body.apocalypse .ash { display: block; }
+        body.apocalypse .fog { position: absolute; inset: 0; pointer-events: none; z-index: 1; background: radial-gradient(ellipse at 22% 30%, rgba(90,20,60,.14), transparent 60%), radial-gradient(ellipse at 78% 66%, rgba(18,70,45,.11), transparent 55%); animation: fogDrift 18s ease-in-out infinite alternate; }
+        @keyframes fogDrift { from { opacity: .5; transform: translate(0,0); } to { opacity: .95; transform: translate(-12px, 6px); } }
+        body.apocalypse .ash { position: absolute; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+        body.apocalypse .ash::before { content: ''; position: absolute; left: 10%; top: 110%; width: 2px; height: 2px; border-radius: 50%; background: #c06080; box-shadow: 90px 0 0 rgba(200,110,140,.7), 210px -20px 0 rgba(150,80,110,.6), 320px -10px 0 rgba(200,110,140,.5), 440px -30px 0 rgba(150,80,110,.6), 560px -5px 0 rgba(200,110,140,.5), 60px -60px 0 rgba(150,80,110,.5), 250px -80px 0 rgba(200,110,140,.45), 400px -100px 0 rgba(150,80,110,.5); animation: ashUp 16s linear infinite; }
+        @keyframes ashUp { from { transform: translateY(0); opacity: 0; } 12% { opacity: .85; } 88% { opacity: .5; } to { transform: translateY(-130px); opacity: 0; } }
+        body.apocalypse .scroll::before { content: "⚸"; position: absolute; top: 4px; left: 14px; font-size: 15px; color: #8a4a6a; opacity: .6; z-index: 3; }
+        body.apocalypse .scroll::after { content: "✦"; position: absolute; right: 24px; bottom: 24px; width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #e8a0b0; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #a02030, #3a0810 72%); box-shadow: inset 0 2px 6px rgba(255,255,255,.12), 0 0 16px rgba(160,32,48,.5), 0 2px 5px rgba(0,0,0,.5); z-index: 3; }
+        body.apocalypse .roller { background: linear-gradient(180deg, #3a2430, #1c1218 45%, #2a1a24 92%); box-shadow: 0 2px 5px rgba(0,0,0,.6), inset 0 1px 2px rgba(255,255,255,.06); }
+        body.apocalypse .roller .cap { background: linear-gradient(90deg, #2e1a24, #150c10 60%, #2e1a24); box-shadow: 0 2px 4px rgba(0,0,0,.5); }
+        body.apocalypse .head-orn { color: #7a4a6a; }
+        body.apocalypse .head-title { color: #e8d8e0; text-shadow: 0 0 14px rgba(200,40,60,.35), 0 0 34px rgba(120,20,60,.22); }
+        body.apocalypse .head-sub { color: #8a7a8a; }
+        body.apocalypse .head-rule { background: linear-gradient(90deg, transparent, #6a1a30 20%, #a03040 50%, #6a1a30 80%, transparent); }
+        body.apocalypse .phase-block { background: linear-gradient(135deg, var(--wash, rgba(42,16,34,.4)), rgba(20,10,16,.32)); border: 1px solid rgba(90,42,66,.30); border-left: 2px solid var(--phase, #7a4a6a); box-shadow: inset 0 0 22px rgba(0,0,0,.42), 0 0 12px rgba(120,20,60,.12); }
+        body.apocalypse .phase-title { background: var(--wash, linear-gradient(135deg, rgba(90,30,50,.32), rgba(40,16,32,.2))); border: 1px solid var(--phase, #7a4a6a); color: #e0d0d8; box-shadow: 0 0 10px rgba(160,40,70,.14), inset 0 0 8px rgba(0,0,0,.35); }
+        body.apocalypse .phase-icon { color: var(--phase, #7a4a6a); text-shadow: 0 0 8px currentColor; }
+        /* 暗黑风·七大流派差异化染色 */
+        body.apocalypse .phase-block.ph-weapon { --phase:#a02030; --wash:linear-gradient(135deg, rgba(120,20,35,.4), rgba(60,10,20,.16)); }
+        body.apocalypse .phase-block.ph-arts { --phase:#b0602a; --wash:linear-gradient(135deg, rgba(120,60,20,.4), rgba(60,30,12,.16)); }
+        body.apocalypse .phase-block.ph-magic { --phase:#7a5ad0; --wash:linear-gradient(135deg, rgba(70,40,150,.4), rgba(36,20,80,.16)); }
+        body.apocalypse .phase-block.ph-holy { --phase:#9a8a2a; --wash:linear-gradient(135deg, rgba(120,100,20,.42), rgba(60,50,12,.16)); }
+        body.apocalypse .phase-block.ph-craft { --phase:#b0602a; --wash:linear-gradient(135deg, rgba(120,60,20,.42), rgba(60,30,12,.16)); }
+        body.apocalypse .phase-block[class*="elem-"] { border: 1px solid var(--edge, rgba(90,42,66,.30)); border-left: 2px solid var(--phase); background: var(--fx, none), var(--wash, linear-gradient(135deg, rgba(42,16,34,.4), rgba(20,10,16,.32))); box-shadow: inset 0 0 22px rgba(0,0,0,.42); }
+        body.apocalypse .phase-block.elem-fire { --phase:#b0553f; --wash:linear-gradient(135deg, rgba(110,45,50,.4), rgba(55,20,26,.18)); --edge:rgba(176,85,63,.42); --fx:linear-gradient(0deg, rgba(176,85,63,.18), transparent 55%); }
+        body.apocalypse .phase-block.elem-water { --phase:#4a6a9a; --wash:linear-gradient(135deg, rgba(40,60,110,.42), rgba(20,32,66,.18)); --edge:rgba(74,106,154,.42); --fx:repeating-linear-gradient(0deg, rgba(74,106,154,.10) 0 1px, transparent 1px 9px); }
+        body.apocalypse .phase-block.elem-wind { --phase:#3a8a70; --wash:linear-gradient(135deg, rgba(30,90,70,.42), rgba(16,50,40,.18)); --edge:rgba(58,138,112,.42); --fx:repeating-linear-gradient(45deg, rgba(58,138,112,.10) 0 1px, transparent 1px 13px); }
+        body.apocalypse .phase-block.elem-earth { --phase:#8a6a3a; --wash:linear-gradient(135deg, rgba(90,66,32,.42), rgba(46,34,18,.18)); --edge:rgba(138,106,58,.42); --fx:repeating-linear-gradient(0deg, rgba(138,106,58,.10) 0 1px, transparent 1px 7px); }
+        body.apocalypse .phase-block.elem-thunder { --phase:#a08a30; --wash:linear-gradient(135deg, rgba(100,84,24,.42), rgba(52,44,14,.18)); --edge:rgba(160,138,48,.42); --fx:repeating-linear-gradient(60deg, rgba(160,138,48,.10) 0 1px, transparent 1px 11px); }
+        body.apocalypse .phase-block.elem-ice { --phase:#5a8aa8; --wash:linear-gradient(135deg, rgba(46,80,112,.44), rgba(24,42,60,.18)); --edge:rgba(90,138,168,.42); --fx:repeating-linear-gradient(45deg, rgba(90,138,168,.10) 0 1px, transparent 1px 12px), repeating-linear-gradient(-45deg, rgba(90,138,168,.08) 0 1px, transparent 1px 12px); }
+        body.apocalypse .phase-block.elem-rune { --phase:#3a7a5a; --wash:linear-gradient(135deg, rgba(30,80,56,.42), rgba(16,44,32,.18)); --edge:rgba(58,122,90,.42); --fx:radial-gradient(rgba(58,122,90,.22) 1px, transparent 1.6px) 0 0/15px 15px; }
+        body.apocalypse .phase-block.elem-kinesis { --phase:#6a5aa8; --wash:linear-gradient(135deg, rgba(56,44,110,.42), rgba(30,24,60,.18)); --edge:rgba(106,90,168,.42); --fx:radial-gradient(ellipse at 50% -20%, rgba(106,90,168,.20), transparent 60%); }
+        body.apocalypse .phase-block.elem-necro { --phase:#6a4a6a; --wash:linear-gradient(135deg, rgba(70,40,66,.42), rgba(36,22,34,.18)); --edge:rgba(106,74,106,.42); --fx:radial-gradient(ellipse at 30% 65%, rgba(106,74,106,.18), transparent 60%), radial-gradient(ellipse at 72% 28%, rgba(106,74,106,.12), transparent 55%); }
+        body.apocalypse .phase-block.elem-summon { --phase:#5a6aa8; --wash:linear-gradient(135deg, rgba(42,52,110,.42), rgba(24,28,60,.18)); --edge:rgba(90,106,168,.42); --fx:radial-gradient(circle at 50% 45%, transparent 34%, rgba(90,106,168,.16) 36%, transparent 40%, rgba(90,106,168,.12) 42%, transparent 48%); }
+        body.apocalypse .phase-block.elem-holy { --phase:#a08a38; --wash:linear-gradient(135deg, rgba(100,84,26,.44), rgba(54,46,16,.20)); --edge:rgba(160,138,56,.44); --fx:radial-gradient(ellipse at 50% 0%, rgba(160,138,56,.20), transparent 60%); }
+        body.apocalypse .phase-block.elem-void { --phase:#4a3a4a; --wash:linear-gradient(135deg, rgba(46,34,46,.42), rgba(24,18,24,.18)); --edge:rgba(74,58,74,.44); --fx:linear-gradient(180deg, transparent, rgba(74,58,74,.20) 92%); }
+        body.apocalypse .phase-block.elem-arcane { --phase:#5a6a9a; --wash:linear-gradient(135deg, rgba(42,52,90,.42), rgba(24,28,50,.18)); --edge:rgba(90,106,154,.42); --fx:radial-gradient(rgba(90,106,154,.18) 1px, transparent 1.6px) 0 0/18px 18px; }
+        body.apocalypse .data-row.elem-fire { background: linear-gradient(90deg, rgba(176,85,63,.16), transparent); border-left-color: #b0553f; }
+        body.apocalypse .data-row.elem-water { background: linear-gradient(90deg, rgba(74,106,154,.16), transparent); border-left-color: #4a6a9a; }
+        body.apocalypse .data-row.elem-wind { background: linear-gradient(90deg, rgba(58,138,112,.16), transparent); border-left-color: #3a8a70; }
+        body.apocalypse .data-row.elem-earth { background: linear-gradient(90deg, rgba(138,106,58,.16), transparent); border-left-color: #8a6a3a; }
+        body.apocalypse .data-row.elem-thunder { background: linear-gradient(90deg, rgba(160,138,48,.16), transparent); border-left-color: #a08a30; }
+        body.apocalypse .data-row.elem-ice { background: linear-gradient(90deg, rgba(90,138,168,.16), transparent); border-left-color: #5a8aa8; }
+        body.apocalypse .data-row.elem-rune { background: linear-gradient(90deg, rgba(58,122,90,.16), transparent); border-left-color: #3a7a5a; }
+        body.apocalypse .data-row.elem-kinesis { background: linear-gradient(90deg, rgba(106,90,168,.16), transparent); border-left-color: #6a5aa8; }
+        body.apocalypse .data-row.elem-necro { background: linear-gradient(90deg, rgba(106,74,106,.16), transparent); border-left-color: #6a4a6a; }
+        body.apocalypse .data-row.elem-summon { background: linear-gradient(90deg, rgba(90,106,168,.16), transparent); border-left-color: #5a6aa8; }
+        body.apocalypse .data-row.elem-holy { background: linear-gradient(90deg, rgba(160,138,56,.16), transparent); border-left-color: #a08a38; }
+        body.apocalypse .data-row.elem-void { background: linear-gradient(90deg, rgba(74,58,74,.16), transparent); border-left-color: #4a3a4a; }
+        body.apocalypse .data-row.elem-arcane { background: linear-gradient(90deg, rgba(90,106,154,.16), transparent); border-left-color: #5a6a9a; }
+        body.apocalypse .data-row { border-left: 2px solid rgba(120,80,100,.25); }
+        body.apocalypse .data-row:hover { background: rgba(120,40,80,.12); border-left-color: #c03040; }
+        body.apocalypse .row-icon { color: #8a5a6a; }
+        body.apocalypse .data-row.crit-row { background: linear-gradient(90deg, rgba(200,40,60,.16), transparent); border-left-color: #ff2a4a; }
+        body.apocalypse .data-row.fail-row { background: linear-gradient(90deg, rgba(60,10,20,.35), transparent); border-left-color: #6a1020; }
+        body.apocalypse .data-row.upgrade-row { background: linear-gradient(90deg, rgba(40,200,100,.12), transparent); border-left-color: #4ae07a; }
+        body.apocalypse .data-row.resource-row { background: rgba(30,16,26,.5); border-left-color: #5a3a4a; }
+        body.apocalypse .data-row.crit-row .row-icon { color: #ff2a4a; }
+        body.apocalypse .data-row.fail-row .row-icon { color: #6a1020; }
+        body.apocalypse .data-row.upgrade-row .row-icon { color: #4ae07a; }
+        body.apocalypse .key { color: #d8c8d0; }
+        body.apocalypse .key::after { color: #7a5a6a; }
+        body.apocalypse .tag-hp { background: linear-gradient(180deg, rgba(160,30,50,.30), rgba(120,20,40,.10)); border-color: #b02a3a; color: #ff8a9a; text-shadow: 0 0 6px rgba(255,42,74,.45); }
+        body.apocalypse .tag-mp { background: linear-gradient(180deg, rgba(40,70,160,.30), rgba(30,50,120,.10)); border-color: #4a6ae0; color: #9ab4ff; text-shadow: 0 0 6px rgba(80,120,255,.35); }
+        body.apocalypse .tag-sp { background: linear-gradient(180deg, rgba(30,130,70,.30), rgba(20,90,50,.10)); border-color: #2ac07a; color: #8affc0; text-shadow: 0 0 6px rgba(58,224,138,.35); }
+        body.apocalypse .tag-char { background: linear-gradient(135deg, #2a1826, #1c0f1a); border-color: #5a3a52; color: #d8c0d0; box-shadow: inset 0 0 8px rgba(0,0,0,.4); }
+        body.apocalypse .tag-crit { background: linear-gradient(135deg, rgba(200,30,50,.42), rgba(120,20,40,.2)); border-color: #ff2a4a; color: #ffd0d8; text-shadow: 0 0 10px rgba(255,42,74,.7); animation: darkGlow 1.5s ease-in-out infinite alternate; }
+        @keyframes darkGlow { from { box-shadow: 0 0 5px rgba(255,42,74,.35); } to { box-shadow: 0 0 16px rgba(255,42,74,.85); } }
+        body.apocalypse .tag-fail { background: linear-gradient(135deg, #2a0810, #180408); border-color: #5a0a14; color: #c06070; }
+        body.apocalypse .tag-hit { background: linear-gradient(135deg, rgba(20,120,60,.30), rgba(10,70,40,.12)); border-color: #2ac07a; color: #8affc0; }
+        body.apocalypse .tag-dice { background: rgba(20,14,28,.85); border-color: #4a4a8a; color: #b8c8ff; box-shadow: inset 0 0 8px rgba(0,0,0,.4); }
+        body.apocalypse .tag-dmg { background: linear-gradient(135deg, rgba(120,30,40,.3), rgba(80,20,30,.12)); border-color: #a03040; color: #ffb0a0; }
+        body.apocalypse .tag-def { background: linear-gradient(135deg, rgba(40,46,70,.35), rgba(28,32,50,.15)); border-color: #4a5a8a; color: #b8c0e0; }
+        body.apocalypse .tag-skill { background: linear-gradient(135deg, rgba(30,100,70,.3), rgba(18,60,45,.12)); border-color: #2a8a60; color: #a0e0c0; }
+        body.apocalypse .tag-resource { background: linear-gradient(135deg, rgba(60,40,56,.4), rgba(40,26,38,.18)); border-color: #6a4a5a; color: #c8a8b8; }
+        body.apocalypse .tag-change-down { background: linear-gradient(135deg, rgba(140,30,40,.3), rgba(90,18,26,.12)); border-color: #a02838; color: #ff8a94; }
+        body.apocalypse .tag-change-up { background: linear-gradient(135deg, rgba(30,130,70,.3), rgba(18,80,46,.12)); border-color: #2ac07a; color: #8affc0; }
+        body.apocalypse .tag-general { background: rgba(26,16,24,.78); border-color: #4a3040; color: #cbb8c4; box-shadow: inset 0 0 8px rgba(0,0,0,.4); }
+        body.apocalypse .tag-status { background: linear-gradient(135deg, rgba(70,40,70,.4), rgba(46,26,46,.18)); border-color: #6a4a6a; color: #d0b8d0; box-shadow: inset 0 0 8px rgba(0,0,0,.3); }
+        body.apocalypse .tag-env { background: linear-gradient(135deg, rgba(30,60,80,.35), rgba(18,38,52,.15)); border-color: #3a6a8a; color: #a0d0e0; }
+        body.apocalypse .tag-round { background: linear-gradient(135deg, rgba(60,40,60,.4), rgba(40,26,40,.18)); border-color: #6a4a5a; color: #c8b0c8; }
+        body.apocalypse .tag-exp { background: linear-gradient(180deg, rgba(30,130,70,.30), rgba(20,90,50,.10)); border-color: #2ac07a; color: #8affc0; text-shadow: 0 0 6px rgba(58,224,138,.3); }
+        body.apocalypse .tag-levelup { background: linear-gradient(135deg, rgba(30,150,90,.30), rgba(20,100,60,.12)); border: 1px solid #3fe08a; color: #a0ffc8; animation: darkGlow 2s ease-in-out infinite alternate; }
+        body.apocalypse .tag-type { background: linear-gradient(135deg, rgba(60,40,70,.4), rgba(40,26,48,.18)); border-color: #6a4a7a; color: #d0b8e0; }
+        body.apocalypse .res-tag.tag-hp .res-fill { background: rgba(176,42,58,.35); }
+        body.apocalypse .res-tag.tag-mp .res-fill { background: rgba(74,106,224,.32); }
+        body.apocalypse .res-tag.tag-sp .res-fill { background: rgba(42,192,122,.32); }
+        body.apocalypse .char-box { background: linear-gradient(135deg, #2a1826, #1c0f1a); border-color: #5a3a52; color: #d8c0d0; box-shadow: inset 0 0 8px rgba(0,0,0,.4); }
+        body.apocalypse .char-box .res-mini { background: rgba(0,0,0,.35); }
+        body.apocalypse .char-box .res-mini.hp { color: #ff8a9a; }
+        body.apocalypse .char-box .res-mini.mp { color: #9ab4ff; }
+        body.apocalypse .char-box .res-mini.sp { color: #8affc0; }
+        body.apocalypse .val-text { color: #d0c0cc; }
+        body.apocalypse .narrative { color: #a89aa8; border-left: 3px solid #6a3040; background: linear-gradient(90deg, rgba(120,30,60,.10), transparent); }
+        body.apocalypse .exp-gain { color: #8affc0; }
+        body.apocalypse .scroll-footer { color: #6a5a6a; border-top: 1px dashed rgba(120,50,70,.35); }
+        body.apocalypse .foot-orn { color: #7a4a6a; }
+        body.apocalypse .foot-seal { background: radial-gradient(circle at 35% 35%, #a02030, #3a0810 75%); color: #e8a8b0; box-shadow: inset 0 1px 3px rgba(255,255,255,.12), 0 0 8px rgba(160,32,48,.45); }
+        body.apocalypse .divider { background: linear-gradient(90deg, transparent, #6a1a30, transparent); }
+        body.apocalypse .sub-head { color: #d0a0b8; background: linear-gradient(90deg, rgba(120,30,60,.14), transparent); border-left: 2px solid #a03040; }
+        body.apocalypse .label-row { color: #8a6a7a; border-bottom: 1px dashed rgba(120,50,70,.35); }
+        body.apocalypse .data-row.exp-update-row { background: linear-gradient(90deg, rgba(40,160,90,.14), rgba(40,160,90,.03)); border-left-color: #3fe08a; }
+        body.apocalypse .data-row.exp-update-row .row-icon { color: #4ae07a; }
+        @media screen and (max-width: 480px) {
+            body.apocalypse .scroll { padding: 34px 16px 40px; }
+            body.apocalypse .phase-title { padding: 3px 12px; }
+            body.apocalypse .narrative { padding: 6px 10px; }
+        }
+
+        /* ============================================================
+           渲染设置面板：右上角齿轮，勾选即开关对应正则/功能
+        ============================================================ */
+        .settings-fab { position: fixed; right: 12px; top: 12px; width: 34px; height: 34px; border-radius: 50%; z-index: 999; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 17px; line-height: 1; border: 1px solid rgba(160,120,64,.45); background: linear-gradient(180deg, #f2e3c0, #e4cf9f); color: #6a4a1a; box-shadow: 0 2px 6px rgba(0,0,0,.28); transition: transform .15s, background .15s; user-select: none; }
+        .settings-fab:hover { transform: rotate(30deg); }
+        .settings-fab.active { background: linear-gradient(180deg, #d4af37, #b8892a); color: #fff; }
+        .settings-panel { position: fixed; right: 12px; top: 52px; width: 240px; z-index: 999; border-radius: 6px; background: #f7ecd4; border: 1px solid #a07840; box-shadow: 0 8px 24px rgba(0,0,0,.35); padding: 10px 13px 8px; font-size: .82em; display: none; }
+        .settings-panel.open { display: block; }
+        .settings-head { font-weight: 700; color: #5a3a08; letter-spacing: 1px; border-bottom: 1px dashed #c4a050; padding-bottom: 5px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; }
+        .settings-close { cursor: pointer; color: #8a6a3a; font-size: 13px; }
+        .settings-group { margin: 4px 0; }
+        .settings-title { font-size: .74em; color: #8a6a3a; letter-spacing: 1px; margin: 4px 0 2px; font-weight: 700; }
+        .setting-item { display: flex; align-items: center; gap: 6px; color: #4a3218; padding: 1.5px 0; cursor: pointer; }
+        .setting-item input { cursor: pointer; accent-color: #a07828; margin: 0; }
+        .settings-foot { border-top: 1px dashed #c4a050; margin-top: 6px; padding-top: 6px; display: flex; justify-content: space-between; align-items: center; }
+        .settings-foot button { cursor: pointer; background: linear-gradient(180deg,#a07840,#8a5a2a); color:#fff; border: none; border-radius: 3px; padding: 3px 10px; font-size: .8em; font-family: inherit; }
+        .settings-saved { color: #3a7a4a; font-size: .76em; opacity: 0; transition: opacity .3s; }
+        .settings-saved.show { opacity: 1; }
+        body.apocalypse .settings-fab { background: linear-gradient(180deg,#3a2a3a,#2a1e2a); color:#b89ab8; border-color:#6a4a6a; }
+        body.apocalypse .settings-fab.active { background: linear-gradient(180deg,#8a4a6a,#5a3050); color:#fff; }
+        body.apocalypse .settings-panel { background:#2a1f2a; border-color:#6a4a6a; color:#d8c8d8; box-shadow: 0 8px 24px rgba(0,0,0,.6); }
+        body.apocalypse .settings-head { color:#d8b8d8; border-color:#6a4a6a; }
+        body.apocalypse .settings-title { color:#9a7a9a; }
+        body.apocalypse .setting-item { color:#c8b0c8; }
+        body.apocalypse .settings-close { color:#9a7a9a; }
+        body.apocalypse .settings-foot { border-color:#6a4a6a; }
+        body.apocalypse .settings-foot button { background: linear-gradient(180deg,#6a4a6a,#4a304a); }
+        /* 关闭流派特效：隐藏角标与背景纹理（保留整块流派色） */
+        body.flowfx-off .phase-block[class*="elem-"]::after { display: none; }
+        body.flowfx-off .phase-block[class*="elem-"] { background: var(--wash, linear-gradient(135deg, rgba(232,214,178,.32), rgba(232,214,178,.30))); box-shadow: inset 0 1px 6px rgba(120,80,30,.06); }
+        body.apocalypse.flowfx-off .phase-block[class*="elem-"] { background: var(--wash, linear-gradient(135deg, rgba(42,16,34,.4), rgba(20,10,16,.32))); box-shadow: inset 0 0 22px rgba(0,0,0,.42); }
+
+        /* ===== 位阶徽章：从变量读角色等阶，显示在资源条旁 ===== */
+        .rank-badge { display: inline-block; padding: 1px 10px; border-radius: 10px; font-size: .8em; font-weight: 800; letter-spacing: 1px; border: 1px solid; margin: 0 2px 0 4px; vertical-align: middle; line-height: 1.5; }
+        .rank-普通 { background: linear-gradient(135deg, #efe9dc, #e2d9c6); border-color: #9a9068; color: #5a5240; }
+        .rank-超凡 { background: linear-gradient(135deg, #dceadf, #c9ddcd); border-color: #2f8a6a; color: #14402e; }
+        .rank-精英 { background: linear-gradient(135deg, #dbe4f2, #c8d6ea); border-color: #2a5a9a; color: #12305a; }
+        .rank-史诗 { background: linear-gradient(135deg, #e6dcf2, #d8c8ea); border-color: #6a3aa0; color: #341a5a; }
+        .rank-传说 { background: linear-gradient(135deg, #f6e3cc, #ecd0b0); border-color: #c07020; color: #6a3210; }
+        .rank-神话 { background: linear-gradient(135deg, #faf0c8, #f2dd9a); border-color: #c9a227; color: #5a4200; box-shadow: 0 0 8px rgba(201,162,39,.45); }
+        body.apocalypse .rank-badge { color: #d8c8d8; }
+        body.apocalypse .rank-普通 { background: rgba(40,28,40,.85); border-color: #6a4a5a; color: #c0a8b8; }
+        body.apocalypse .rank-超凡 { background: linear-gradient(180deg, rgba(40,160,90,.35), rgba(20,90,50,.15)); border-color: #2ac07a; color: #8affc0; text-shadow: 0 0 6px rgba(58,224,138,.4); }
+        body.apocalypse .rank-精英 { background: linear-gradient(180deg, rgba(40,80,180,.35), rgba(20,50,120,.15)); border-color: #4a6ae0; color: #9ab4ff; text-shadow: 0 0 6px rgba(80,120,255,.35); }
+        body.apocalypse .rank-史诗 { background: linear-gradient(180deg, rgba(120,60,200,.35), rgba(70,30,130,.15)); border-color: #8a5ae0; color: #c8a8ff; text-shadow: 0 0 6px rgba(140,90,255,.35); }
+        body.apocalypse .rank-传说 { background: linear-gradient(180deg, rgba(200,120,40,.35), rgba(130,70,20,.15)); border-color: #e0a040; color: #ffd0a0; text-shadow: 0 0 6px rgba(255,160,60,.35); }
+        body.apocalypse .rank-神话 { background: linear-gradient(180deg, rgba(200,40,60,.4), rgba(120,20,40,.2)); border-color: #ff2a4a; color: #ffd0d8; text-shadow: 0 0 10px rgba(255,42,74,.7); box-shadow: 0 0 10px rgba(255,42,74,.5); }
+    </style>
+</head>
+<body>
+    <div id="rawData" style="display:none;">$1</div>
+    <!-- 渲染设置：右上角齿轮，勾选即开关对应正则/功能；设置会存入浏览器并同步到酒馆聊天变量「战斗轮渲染设置」 -->
+    <div class="settings-fab" id="settingsFab" title="羊皮卷渲染设置">⚙</div>
+    <div class="settings-panel" id="settingsPanel">
+        <div class="settings-head">羊皮卷渲染设置 <span class="settings-close" id="settingsClose">✕</span></div>
+        <div class="settings-group">
+            <div class="settings-title">— 渲染风格 —</div>
+            <label class="setting-item"><input type="checkbox" data-key="flowStyle"> 七大流派整块染色</label>
+            <label class="setting-item"><input type="checkbox" data-key="flowFx"> 流派角标与纹理特效</label>
+            <label class="setting-item"><input type="checkbox" data-key="critHighlight"> 暴击/大失败/升级高亮</label>
+        </div>
+        <div class="settings-group">
+            <div class="settings-title">— 解析兼容 —</div>
+            <label class="setting-item"><input type="checkbox" data-key="fullWidth"> 全角符号兼容（：｜→）</label>
+            <label class="setting-item"><input type="checkbox" data-key="charBox"> 角色状态紧凑灰框</label>
+            <label class="setting-item"><input type="checkbox" data-key="groupStatus"> 群状态一行格式</label>
+            <label class="setting-item"><input type="checkbox" data-key="resourceBar"> 资源条彩色填充</label>
+            <label class="setting-item"><input type="checkbox" data-key="rankBadge"> 位阶徽章</label>
+        </div>
+        <div class="settings-group">
+            <div class="settings-title">— 主题与界面 —</div>
+            <label class="setting-item"><input type="checkbox" data-key="apocalypseForce"> 强制暗黑风</label>
+            <label class="setting-item"><input type="checkbox" data-key="apocalypseBlock"> 禁用暗黑风</label>
+            <label class="setting-item"><input type="checkbox" data-key="headSub"> 卷首题头</label>
+        </div>
+        <div class="settings-foot">
+            <button id="settingsReset">恢复默认</button>
+            <span class="settings-saved" id="settingsSaved">已保存 ✓</span>
+        </div>
+    </div>
+    <div class="stage">
+        <div class="scroll-frame">
+            <div class="roller roller-top"><i class="cap c-l"></i><i class="cap c-r"></i></div>
+            <div class="scroll">
+                <span class="stain stain-1"></span>
+                <span class="stain stain-2"></span>
+                <div class="fog"></div>
+                <div class="ash"></div>
+                <div class="content" id="battleContent">
+                    <div style="text-align:center; color:#8b6914; font-weight:600; letter-spacing:2px;">─ 展开羊皮卷中 ─</div>
+                </div>
+            </div>
+            <div class="roller roller-bottom"><i class="cap c-l"></i><i class="cap c-r"></i></div>
+        </div>
+    </div>
+    <script>
+        // ===== 判定类型配色：按世界观三系 + 元素着色 =====
+        var TYPE_COLORS = {
+            '武技': { c: '#9a3b2a', i: '⚔' }, '战技': { c: '#a06020', i: '⚒' }, '魔法': { c: '#2a4a8a', i: '✧' }, '神术': { c: '#b8892a', i: '☀' },
+            '火': { c: '#c0392b', i: '🔥' }, '水': { c: '#1f5fa8', i: '💧' }, '风': { c: '#2e8b74', i: '🌪️' },
+            '雷': { c: '#c9a227', i: '⚡' }, '冰': { c: '#6a9ac0', i: '❄️' }, '土': { c: '#9a7a3a', i: '⛰️' },
+            '符文': { c: '#3a5a4a', i: '✳️' }, '塑能': { c: '#4a3a6a', i: '✹' }, '死灵': { c: '#5a3a4a', i: '💀' }, '召唤': { c: '#4a3a6a', i: '✶' }, '暗能': { c: '#3a2a3a', i: '🌑' },
+            '锻造': { c: '#8a4a1a', i: '🔨' }, '炼金': { c: '#2f6a4a', i: '⚗️' }, '工艺': { c: '#7a5a2a', i: '🛠' }
+        };
+        function hexA(hex, a) {
+            var n = parseInt(hex.slice(1), 16);
+            return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+        }
+        function getTypeMeta(text) {
+            var t = text || '';
+            if (/符文/.test(t)) return TYPE_COLORS['符文'];
+            if (/塑能/.test(t)) return TYPE_COLORS['塑能'];
+            if (/死灵|尸术|灵术|亡灵/.test(t)) return TYPE_COLORS['死灵'];
+            if (/召唤/.test(t)) return TYPE_COLORS['召唤'];
+            if (/暗能|暗影|虚空/.test(t)) return TYPE_COLORS['暗能'];
+            if (/神术|圣光|信仰/.test(t)) return TYPE_COLORS['神术'];
+            if (/魔法|术式|术士/.test(t)) {
+                if (/火/.test(t)) return TYPE_COLORS['火'];
+                if (/水/.test(t)) return TYPE_COLORS['水'];
+                if (/风/.test(t)) return TYPE_COLORS['风'];
+                if (/雷/.test(t)) return TYPE_COLORS['雷'];
+                if (/冰/.test(t)) return TYPE_COLORS['冰'];
+                if (/土|岩/.test(t)) return TYPE_COLORS['土'];
+                return TYPE_COLORS['魔法'];
+            }
+            if (/战技/.test(t)) return TYPE_COLORS['战技'];
+            if (/武技|剑|斩|劈|锤|弓|枪|拳/.test(t)) return TYPE_COLORS['武技'];
+            // 生产体系：锻造 / 炼金 / 工艺（附魔、制作）
+            if (/锻造|打造|铁匠|熔炼|淬火|铸/.test(t)) return TYPE_COLORS['锻造'];
+            if (/炼金|药剂|蒸馏|调配|魔药|药水|毒剂/.test(t)) return TYPE_COLORS['炼金'];
+            if (/工艺|制作|制造|附魔|工坊|木工|缝纫/.test(t)) return TYPE_COLORS['工艺'];
+            return null;
+        }
+        // 流派识别：从区块名/文本推断七大魔法流派（元素/符文/塑能/死灵/召唤/圣光/暗能）+ 元素子类，
+        // 用于施法结算按流派差异化染色与专属特效
+        function detectElement(text) {
+            var t = text || '';
+            if (/符文/.test(t)) return 'rune';
+            if (/塑能/.test(t)) return 'kinesis';
+            if (/死灵|尸术|灵术|亡灵/.test(t)) return 'necro';
+            if (/召唤/.test(t)) return 'summon';
+            if (/暗能|暗影|虚空/.test(t)) return 'void';
+            if (/神术|圣光|信仰|光系/.test(t)) return 'holy';
+            if (/火/.test(t)) return 'fire';
+            if (/冰/.test(t)) return 'ice';
+            if (/水/.test(t)) return 'water';
+            if (/风/.test(t)) return 'wind';
+            if (/雷/.test(t)) return 'thunder';
+            if (/土|岩/.test(t)) return 'earth';
+            if (/魔法|术/.test(t)) return 'arcane';
+            return null;
+        }
+        function getPhaseMeta(name) {
+            if (isApocalypse) {
+                if (/符文/.test(name)) return { c: '#3a7a5a', i: '✳️' };
+                if (/塑能/.test(name)) return { c: '#6a5aa8', i: '✹' };
+                if (/死灵|尸术|灵术/.test(name)) return { c: '#6a4a6a', i: '💀' };
+                if (/召唤/.test(name)) return { c: '#5a6aa8', i: '✶' };
+                if (/暗能|暗影|虚空/.test(name)) return { c: '#4a3a4a', i: '🌑' };
+                if (/神术|圣光|信仰/.test(name)) return { c: '#9a8a2a', i: '☀' };
+                if (/魔法|术/.test(name)) return { c: '#7a5ad0', i: '✧' };
+                if (/战技/.test(name)) return { c: '#b0602a', i: '⚒' };
+                if (/攻击|武技/.test(name)) return { c: '#a02030', i: '⚔' };
+                if (/升级/.test(name)) return { c: '#4ae07a', i: '⬆' };
+                // 生产体系（锻造/炼金/工艺）
+                if (/锻造|打造|熔炼|铁匠|淬火|铸/.test(name)) return { c: '#b0602a', i: '🔨' };
+                if (/炼金|药剂|蒸馏|调配/.test(name)) return { c: '#4a8a5a', i: '⚗️' };
+                if (/生产|制作|工艺|附魔|工坊/.test(name)) return { c: '#8a6a3a', i: '🛠' };
+                return { c: '#7a4a6a', i: '⚄' };
+            }
+            if (/符文/.test(name)) return { c: '#3a5a4a', i: '✳️' };
+            if (/塑能/.test(name)) return { c: '#4a3a6a', i: '✹' };
+            if (/死灵|尸术|灵术/.test(name)) return { c: '#5a3a4a', i: '💀' };
+            if (/召唤/.test(name)) return { c: '#4a3a6a', i: '✶' };
+            if (/暗能|暗影|虚空/.test(name)) return { c: '#3a2a3a', i: '🌑' };
+            if (/神术|圣光|信仰/.test(name)) return { c: '#b8892a', i: '☀' };
+            if (/魔法|术/.test(name)) return { c: '#2a4a8a', i: '✧' };
+            if (/战技/.test(name)) return { c: '#a06020', i: '⚒' };
+            if (/攻击|武技/.test(name)) return { c: '#9a3b2a', i: '⚔' };
+            if (/升级/.test(name)) return { c: '#d4af37', i: '⬆' };
+            // 生产体系（锻造/炼金/工艺）
+            if (/锻造|打造|熔炼|铁匠|淬火|铸/.test(name)) return { c: '#8a4a1a', i: '🔨' };
+            if (/炼金|药剂|蒸馏|调配/.test(name)) return { c: '#2f6a4a', i: '⚗️' };
+            if (/生产|制作|工艺|附魔|工坊/.test(name)) return { c: '#7a5a2a', i: '🛠' };
+            return { c: '#a07828', i: '⚄' };
+        }
+        // 位阶徽章：从 MVU 变量读角色等阶（主角经 persona 名匹配 / 同伴直接查表）
+        function getActorRank(name) {
+            try {
+                if (!name) return null;
+                var stat = null;
+                if (typeof Mvu !== 'undefined' && Mvu.getMvuData) {
+                    stat = (Mvu.getMvuData({ type: 'message', message_id: 'latest' }) || {}).stat_data;
+                }
+                if (!stat) return null;
+                var n = String(name).trim();
+                // 主角：经当前 persona 名匹配
+                var heroName = null;
+                try { if (typeof getCurrentPersonaName === 'function') heroName = getCurrentPersonaName(); } catch (e) {}
+                if (heroName && n === String(heroName).trim()) {
+                    var hr = stat.主角 && stat.主角.等阶;
+                    return hr ? String(hr) : null;
+                }
+                // 同伴：直接查表
+                if (stat.同伴 && stat.同伴[n]) {
+                    var cr = stat.同伴[n].等阶;
+                    return cr ? String(cr) : null;
+                }
+                return null;
+            } catch (e) { return null; }
+        }
+        function rankBadgeHtml(rank) {
+            var r = String(rank || '').trim();
+            if (!r) return '';
+            return '<span class="rank-badge rank-' + r + '">◈ ' + r + '</span> ';
+        }
+        // 卷首题记：从酒馆变量读 世界.日期 / 世界.时间 / 世界.当前地点（回退当前位置）
+        function buildHeadSub() {
+            try {
+                var stat = null;
+                if (typeof Mvu !== 'undefined' && Mvu.getMvuData) {
+                    stat = (Mvu.getMvuData({ type: 'message', message_id: 'latest' }) || {}).stat_data;
+                }
+                var w = (stat && stat.世界) || {};
+                var parts = [];
+                if (w.日期) parts.push(String(w.日期));
+                if (w.时间) parts.push(String(w.时间));
+                var loc = w.当前地点 || w.当前位置;
+                if (loc) parts.push(String(loc));
+                return parts.join(' · ') || (isApocalypse ? '终焉纪元 · 莫尔加纳 · 深渊之忆' : '圣光历 · 阿尔比恩王国 · 冒险者公会笔录');
+            } catch (e) {
+                return isApocalypse ? '终焉纪元 · 莫尔加纳 · 深渊之忆' : '圣光历 · 阿尔比恩王国 · 冒险者公会笔录';
+            }
+        }
+        // 卷首副标题：按「卷首题头」开关决定是否渲染
+        function headSubHtml() {
+            return SETTINGS.headSub ? '<div class="head-sub">' + buildHeadSub() + '</div>' : '';
+        }
+        function getTagClass(key, value) {
+            var k = (key || '').toLowerCase();
+            var v = (value || '').toLowerCase();
+            if (/^hp/i.test(k) || /^hp\b/i.test(v)) return 'tag tag-hp';
+            if (/^mp/i.test(k) || /^mp\b/i.test(v)) return 'tag tag-mp';
+            if (/^sp/i.test(k) || /^sp\b/i.test(v)) return 'tag tag-sp';
+            if (/^角色$|^行动者$|^濒死者$|^目标$|^攻方$|^守方$|^施法者$/.test(k)) return 'tag tag-char';
+            if (/^掷骰$|^死亡豁免$/.test(k)) return 'tag tag-dice';
+            // 经验值相关
+            if (/exp|经验值|经验/.test(k) || /^最终获得/.test(k)) return 'tag tag-exp';
+            // 升级相关
+            if (/^总等级$|^未分配属性点$|^待分配职业等级$|^等级提升$/.test(k)) return 'tag tag-levelup';
+            if (/伤害/.test(k)) return 'tag tag-dmg';
+            if (/^防御值$|^防御$|^难度dc$/.test(k)) return 'tag tag-def';
+            if (/^动作$|^技能$|^检定项目$|^招式$|^附赠动作$/.test(k)) return 'tag tag-skill';
+            if (/^资源消耗$|^资源剩余$/.test(k)) return 'tag tag-resource';
+            if (/^先攻序列$|^序列$|^回合/.test(k)) return 'tag tag-round';
+            if (/^环境$/.test(k)) return 'tag tag-env';
+            if (/^状态$|^状态施加$|^状态变更$|^附加状态$|^累计状态$|^状态保留$/.test(k)) return 'tag tag-status';
+            if (/^类型$/.test(k)) return 'tag tag-type';
+            if (/^\s*\d+\s*(?:->|→)\s*\d+\s*$/.test(v)) {
+                var nums = v.match(/(\d+)[\s]*(?:→|->)[\s]*(\d+)/);
+                if (nums && nums.length >= 3) {
+                    return parseInt(nums[2]) < parseInt(nums[1]) ? 'tag tag-change-down' : 'tag tag-change-up';
+                }
+            }
+            if (/^判定结果$|^结果$|^最终结果$/.test(k)) {
+                if (/大成功|暴击|自然20|胜利/.test(v)) return 'tag tag-crit';
+                if (/大失败|自然1|失败|死亡|全灭/.test(v)) return 'tag tag-fail';
+                if (/未命中|未中|失手|落空/.test(v)) return 'tag tag-general';
+                if (/成功|命中|稳定|苏醒/.test(v)) return 'tag tag-hit';
+            }
+            // 生产相关（锻造/防具/炼金/工艺）
+            if (/^制作者$|^工匠$|^铁匠$|^炼金师$/.test(k)) return 'tag tag-char';
+            if (/^材料$|^材料消耗$|^配方$|^原料$|^素材$|^图纸$/.test(k)) return 'tag tag-craft-mat';
+            if (/^成品$|^产出$|^产量$/.test(k)) return 'tag tag-craft-out';
+            if (/^品质$/.test(k)) {
+                if (/史诗|传说|神话|唯一/.test(v)) return 'tag tag-crit';
+                if (/精良|稀有/.test(v)) return 'tag tag-craft-out';
+                return 'tag tag-craft-mat';
+            }
+            if (/^工序$|^步骤$|^耗时$|^工时$|^工坊$|^工具$|^火候$|^锻打$|^淬火$|^熔炼$/.test(k)) return 'tag tag-craft-step';
+            return 'tag tag-general';
+        }
+        function detectRowType(text) {
+            if (!SETTINGS.critHighlight) return ''; // 关闭开关时不做暴击/大失败/升级高亮
+            if (/资源剩余/.test(text)) return 'resource-row';
+            if (/大成功|暴击|自然20|胜利/.test(text)) return 'crit-row';
+            if (/大失败|自然1/.test(text)) return 'fail-row';
+            if (/等级提升|未分配属性点|待分配职业等级/.test(text)) return 'upgrade-row';
+            return '';
+        }
+        // 行图标：只按「键名」与「判定结果值」判断，避免效果/备注文案里的"动作/技能"字样误触发 ⚔
+        function rowIconFromPairs(pairs) {
+            var keys = [], jud = null, typeVal = null;
+            pairs.forEach(function(p) {
+                var i = p.indexOf(':');
+                if (i === -1) return;
+                var k = p.substring(0, i).trim();
+                keys.push(k);
+                if (/^判定结果$|^结果$|^最终结果$/.test(k)) jud = p.substring(i + 1).trim();
+                if (/^类型$/.test(k)) typeVal = p.substring(i + 1).trim();
+            });
+            function has(pat) { for (var x = 0; x < keys.length; x++) { if (pat.test(keys[x])) return true; } return false; }
+            if (has(/^(总等级|未分配属性点|待分配职业等级|等级提升)$/)) return '⬆';
+            if (jud && /大成功|暴击|自然20|胜利/.test(jud)) return '✦';
+            if (jud && /大失败|自然1/.test(jud)) return '☠';
+            // 按「类型」字段着色图标（武技⚔ / 战技⚒ / 魔法✧ / 神术☀ / 元素）
+            var tm = (SETTINGS.flowStyle && typeVal) ? getTypeMeta(typeVal) : null;
+            if (tm) return tm.i;
+            if (has(/^(攻方|守方|动作|技能|招式|附赠动作)$/)) return '⚔';
+            if (has(/^(施法者|法术|魔法)$/)) return '✧';
+            if (has(/^(检定项目|掷骰|死亡豁免)$/)) return '⚄';
+            return '';
+        }
+        // 资源条：把 "45/45" 渲染成按比例填充的色条
+        function resBar(key, value, cls) {
+            var m = value.match(/^(\d+)\s*\/\s*(\d+)$/);
+            if (!m) return null;
+            var cur = parseInt(m[1], 10), max = parseInt(m[2], 10);
+            var pct = max > 0 ? Math.min(100, Math.round(cur / max * 100)) : 0;
+            return '<span class="kv"><span class="key">' + key + '</span><span class="tag ' + cls + ' res-tag"><i class="res-fill" style="width:' + pct + '%"></i><span class="res-text">' + value + '</span></span></span> ';
+        }
+        // 角色状态解析：把「名字 HP x/y MP x/y SP x/y ...」渲染为一个灰色小框（名字 + 各资源数值）
+        // 例：行人 HP 23/23 MP 12/23 / 巨型穴居鼠A/B/C HP 8/8
+        // 兼容紧凑格式（名字与资源、资源与资源之间可有/无空格，尾部可带 (xN) 备注）：
+        //   行人HP 23/23MP 6/23SP 0/0 / 穴居鼠AHP 15/15 / 后方鼠群 HP 15/15 (x4)
+        function charStatusHtml(text) {
+            if (!SETTINGS.charBox) return null; // 关闭开关时回退普通文本/标签渲染
+            var s = String(text || '').trim();
+            if (!s) return null;
+            // 提取全部资源块
+            var res = s.match(/(?:HP|MP|SP)\s*\d+\s*\/\s*\d+/ig);
+            if (!res || res.length === 0) return null;
+            // 名字 = 去掉资源块后的剩余文本；尾部 (xN) 备注单独保留
+            var name = s.replace(/(?:HP|MP|SP)\s*\d+\s*\/\s*\d+/ig, '').trim();
+            var note = '';
+            var nm = name.match(/^(.*?)\s*(\([^)]*\))\s*$/);
+            if (nm) { name = nm[1]; note = nm[2]; }
+            if (!name) return null;
+            var html = '<span class="char-box"><span class="char-name">' + name + '</span>';
+            res.forEach(function(seg) {
+                var rm = seg.match(/^(HP|MP|SP)\s*(\d+)\s*\/\s*(\d+)$/i);
+                if (!rm) return;
+                var cls = rm[1].toLowerCase() === 'hp' ? 'hp' : rm[1].toLowerCase() === 'mp' ? 'mp' : 'sp';
+                html += '<span class="res-mini ' + cls + '">' + rm[1].toUpperCase() + ' ' + rm[2] + '/' + rm[3] + '</span>';
+            });
+            if (note) html += '<span class="char-note">' + note + '</span>';
+            html += '</span>';
+            return html;
+        }
+        // 角色群状态解析：「队伍状态/敌人状态/资源剩余: 名字 HP x/y | MP x/y | SP x/y | 名字2 ...」
+        // 把每个角色的 HP/MP/SP 归入同一个灰框（兼容协议一行全员格式）
+        function groupStatusHtml(text) {
+            if (!SETTINGS.groupStatus || !SETTINGS.charBox) return null;
+            var m = String(text || '').match(/^(队伍状态|敌人状态|队伍|敌人|资源剩余)\s*[:：]\s*([\s\S]+)$/);
+            if (!m) return null;
+            var body = m[2];
+            var tokens = body.split(/\s*\|\s*/).map(function(t) { return t.trim(); }).filter(Boolean);
+            var groups = [];
+            tokens.forEach(function(tok) {
+                if (/^(HP|MP|SP)\s*\d+\s*\/\s*\d+$/i.test(tok)) {
+                    if (!groups.length) groups.push({ name: '', res: [] });
+                    groups[groups.length - 1].res.push(tok);
+                } else {
+                    groups.push({ name: tok, res: [] });
+                }
+            });
+            var html = '';
+            groups.forEach(function(g) {
+                if (!g.name) return;
+                var seg = g.res.length ? (g.name + ' ' + g.res.join(' ')).trim() : g.name;
+                var c = charStatusHtml(seg);
+                if (c) html += c + ' ';
+            });
+            return html || null;
+        }
+        function parseAndRender(rawText) {
+            var contentDiv = document.getElementById('battleContent');
+            if (!rawText || rawText.trim() === '') {
+                contentDiv.innerHTML = '<div style="text-align:center;color:' + (isApocalypse ? '#8a5a6a' : '#a0522d') + ';font-weight:600;letter-spacing:2px;">' + (isApocalypse ? '※ 深渊之中空无一物 ※' : '※ 羊皮卷上未记载任何信息 ※') + '</div>';
+                return;
+            }
+            rawText = rawText.replace(/<\/?(战斗结算|检定结算|升级结算|生产结算)>/g, '');
+              // ☆ 咏唱特效：咏唱中/咏唱完成待释放/前摇 相关值渲染为金色脉动光晕
+              rawText = rawText.replace(/咏唱(?:中|完成待释放|前摇|状态)[：:]\s*[^|\n]{0,40}/g, function(seg){ return '<span class="cast-glow">' + seg + '</span>'; });
+            var lines = rawText.split(/\n/);
+            // 预扫描：为每个区块确定流派（取区块内首个「类型」字段，整块按该流派染色，替代行级染色）
+            var blockElems = [];
+            var blockTypeSet = [];
+            var scanIdx = -1;
+            lines.forEach(function(line, li) {
+                if (!SETTINGS.flowStyle) return; // 关闭七大流派染色时跳过预扫描
+                var st = line.trim();
+                if (SETTINGS.fullWidth) st = st.replace(/：/g, ':');
+                if (/^\{.+\}$/.test(st)) {
+                    // 仅第一行的根级卷首标记（渲染走标题分支、不计数）跳过；其余 {} 均计数（与渲染保持一致）
+                    if (li === 0 && /^[【\{](战斗结算|检定结算|升级结算|生产结算)[】\}]$/.test(st)) return;
+                    scanIdx++;
+                    blockElems[scanIdx] = detectElement(st);
+                    return;
+                }
+                if (scanIdx >= 0 && /(?:^|\|)\s*类型\s*:/.test(st)) {
+                    var stm = st.match(/类型\s*:\s*([^\|]+)/);
+                    if (stm) {
+                        var ste = detectElement(stm[1]);
+                        // 只取区块内首个类型行（避免后续类型行覆盖）
+                        if (ste && !blockTypeSet[scanIdx]) { blockElems[scanIdx] = ste; blockTypeSet[scanIdx] = true; }
+                    }
+                }
+            });
+            var html = '';
+            var inBlock = false;
+            var hasTitle = false;
+            var firstLine = true;
+            var blockIdx = -1;
+            lines.forEach(function(line) {
+                var t = line.trim();
+                if (SETTINGS.fullWidth) t = t.replace(/｜/g, '|').replace(/：/g, ':');
+                if (t === '') return;
+                // 卷首题头：仅第一行若为「战斗结算/检定结算/升级结算」（{} 或 【】 形式）才作为整卷标题
+                if (firstLine && !hasTitle) {
+                    firstLine = false;
+                    var m1 = t.match(/^[【\{](战斗结算|检定结算|升级结算|生产结算)[】\}]$/);
+                    if (m1) {
+                        hasTitle = true;
+                        html += '<div class="scroll-header"><div class="head-orn">' + (isApocalypse ? '⚸ ─── ✦ ─── ⚸' : '❦ ─── ✦ ─── ❦') + '</div><div class="head-title">' + m1[1] + '</div>' + headSubHtml() + '<div class="head-rule"></div></div>';
+                        return;
+                    }
+                    // 首行非根级标记（如 {战况总览 - 第X轮}）：显示通用卷首题头
+                    hasTitle = true;
+                    html += '<div class="scroll-header"><div class="head-orn">' + (isApocalypse ? '⚸ ─── ✦ ─── ⚸' : '❦ ─── ✦ ─── ❦') + '</div><div class="head-title">' + (isApocalypse ? '终焉纪事' : '战斗记录') + '</div>' + headSubHtml() + '<div class="head-rule"></div></div>';
+                }
+                if (/^\{.+\}$/.test(t)) {
+                    var name = t.replace(/[{}]/g, '');
+                    // 判定区块
+                    if (inBlock) html += '</div>';
+                    blockIdx++;
+                    var pm = getPhaseMeta(name);
+                    var elem = SETTINGS.flowStyle ? (blockElems[blockIdx] || detectElement(name)) : null;
+                    var pcls = /神术|圣光|信仰/.test(name) ? 'ph-holy' : (/魔法|术/.test(name) ? 'ph-magic' : (/战技/.test(name) ? 'ph-arts' : (/攻击|武技/.test(name) ? 'ph-weapon' : (/锻造|打造|熔炼|铁匠|炼金|药剂|生产|制作|工艺|附魔|工坊/.test(name) ? 'ph-craft' : 'ph-generic'))));
+                    html += '<div class="phase-block ' + pcls + (elem ? ' elem-' + elem : '') + '">';
+                    inBlock = true;
+                    html += '<div class="phase-marker"><span class="phase-title"><span class="phase-icon">' + pm.i + '</span>' + name + '<span class="phase-icon">' + pm.i + '</span></span></div>';
+                    return;
+                }
+                if (t.indexOf('|') !== -1) {
+                    var clean = t.replace(/^\|\s*/, '').replace(/\s*\|?\s*$/, '');
+                    // 无冒号的经验值更新行：| - 名字 经验值 旧 -> 新/所需 |
+                    var expM = clean.match(/^-\s*(.+?)\s+经验值\s+(\d+)\s*(?:->|→)\s*(\d+)\s*\/\s*(\d+)\s*$/);
+                    if (expM) {
+                        var expDelta = parseInt(expM[3], 10) - parseInt(expM[2], 10);
+                        html += '<div class="data-row exp-update-row"><span class="row-icon">⬆</span><span class="tag tag-char">' + expM[1] + '</span> <span class="tag tag-exp">经验值 ' + expM[2] + ' → ' + expM[3] + '/' + expM[4] + (expDelta > 0 ? '（+' + expDelta + '）' : '') + '</span></div>';
+                        return;
+                    }
+                    if (!/\|[^|]+:/.test(t)) {
+                        html += '<div class="narrative">' + clean + '</div>';
+                        return;
+                    }
+                    var pairs = clean.split(/\s*\|\s*/);
+                    var extra = detectRowType(clean);
+                    var icon = rowIconFromPairs(pairs);
+                    var rowHtml = '<div class="data-row' + (extra ? ' ' + extra : '') + '">';
+                    if (icon) rowHtml += '<span class="row-icon">' + icon + '</span>';
+                    // 行内是否属于 EXP 结算（EXP计算/经验值更新/最终获得EXP）→ 后续无 key 片段统一染绿 tag-exp
+                    var rowExp = /(?:EXP计算|基础EXP总计|最终获得EXP|经验值更新|经验值|EXP)/i.test(clean);
+                    // 位阶徽章：识别行内角色名（角色/行动者/攻方/守方/施法者），从 MVU 变量读等阶
+                    var actorName = null, actorRank = null, rankIn = false;
+                    var hasRankField = false; // 行内是否已有「位阶:」文本字段（有则不再插徽章，避免重复）
+                    if (SETTINGS.rankBadge) {
+                        // 先独立扫描所有 pair，确认是否已有「位阶:」字段（不能在找到角色名后 break，否则漏检位阶）
+                        for (var hf = 0; hf < pairs.length; hf++) {
+                            var hfi = pairs[hf].indexOf(':');
+                            if (hfi === -1) continue;
+                            if (/^位阶$/.test(pairs[hf].substring(0, hfi).trim())) { hasRankField = true; break; }
+                        }
+                        for (var ri = 0; ri < pairs.length; ri++) {
+                            var rci = pairs[ri].indexOf(':');
+                            if (rci === -1) continue;
+                            var rkey = pairs[ri].substring(0, rci).trim();
+                            if (/^(角色|行动者|攻方|守方|施法者)$/.test(rkey)) {
+                                actorName = pairs[ri].substring(rci + 1).trim().replace(/(?:HP|MP|SP)\s*\d+\s*\/\s*\d+/ig, '').trim();
+                                break;
+                            }
+                        }
+                        if (actorName) actorRank = getActorRank(actorName);
+                    }
+                    var pushRank = function() { if (actorRank && !rankIn && !hasRankField) { rowHtml += rankBadgeHtml(actorRank); rankIn = true; } };
+                    var rowDone = false;
+                    pairs.forEach(function(pair) {
+                        if (rowDone) return;
+                        if (!pair.trim()) return;
+                        var idx = pair.indexOf(':');
+                        if (idx !== -1) {
+                            var key = pair.substring(0, idx).trim();
+                            var value = pair.substring(idx + 1).trim();
+                            if (!value) value = '---';
+                            // 角色状态行：value 形如「名字 HP x/y MP x/y ...」→ 名字标签 + 资源条
+                            if (SETTINGS.groupStatus && SETTINGS.charBox && /^(队伍状态|敌人状态|队伍|敌人|资源剩余)$/.test(key)) {
+                                // 群状态（协议一行全员格式）：整行按角色分组，HP/MP/SP 归入同一灰框
+                                var gst = groupStatusHtml(clean);
+                                if (gst) { rowHtml += '<span class="key">' + key + '</span> ' + gst + ' '; rowDone = true; return; }
+                            }
+                            if (/^(角色|行动者|攻方|守方|施法者|目标|濒死者)$/.test(key)) {
+                                var cst = charStatusHtml(value);
+                                if (cst) { pushRank(); rowHtml += '<span class="key">' + key + '</span> ' + cst + ' '; return; }
+                            }
+                            var cls = getTagClass(key, value);
+                            // 原始逐项格式「角色名: HP x/y」→ 角色标签 + 资源条（键名为角色名，值恰为单个资源对）
+                            var resOnly = value.match(/^(HP|MP|SP)\s+(\d+)\s*\/\s*(\d+)$/i);
+                            if (resOnly && key !== '类型' && SETTINGS.charBox) {
+                                pushRank();
+                                var rcls = resOnly[1].toLowerCase() === 'hp' ? 'hp' : resOnly[1].toLowerCase() === 'mp' ? 'mp' : 'sp';
+                                rowHtml += '<span class="char-box"><span class="char-name">' + key + '</span><span class="res-mini ' + rcls + '">' + resOnly[1].toUpperCase() + ' ' + resOnly[2] + '/' + resOnly[3] + '</span></span> ';
+                                return;
+                            }
+                            // HP/MP/SP 资源条
+                            var bar = (/^(hp|mp|sp)$/i.test(key) && SETTINGS.resourceBar) ? resBar(key, value, cls) : null;
+                            if (bar) { pushRank(); rowHtml += bar; return; }
+                            // 类型标签：按体系/元素动态着色
+                            var tmeta = (key === '类型' && SETTINGS.flowStyle) ? getTypeMeta(value) : null;
+                            if (tmeta) {
+                                rowHtml += '<span class="kv"><span class="key">' + key + '</span><span class="tag type-tag" style="border-color:' + tmeta.c + ';color:' + tmeta.c + ';background:linear-gradient(180deg,' + hexA(tmeta.c, .14) + ',' + hexA(tmeta.c, .03) + ');">' + tmeta.i + ' ' + value + '</span></span> ';
+                            } else {
+                                rowHtml += '<span class="kv"><span class="key">' + key + '</span><span class="' + cls + '">' + value + '</span></span> ';
+                            }
+                        } else {
+                            var fragment = pair.trim();
+                            // 紧凑角色状态片段：如「千早 HP 33/33 SP 21/21」
+                            var cstFrag = charStatusHtml(fragment);
+                            if (cstFrag) { rowHtml += cstFrag + ' '; return; }
+                            if (/^HP\s+\d+\/\d+$/i.test(fragment)) rowHtml += resBar('HP', fragment.replace(/^HP\s+/i, ''), 'tag tag-hp');
+                            else if (/^MP\s+\d+\/\d+$/i.test(fragment)) rowHtml += resBar('MP', fragment.replace(/^MP\s+/i, ''), 'tag tag-mp');
+                            else if (/^SP\s+\d+\/\d+$/i.test(fragment)) rowHtml += resBar('SP', fragment.replace(/^SP\s+/i, ''), 'tag tag-sp');
+                            else if (/^HP\b/i.test(fragment)) rowHtml += '<span class="tag tag-hp">' + fragment + '</span> ';
+                            else if (/^MP\b/i.test(fragment)) rowHtml += '<span class="tag tag-mp">' + fragment + '</span> ';
+                            else if (/^SP\b/i.test(fragment)) rowHtml += '<span class="tag tag-sp">' + fragment + '</span> ';
+                            else if (/^\s*\d+\s*(?:->|→)\s*\d+\s*$/.test(fragment)) {
+                                var fn = fragment.match(/(\d+)[\s]*(?:->|→)[\s]*(\d+)/);
+                                var fcls = parseInt(fn[2]) < parseInt(fn[1]) ? 'tag tag-change-down' : 'tag tag-change-up';
+                                rowHtml += '<span class="' + fcls + '">' + fragment + '</span> ';
+                            }
+                            else if (/→|->/.test(fragment)) rowHtml += '<span class="' + (rowExp ? 'tag tag-exp' : 'tag tag-general') + '">' + fragment + '</span> ';
+                            else if (fragment) rowHtml += '<span class="kv"><span class="' + (rowExp ? 'tag tag-exp' : 'val-text') + '">' + fragment + '</span></span> ';
+                        }
+                    });
+                    rowHtml += '</div>';
+                    html += rowHtml;
+                } else if (/^-{2,}$/.test(t)) {
+                    html += '<div class="divider"></div>';
+                } else if (/^\[.+\]$/.test(t)) {
+                    html += '<div class="sub-head">' + t.replace(/[\[\]]/g, '') + '</div>';
+                } else if (/^(EXP计算|基础EXP总计|最终获得EXP|经验值更新|备注|资源剩余|战果简述|队伍状态|敌人状态)$/.test(t)) {
+                    html += '<div class="label-row">' + t + '</div>';
+                } else {
+                    // 角色状态行（紧凑格式：行人HP 23/23MP 6/23SP 0/0 等）→ 灰框，与队伍/敌人状态保持一致的视觉
+                    var cstLine = charStatusHtml(t);
+                    if (cstLine) {
+                        html += '<div class="data-row resource-row"><span class="row-icon">✦</span>' + cstLine + '</div>';
+                        return;
+                    }
+                    // 无包裹的经验值更新行：| 名字 经验值 旧 -> 新/所需 |（AI 可能不带 | 前缀，逐人一行）
+                    var expLine = t.trim().match(/^(.+?)\s+经验值\s+(\d+)\s*(?:->|→)\s*(\d+)\s*\/\s*(\d+)\s*$/);
+                    if (expLine) {
+                        var expDelta2 = parseInt(expLine[3], 10) - parseInt(expLine[2], 10);
+                        html += '<div class="data-row exp-update-row"><span class="row-icon">⬆</span><span class="tag tag-char">' + expLine[1] + '</span> <span class="tag tag-exp">经验值 ' + expLine[2] + ' → ' + expLine[3] + '/' + expLine[4] + (expDelta2 > 0 ? '（+' + expDelta2 + '）' : '') + '</span></div>';
+                        return;
+                    }
+                    html += '<div class="narrative">' + t + '</div>';
+                }
+            });
+            if (inBlock) html += '</div>';
+            html += '<div class="scroll-footer"><span class="foot-orn">─ ✦ ─</span><span>' + (isApocalypse ? '魔潮吞没至此' : '记录至此 · 冒险者公会') + '</span><span class="foot-orn">─ ✦ ─</span><span class="foot-seal">' + (isApocalypse ? '魔' : '印') + '</span></div>';
+            contentDiv.innerHTML = html;
+        }
+        function init() {
+            try {
+                var raw = document.getElementById('rawData').innerText || '';
+                parseAndRender(raw);
+            } catch (e) {
+                document.getElementById('battleContent').innerHTML = '<div style="color:#8b2222; text-align:center;font-weight:600;">※ 卷轴破损，无法解读 ※</div>';
+            }
+        }
+        // ===== 渲染设置系统：勾选选项即开关对应正则/功能 =====
+        // 持久化：localStorage（本机记忆）+ 酒馆聊天变量「战斗轮渲染设置」（跨设备），读取优先级 localStorage > 聊天变量 > 默认
+        var DEFAULT_SETTINGS = {
+            flowStyle: true,       // 七大流派整块染色（流派底色/边框/标题/角标/纹理）
+            flowFx: true,          // 流派角标与背景纹理特效
+            critHighlight: true,   // 暴击/大失败/升级高亮行
+            fullWidth: true,       // 全角符号兼容（：→:、｜→|、→）
+            charBox: true,         // 角色状态紧凑灰框（行人 HP 23/23 之类）
+            groupStatus: true,     // 群状态一行格式（队伍状态/敌人状态 一行全员）
+            resourceBar: true,     // 资源条彩色填充（HP/MP/SP 按比例色条）
+            apocalypseForce: false, // 强制暗黑风
+            apocalypseBlock: false, // 禁用暗黑风（两者都关时跟随聊天变量「终焉纪元IF线」）
+            headSub: true,          // 卷首题头（日期/地点副标题）
+            rankBadge: true         // 位阶徽章（从变量读角色等阶，显示在资源条旁）
+        };
+        var SETTINGS = {};
+        var isApocalypse = false;
+        var DEFAULT_TYPE_COLORS = {};
+        (function() { for (var k in TYPE_COLORS) DEFAULT_TYPE_COLORS[k] = { c: TYPE_COLORS[k].c, i: TYPE_COLORS[k].i }; })();
+        function loadSettings() {
+            var s = {};
+            try {
+                var raw = null;
+                try { if (window.localStorage) raw = localStorage.getItem('battle_scroll_settings_v1'); } catch (e) {}
+                if (!raw && typeof getVariables === 'function') {
+                    try { raw = getVariables({ type: 'chat' })['战斗轮渲染设置'] || null; } catch (e) {}
+                }
+                if (raw) s = JSON.parse(raw) || {};
+            } catch (e) { s = {}; }
+            SETTINGS = {};
+            for (var k in DEFAULT_SETTINGS) SETTINGS[k] = (typeof s[k] === 'boolean') ? s[k] : DEFAULT_SETTINGS[k];
+        }
+        function saveSettings() {
+            try {
+                var j = JSON.stringify(SETTINGS);
+                try { if (window.localStorage) localStorage.setItem('battle_scroll_settings_v1', j); } catch (e) {}
+                try {
+                    if (typeof insertOrAssignVariables === 'function') {
+                        insertOrAssignVariables({ name: '战斗轮渲染设置', value: j, type: 'chat' });
+                    }
+                } catch (e) {}
+            } catch (e) {}
+        }
+        // 应用开关到全局：暗黑风三态（强制开/强制关/跟随聊天变量）+ 流派特效类
+        function applySettings() {
+            document.body.classList.toggle('flowfx-off', !SETTINGS.flowFx);
+            var varDark = false;
+            try { if (typeof getVariables === 'function') varDark = !!getVariables({ type: 'chat' })['终焉纪元IF线']; } catch (e) {}
+            // 优先级：禁用暗黑风（硬性关）> 强制暗黑风（硬性开）> 跟随聊天变量「终焉纪元IF线」
+            isApocalypse = SETTINGS.apocalypseBlock ? false : (SETTINGS.apocalypseForce ? true : varDark);
+            document.body.classList.toggle('apocalypse', isApocalypse);
+            // 先恢复默认类型配色，再按需覆盖为暗黑系（保证开关来回切换不残留）
+            for (var k in DEFAULT_TYPE_COLORS) TYPE_COLORS[k] = { c: DEFAULT_TYPE_COLORS[k].c, i: DEFAULT_TYPE_COLORS[k].i };
+            if (isApocalypse) {
+                TYPE_COLORS['武技'] = { c: '#a02030', i: '⚔' };
+                TYPE_COLORS['战技'] = { c: '#b0602a', i: '⚒' };
+                TYPE_COLORS['魔法'] = { c: '#7a5ad0', i: '✧' };
+                TYPE_COLORS['神术'] = { c: '#9a8a2a', i: '☀' };
+                TYPE_COLORS['火'] = { c: '#c03040', i: '🔥' };
+                TYPE_COLORS['水'] = { c: '#4a6ae0', i: '💧' };
+                TYPE_COLORS['风'] = { c: '#2e8b74', i: '🌪️' };
+                TYPE_COLORS['雷'] = { c: '#8a8a20', i: '⚡' };
+                TYPE_COLORS['冰'] = { c: '#6a9ac0', i: '❄️' };
+                TYPE_COLORS['土'] = { c: '#8a6a4a', i: '⛰️' };
+                TYPE_COLORS['符文'] = { c: '#3a7a5a', i: '✳️' };
+                TYPE_COLORS['塑能'] = { c: '#6a5aa8', i: '✹' };
+                TYPE_COLORS['死灵'] = { c: '#6a4a6a', i: '💀' };
+                TYPE_COLORS['召唤'] = { c: '#5a6aa8', i: '✶' };
+                TYPE_COLORS['暗能'] = { c: '#4a3a4a', i: '🌑' };
+            }
+        }
+        function bindSettings() {
+            var fab = document.getElementById('settingsFab');
+            var panel = document.getElementById('settingsPanel');
+            if (!fab || !panel) return;
+            function closePanel() { panel.classList.remove('open'); fab.classList.remove('active'); }
+            fab.addEventListener('click', function() {
+                panel.classList.toggle('open');
+                fab.classList.toggle('active', panel.classList.contains('open'));
+            });
+            var closeBtn = document.getElementById('settingsClose');
+            if (closeBtn) closeBtn.addEventListener('click', closePanel);
+            var saved = document.getElementById('settingsSaved');
+            function flashSaved() {
+                if (!saved) return;
+                saved.classList.add('show');
+                clearTimeout(saved._t);
+                saved._t = setTimeout(function() { saved.classList.remove('show'); }, 1200);
+            }
+            panel.querySelectorAll('input[data-key]').forEach(function(inp) {
+                var key = inp.getAttribute('data-key');
+                inp.checked = !!SETTINGS[key];
+                inp.addEventListener('change', function() {
+                    SETTINGS[key] = inp.checked;
+                    saveSettings();
+                    applySettings();
+                    init(); // 立即按新开关重新渲染
+                    flashSaved();
+                });
+            });
+            var resetBtn = document.getElementById('settingsReset');
+            if (resetBtn) resetBtn.addEventListener('click', function() {
+                for (var k in DEFAULT_SETTINGS) SETTINGS[k] = DEFAULT_SETTINGS[k];
+                panel.querySelectorAll('input[data-key]').forEach(function(inp) { inp.checked = !!SETTINGS[inp.getAttribute('data-key')]; });
+                saveSettings();
+                applySettings();
+                init();
+                flashSaved();
+            });
+        }
+        $(function() {
+            loadSettings();
+            applySettings();
+            bindSettings();
+            init();
+        });
+    </script>
+</body>
+</html>
+```

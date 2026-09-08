@@ -1,0 +1,294 @@
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生产结算</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: transparent; display: flex; justify-content: center; align-items: flex-start; padding: 8px; font-family: "Noto Serif SC", "Source Han Serif SC", "华文中宋", "楷体", serif; font-weight: 600; }
+        .stage { width: 100%; max-width: 760px; }
+        .scroll-frame { position: relative; padding: 16px 0 20px; }
+        .scroll { width: 100%; position: relative; overflow: hidden; border-radius: 3px; }
+        .content { position: relative; z-index: 2; line-height: 1.85; font-size: 0.95em; animation: scrollIn .65s ease-out; }
+        @keyframes scrollIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+        .scroll {
+            padding: 42px 30px 48px;
+            background:
+                radial-gradient(ellipse at center, transparent 52%, rgba(96,60,20,.20) 100%),
+                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="4" stitchTiles="stitch"/></filter><rect width="120" height="120" filter="url(%23noise)" opacity="0.06"/></svg>'),
+                repeating-linear-gradient(0deg, transparent, transparent 26px, rgba(140,100,50,.04) 26px, rgba(140,100,50,.04) 27px),
+                #f5ead0;
+            color: #3a2718; border: 1px solid #a07840; border-top: 4px double #5a3a1a; border-bottom: 4px double #5a3a1a;
+            box-shadow: 0 12px 30px rgba(0,0,0,.38), inset 0 0 50px rgba(120,80,30,.07), inset 0 -18px 40px rgba(120,80,30,.10);
+        }
+        .stain { position: absolute; border-radius: 50%; pointer-events: none; z-index: 1; }
+        .stain-1 { width: 190px; height: 190px; right: -40px; top: -34px; background: radial-gradient(circle, rgba(150,110,60,.11), transparent 68%); }
+        .stain-2 { width: 150px; height: 150px; left: -36px; bottom: 6px; background: radial-gradient(circle, rgba(120,90,50,.09), transparent 66%); }
+        .scroll::before { content: "❦"; position: absolute; top: 6px; left: 12px; font-size: 14px; color: #a07828; opacity: .55; z-index: 3; }
+        .roller { position: absolute; left: 0; right: 0; height: 14px; background: linear-gradient(180deg,#8a5a2a,#6b3f1c 45%,#8a5a2a 92%); border-radius: 7px; box-shadow: 0 2px 5px rgba(0,0,0,.45), inset 0 1px 2px rgba(255,255,255,.28); z-index: 4; }
+        .roller-top { top: 2px; } .roller-bottom { bottom: 6px; }
+        .roller .cap { position: absolute; top: 50%; transform: translateY(-50%); width: 18px; height: 24px; background: linear-gradient(90deg,#7a4a22,#54300f 60%,#7a4a22); border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,.4); }
+        .roller .cap.c-l { left: -10px; } .roller .cap.c-r { right: -10px; }
+        .scroll-header { text-align: center; margin-bottom: 14px; }
+        .head-orn { color: #a07828; letter-spacing: 6px; font-size: .9em; }
+        .head-title { font-size: 1.6em; font-weight: 800; letter-spacing: 10px; color: #5a3a08; text-shadow: 0 1px 0 rgba(255,255,255,.45); }
+        .head-sub { font-size: .78em; color: #8a6a3a; letter-spacing: 2px; margin-top: 5px; }
+        .head-rule { height: 2px; margin: 12px auto 0; width: 82%; background: linear-gradient(90deg, transparent, #c4a050 20%, #d4af37 50%, #c4a050 80%, transparent); }
+
+        .phase-block { position: relative; margin: 10px 0 16px; padding: 10px 14px 12px 12px; background: linear-gradient(135deg, var(--wash, rgba(232,214,178,.32)), rgba(232,214,178,.30)); border: 1px solid rgba(160,120,64,.28); border-left: 3px solid var(--phase, #c4a050); border-radius: 4px; box-shadow: inset 0 1px 8px rgba(120,80,30,.09), inset 0 -2px 10px rgba(120,80,30,.06); }
+        .phase-block::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; background: linear-gradient(180deg, transparent, var(--phase, #c4a050), transparent); border-radius: 2px; }
+        .phase-marker { text-align: center; margin: 2px 0 10px; padding: 4px 0; }
+        .phase-title { display: inline-block; padding: 4px 20px; background: var(--wash, rgba(180,150,60,.16)); border: 1px solid var(--phase, #c4a050); border-radius: 3px; color: #5a3a08; font-weight: 700; font-size: 1.05em; letter-spacing: 4px; box-shadow: 0 1px 3px rgba(120,80,30,.18); }
+        .phase-icon { display: inline-block; margin: 0 6px; font-size: 1em; color: var(--phase, #a07828); }
+        .data-row { display: flex; flex-wrap: wrap; align-items: center; padding: 5px 0 5px 10px; margin: 3px 0; gap: 5px 12px; border-left: 2px solid rgba(160,120,64,.25); border-radius: 0 3px 3px 0; transition: border-left-color .2s, background .2s; }
+        .data-row:hover { background: rgba(255,248,225,.6); border-left-color: #d4af37; }
+        .kv { display: inline-flex; align-items: flex-start; gap: 4px; max-width: 100%; flex-wrap: wrap; word-break: break-word; overflow-wrap: anywhere; }
+        .key { font-weight: 700; color: #3a2718; font-size: .87em; letter-spacing: .5px; flex-shrink: 0; }
+        .key::after { content: ":"; margin-left: 1px; margin-right: 5px; color: #7a5020; }
+        .val { color: #4a3520; }
+        .key-k-material { color: #8a5a1a; } .key-k-material::after { content: ":"; color: #8a5a1a; }
+        .key-k-proc { color: #9a4a20; } .key-k-proc::after { content: ":"; color: #9a4a20; }
+        .key-k-product { color: #1f7a4a; } .key-k-product::after { content: ":"; color: #1f7a4a; }
+        .key-k-check { color: #5a3a8a; } .key-k-check::after { content: ":"; color: #5a3a8a; }
+        .tag { display: inline-block; padding: 1px 8px; border-radius: 3px; font-size: .85em; border: 1px solid transparent; white-space: nowrap; }
+        .tag-char { background: rgba(180,150,60,.16); border-color: rgba(180,150,60,.5); color: #6a4a10; }
+        .tag-material { background: rgba(140,90,26,.13); border-color: rgba(140,90,26,.4); color: #7a4a12; }
+        .tag-proc { background: rgba(154,74,32,.12); border-color: rgba(154,74,32,.38); color: #8a3f17; }
+        .tag-succ { background: linear-gradient(180deg, rgba(60,140,80,.18), rgba(60,140,80,.08)); border-color: rgba(40,110,60,.5); color: #1f6a3a; }
+        .tag-fail { background: linear-gradient(180deg, rgba(160,50,40,.16), rgba(160,50,40,.06)); border-color: rgba(140,40,32,.45); color: #8a2418; }
+        .tag-crit { background: linear-gradient(180deg, rgba(212,175,55,.30), rgba(212,175,55,.10)); border-color: #d4af37; color: #7a5510; }
+        .product-row { margin: 5px 0; padding: 5px 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: linear-gradient(120deg, rgba(31,122,74,.10), rgba(212,175,55,.08)); border: 1px solid rgba(31,122,74,.30); border-left: 3px solid #1f7a4a; border-radius: 4px; box-shadow: inset 0 0 10px rgba(31,122,74,.05); }
+        .product-label { font-size: .72em; font-weight: 800; color: #1f6a3a; letter-spacing: 2px; padding: 1px 6px; background: rgba(255,255,255,.5); border: 1px solid rgba(31,122,74,.3); border-radius: 3px; }
+        .product-name { font-size: 1em; font-weight: 700; color: #0e5c30; text-shadow: 0 1px 0 rgba(255,255,255,.5), 0 0 6px rgba(31,122,74,.20); letter-spacing: 1px; }
+        .product-attrs { font-size: .88em; color: #4a3520; }
+
+
+        .quality { display: inline-block; padding: 3px 14px; border-radius: 999px; font-weight: 800; letter-spacing: 2px; font-size: .95em; border: 1.5px solid; }
+        .q-普通 { color: #6a6a58; background: linear-gradient(180deg, rgba(120,120,100,.14), rgba(120,120,100,.04)); border-color: #8a8a72; }
+        .q-精良 { color: #2a5a8a; background: linear-gradient(180deg, rgba(50,110,170,.16), rgba(50,110,170,.05)); border-color: #3a7ab0; }
+        .q-稀有 { color: #6a2a9a; background: linear-gradient(180deg, rgba(130,60,180,.16), rgba(130,60,180,.05)); border-color: #8a3ac0; }
+        .q-史诗 { color: #8a5a08; background: linear-gradient(180deg, rgba(212,175,55,.32), rgba(212,175,55,.08)); border-color: #d4af37; box-shadow: 0 0 10px rgba(212,175,55,.35); animation: goldShimmer 2.5s linear infinite; }
+        @keyframes goldShimmer { 0%,100% { box-shadow: 0 0 6px rgba(212,175,55,.30); } 50% { box-shadow: 0 0 16px rgba(212,175,55,.6); } }
+        .q-传说 { color: #b44a08; background: linear-gradient(180deg, rgba(230,120,40,.22), rgba(230,120,40,.06)); border-color: #e07020; box-shadow: 0 0 10px rgba(230,120,40,.4); }
+        .q-神话 { color: #9a1a1a; background: linear-gradient(180deg, rgba(200,40,40,.18), rgba(200,40,40,.05)); border-color: #c03030; box-shadow: 0 0 10px rgba(200,40,40,.4); }
+        .q-唯一 { background: linear-gradient(90deg, #f5d76e, #e8a33d, #c45a3a, #8a4a9a, #3a6ab0); -webkit-background-clip: text; background-clip: text; color: transparent; border-color: #b8882a; filter: drop-shadow(0 0 6px rgba(200,160,60,.5)); }
+        .check-line { margin: 6px 0; padding: 6px 12px; background: rgba(90,58,138,.07); border: 1px solid rgba(90,58,138,.22); border-radius: 4px; font-size: .95em; }
+        .check-dice { font-weight: 800; color: #5a3a8a; }
+        .check-total { font-weight: 900; color: #3a1f6a; }
+        .check-dc { font-weight: 800; color: #8a4a1a; }
+        .arrow-link { color: #9a4a20; font-weight: 700; }
+        .narrative { margin: 8px 0 4px; padding: 8px 12px; font-style: italic; font-size: .86em; color: #5a4433; border-left: 2px solid rgba(140,120,90,.4); background: rgba(140,120,90,.06); }
+        .narrative::before { content: "✎ 叙事 · "; color: #a07828; font-style: normal; font-size: .82em; letter-spacing: 1px; }
+        .scroll-footer { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px; font-size: .8em; color: #8a6a3a; letter-spacing: 1px; }
+        .foot-seal { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; color: #f2d8a0; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #a03a2a, #6a1a10 70%); box-shadow: inset 0 2px 6px rgba(255,255,255,.25), 0 2px 5px rgba(0,0,0,.35); }
+        .err-msg { color: #8b2222; text-align: center; font-weight: 600; padding: 20px; }
+        .raw { display: none; }
+        @media (max-width: 560px) { .scroll { padding: 32px 16px 38px; } .head-title { font-size: 1.25em; letter-spacing: 6px; } }
+    </style>
+</head>
+
+<body>
+    <div class="stage">
+        <div class="scroll-frame">
+            <div class="roller roller-top"><span class="cap c-l"></span><span class="cap c-r"></span></div>
+            <div class="scroll">
+                <div class="stain stain-1"></div>
+                <div class="stain stain-2"></div>
+                <div class="content" id="prodContent"></div>
+            </div>
+            <div class="roller roller-bottom"><span class="cap c-l"></span><span class="cap c-r"></span></div>
+        </div>
+    </div>
+    <div id="rawData" style="display:none;"><生产结算>
+    {锻造结算}
+    | 制作者: [角色] | 类型: 锻造 | 目标成品: [武器名] | 品类: [刀/剑/枪/锤/弓/杖/斧] |
+    | 材料: [矿石/合金×数量] | 材料消耗: [已消耗] | 工具/工坊: [铁砧/熔炉/便携工具] |
+    | 工序: [熔炼→锻打→淬火→打磨] | 火候: [阶段温度] | 耗时: [时长] |
+    | 检定: 铁匠工具 d20([骰值]) + 修正([数值]) = [总值] vs DC [数值] |
+    | 判定结果: [大成功/成功/失败/大失败] | 品质: [普通/精良/稀有/史诗/传说] |
+    | 成品: [武器名] | 属性: [伤害骰/攻击类型/材质/词条] | 产量: [1] |
+  </生产结算>
+  叙事指导: (白描锤击火星、锻打节奏、淬火蒸汽与成品的锋芒)</div>
+
+    <script>
+        // ===== 区块配色：生产概览/锻造/炼金/工艺/附魔 =====
+        var PHASE_META = {
+            '生产概览': { icon: '📜', c: '#b8882a' },
+            '锻造结算': { icon: '🔨', c: '#a05030' },
+            '炼金结算': { icon: '⚗️', c: '#3a7a4a' },
+            '工艺结算': { icon: '🛠', c: '#8a5a2a' },
+            '附魔结算': { icon: '✨', c: '#6a4a8a' }
+        };
+        function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+        // ===== 解析 <生产结算> 文本 → 结构 =====
+        // 返回 { blocks: [{ name, meta, rows: [[key,value]...], narrative }] }
+        function parseProduction(text) {
+            var out = [];
+            if (!text) return out;
+            // 以 <生产结算> 分割（内容到下一个 <生产结算> 或文本结束）；
+            // 闭合标签 </生产结算> 可有可无——因为裸标签注入时浏览器可能把闭合标签丢弃
+            var parts = String(text).split(/<生产结算>\s*/);
+            // 兼容正则只捕获内层内容（不带 <生产结算> 包裹标签）的情况
+            if (parts.length === 1 && String(text).trim()) parts = ['', String(text)];
+            for (var pi = 1; pi < parts.length; pi++) {
+                var chunk = parts[pi].replace(/<\/生产结算>\s*/g, '');
+                // 叙事指导（可能在标签内或标签外）
+                var tailNarr = '';
+                var tm = chunk.match(/叙事指导\s*[:：]\s*([\s\S]*?)(?=\n\s*<生产结算>|$)/);
+                if (tm) tailNarr = tm[1].replace(/^\(|\)$/g, '').replace(/[ \t]+/g, ' ').trim();
+                var blockRe = /\{([^}]+)\}([\s\S]*?)(?=\{[^}]+\}|$)/g, bm;
+                while ((bm = blockRe.exec(chunk)) !== null) {
+                    var name = bm[1].trim();
+                    var body = bm[2] || '';
+                    var meta = PHASE_META[name] || { icon: '⚒', c: '#a07828' };
+                    var rows = [], narrative = '';
+                    body.split(/\r?\n/).forEach(function (line) {
+                        line = line.trim();
+                        if (!line) return;
+                        if (/^叙事指导\s*[:：]/.test(line)) {
+                            narrative = line.replace(/^叙事指导\s*[:：]\s*/, '').replace(/^\(|\)$/g, '').trim();
+                            return;
+                        }
+                        // | 键: 值 | 键: 值 | 拆分
+                        var segs = line.split('|');
+                        segs.forEach(function (seg) {
+                            seg = seg.trim();
+                            if (!seg) return;
+                            var ci = seg.search(/[:：]/);
+                            if (ci > 0) rows.push([seg.slice(0, ci).trim(), seg.slice(ci + 1).trim()]);
+                            else rows.push(['', seg]);
+                        });
+                    });
+                    if (!narrative && tailNarr) narrative = tailNarr;
+                    out.push({ name: name, meta: meta, rows: rows, narrative: narrative });
+                }
+            }
+            return out;
+        }
+
+        // ===== 键名分类（用于键着色） =====
+        function keyClass(k) {
+            if (/材料|工具|工坊|原料|矿石|消耗/.test(k)) return 'key-k-material';
+            if (/工序|火候|耗时|流程/.test(k)) return 'key-k-proc';
+            if (/成品|目标|属性|效果|产量|产出/.test(k)) return 'key-k-product';
+            if (/检定|判定|骰|修正|DC/.test(k)) return 'key-k-check';
+            return '';
+        }
+        // ===== 值渲染：品质/成品/检定/判定结果/工序等 =====
+        function renderVal(key, value) {
+            var v = esc(value), k = key || '';
+            if (/^品质$/.test(k) && /^(普通|精良|稀有|史诗|传说|神话|唯一)$/.test(value.trim())) {
+                return '<span class="quality q-' + value.trim() + '">✦ ' + esc(value.trim()) + '</span>';
+            }
+            if (/^(成品|目标成品|目标)$/.test(k) && value.trim()) {
+                return '<div class="product-row"><span class="product-label">' + (k === '目标成品' ? '目标成品' : (k === '目标' ? '目标' : '成品')) + '</span><span class="product-name">' + v + '</span></div>';
+            }
+            if (/^检定$/.test(k)) {
+                var m = value.match(/([\u4e00-\u9fa5·]+工具|[\u4e00-\u9fa5]+)\s*d20\s*\(\s*(\d+)\s*\)\s*\+\s*(\d+)\s*=\s*(\d+)\s*vs\s*DC\s*(\d+)/i);
+                if (m) {
+                    return '<div class="check-line">⚄ <span class="check-dice">' + esc(m[1]) + ' d20(' + m[2] + ')</span> + <span class="check-dice">' + m[3] + '</span> = <span class="check-total">' + m[4] + '</span> <span style="color:#8a6a3a;">vs</span> DC <span class="check-dc">' + m[5] + '</span></div>';
+                }
+                return '<span class="val">' + v + '</span>';
+            }
+            if (/^判定结果$/.test(k)) {
+                if (/大成功/.test(value)) return '<span class="tag tag-crit">✦ 大成功</span>';
+                if (/大失败|大失敗/.test(value)) return '<span class="tag tag-fail">✖ 大失败</span>';
+                if (/成功/.test(value)) return '<span class="tag tag-succ">✔ 成功</span>';
+                if (/失败/.test(value)) return '<span class="tag tag-fail">✖ 失败</span>';
+                return '<span class="val">' + v + '</span>';
+            }
+            if (/^(工序|火候)$/.test(k)) {
+                return '<span class="val">' + v.replace(/→|->/g, ' <span class="arrow-link">→</span> ') + '</span>';
+            }
+            if (/^材料|材料清单|材料消耗|工具|原料/.test(k)) return '<span class="tag tag-material">' + v + '</span>';
+            if (/^产量$/.test(k)) return '<span class="tag tag-char">× ' + v + '</span>';
+            return '<span class="val">' + v + '</span>';
+        }
+
+
+        // ===== 渲染：结构 → 精美卷轴 HTML =====
+        function buildHeadSub() {
+            try {
+                var stat = null;
+                if (typeof Mvu !== 'undefined' && Mvu.getMvuData) stat = (Mvu.getMvuData({ type: 'message', message_id: 'latest' }) || {}).stat_data;
+                var w = (stat && stat.世界) || {};
+                var parts = [];
+                if (w.日期) parts.push(String(w.日期));
+                if (w.时间) parts.push(String(w.时间));
+                var loc = w.当前地点 || w.当前位置;
+                if (loc) parts.push(String(loc));
+                return parts.join(' · ') || '圣光历 · 工匠坊记录';
+            } catch (e) { return '圣光历 · 工匠坊记录'; }
+        }
+        function renderProduction(text) {
+            var blocks = parseProduction(text);
+            if (!blocks.length) return '<div class="err-msg">※ 未发现生产结算记录 ※</div>';
+            var typeName = '';
+            blocks.forEach(function (b) { if (b.name !== '生产概览' && !typeName) typeName = b.name.replace('结算', ''); });
+            if (!typeName) typeName = '生产';
+            var html = '<div class="scroll-header"><div class="head-orn">─ ✦ ─</div><div class="head-title">' + esc(typeName) + '</div><div class="head-sub">' + esc(buildHeadSub()) + '</div><div class="head-rule"></div></div>';
+            blocks.forEach(function (b) {
+                var c = b.meta.c;
+                html += '<div class="phase-block" style="--phase:' + c + ';--wash:linear-gradient(135deg,' + hexA(c, .16) + ',' + hexA(c, .05) + ');">';
+                html += '<div class="phase-marker"><span class="phase-icon">' + b.meta.icon + '</span><span class="phase-title">' + esc(b.name) + '</span></div>';
+                b.rows.forEach(function (pair) {
+                    var key = pair[0], value = pair[1];
+                    if (!key && !value) return;
+                    var rv = renderVal(key, value);
+                    if (rv.indexOf('<div') === 0) {
+                        html += '<div class="data-row">' + (key ? '<span class="key ' + keyClass(key) + '">' + esc(key) + '</span>' : '') + rv + '</div>';
+                    } else {
+                        html += '<div class="data-row"><span class="kv">' + (key ? '<span class="key ' + keyClass(key) + '">' + esc(key) + '</span>' : '') + rv + '</span></div>';
+                    }
+                });
+                if (b.narrative) html += '<div class="narrative">' + esc(b.narrative) + '</div>';
+                html += '</div>';
+            });
+            html += '<div class="scroll-footer"><span class="foot-orn">─ ✦ ─</span><span>生产记录 · 工匠之卷</span><span class="foot-orn">─ ✦ ─</span><span class="foot-seal">工</span></div>';
+            return html;
+        }
+        // ===== 演示数据（浏览器直接打开 URL 后加 #demo 可预览效果；酒馆正则注入数据时用不到） =====
+        var DEMO_TEXT = '<生产结算>\n  {生产概览}\n  | 制作者: 艾伦 | 工坊: 铁匠铺 | 生产类型: 锻造 |\n  | 目标成品: 精铁长剑 | 图纸/配方: 精铁长剑图纸 |\n  | 材料清单: 精铁锭×2、木炭×5 | 工具要求: 铁砧、熔炉、淬火缸 |\n  | 预计耗时: 4小时 | 预计成本: 精铁锭×2、木炭×5 |\n  叙事指导: (熔炉内壁泛着橘红，铁锭在高温中渐软，铁锤在砧上敲出规律的节奏。)\n  {锻造结算}\n  | 制作者: 艾伦 | 类型: 锻造 | 目标: 精铁长剑 | 品类: 长剑 |\n  | 材料: 精铁锭×2、木炭×5 | 材料消耗: 精铁锭×2、木炭×5 | 工具/工坊: 铁匠铺 |\n  | 工序: 熔炼→锻打→淬火→打磨 | 火候: 高温→中温→冷水 | 耗时: 4小时 |\n  | 检定: 铁匠工具 d20(19) + 5 = 24 vs DC 15 | 判定结果: 大成功 |\n  | 品质: 史诗 | 成品: 精铁长剑 | 属性: 1d10+3挥砍/精铁材质/锋锐词条 | 产量: 1 |\n  叙事指导: (最后一锤落下，火星四溅，淬火的蒸汽腾起，剑身映出一线寒芒。)\n</生产结算>\n';
+        function showWaiting() {
+            document.getElementById('prodContent').innerHTML = '<div style="text-align:center; color:#8a6914; font-weight:600; letter-spacing:2px; padding:32px 0;">─ 展开羊皮卷中 ─</div>';
+        }
+        // 智能读取：#rawData 可能是「裸 <生产结算> 标签注入」（被浏览器当元素，innerHTML 保留字面量）
+        // 也可能是「实体转义注入」（&lt;生产结算&gt;，innerText 解码）。两种都要兼容。
+        function readRawText() {
+            var el = document.getElementById('rawData');
+            if (!el) return '';
+            var h = (el.innerHTML || '').trim();
+            if (!h) return '';
+            if (h.indexOf('&lt;') !== -1) {
+                var t = (el.innerText || h).trim();
+                return t || h;
+            }
+            return h;
+        }
+        function init() {
+            try {
+                var raw = readRawText();
+                // 注意：判断占位符必须用 \x241（运行时即 美元符+1），若写成字面量会被酒馆正则当捕获组替换成多行数据，导致脚本语法错误
+                if (!raw || raw === '\x241') {
+                    if (location.hash === '#demo') raw = DEMO_TEXT;
+                    else { showWaiting(); return; }
+                }
+                document.getElementById('prodContent').innerHTML = renderProduction(raw);
+            } catch (e) {
+                document.getElementById('prodContent').innerHTML = '<div class="err-msg">※ 卷轴破损，无法解读 ※</div>';
+            }
+        }
+        function boot() { init(); }
+        if (typeof $ !== 'undefined' && $.fn) { $(function () { boot(); }); }
+        else if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', boot); }
+        else { boot(); }
+    </script>
+</body>
+</html>
+
+```

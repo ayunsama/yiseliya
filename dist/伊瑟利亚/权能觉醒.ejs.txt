@@ -1,0 +1,101 @@
+<%
+// ============================================================
+//  伊瑟利亚 · 权能觉醒检测（传说级 · 自动授予）
+//  ★ 作用：
+//    1. 自动检测 主角/全部同伴 是否抵达传说级（总等级 ≥ 17）
+//    2. 等级达标且【尚无 权能】→ 输出权能觉醒指令，要求 AI 生成权能
+//       权能 = 传说级存在自身领悟的独特力量（比命格更深层的自悟之力，专属且绝对）
+//       生成依据 = 角色自身的职业 + 能力特色 → 领域型（范围法则）或 个体能力型（自悟绝技）
+//    3. 已有权能但总等级提升 → 输出权能进化提示（允许后续进化，但需剧情驱动）
+//  ★ 部署：作为常驻世界书条目（建议 constant=true，或挂关键词：权能/传说级/觉醒）
+//  ★ 与「状态变量输出」配合：权能数据 AI 可见可写，写入容器
+//     主角: stat_data.主角.资产与能力.权能
+//     同伴: stat_data.同伴[名字].权能（同伴为顶层扁平字段，不再嵌套 资产与能力）
+// ============================================================
+
+// ---- 读取变量 ----
+const _W = getvar('stat_data.世界', { defaults: {} });
+const _主角 = getvar('stat_data.主角', { defaults: {} });
+const _同伴 = getvar('stat_data.同伴', { defaults: {} });
+
+// 传说级门槛：总等级 ≥ 17（对齐 升级代码 RANK_LEVELS：17-20 传说）
+const _LEGEND_LV = 17;
+// 权能容器存在性判断（兼容 缺字段 / 空对象 / 空字符串）
+function _empty(rec) { return !rec || typeof rec !== 'object' || Object.keys(rec).length === 0; }
+// 读取总等级
+function _lvl(actor) { return _.get(actor, '基础状态.总等级', 0) || 0; }
+// 读取职业信息摘要（权能生成依据：职业）
+function _jobs(actor) {
+  const j = _.get(actor, '基础状态.职业信息', {}) || {};
+  return Object.keys(j).length ? Object.entries(j).map(([n, d]) => `${n}(Lv.${d?.等级 ?? 1})`).join('、') : '无职业';
+}
+// 读取基础属性中最高属性（权能生成依据：能力倾向）
+function _topAttr(actor) {
+  const a = actor?.基础属性 || {};
+  const list = [['力量', a.力量], ['敏捷', a.敏捷], ['体质', a.体质], ['智力', a.智力], ['感知', a.感知], ['魅力', a.魅力]];
+  list.sort((x, y) => (y[1] || 0) - (x[1] || 0));
+  return list[0][1] ? `${list[0][0]}${list[0][1]}` : '平均';
+}
+// 单角色权能检查
+function _check(name, actor, pathPrefix, authPath) {
+  const authPatch = authPath.replace(/\./g, '/');  // lodash 用点路径，JSONPatch 用斜杠路径
+  if (!actor || typeof actor !== 'object') return '';
+  const lv = _lvl(actor);
+  if (lv < _LEGEND_LV) return '';
+  const has = !_empty(_.get(actor, authPath, {}));
+  const job = _jobs(actor);
+  const top = _topAttr(actor);
+  // 等级 ≥ 22（神话）额外提示可再领悟一条权能（传说级最多一条，神话可多条，宽松处理）
+  const mythic = lv >= 22;
+  if (!has) {
+    return `<权能觉醒 目标="${name}" 路径="${pathPrefix}.${authPath}" 等级="${lv}" 职业="${job}" 能力倾向="${top}">\n` +
+      `  该角色已抵达传说级（总等级 Lv.${lv}），但尚未领悟任何权能。请为其生成【权能】并写入变量。\n` +
+      `  生成要求：\n` +
+      `    - 依据：基于该角色的职业（${job}）与能力特色（六维倾向：${top}）自悟而来，专属且绝对，不遵循常规力量体系框架。\n` +
+      `    - 类型二选一：\n` +
+      `      ① 领域型（范围法则）——展开一片以自身为中心的区域，区域内发生某种法则级改写（如领域内友方施法消耗减半、敌方增益失效）。\n` +
+      `      ② 个体能力型（自悟绝技）——一件独属于自身的超规格绝技（如每日1次将某项攻击判定翻倍、短暂触及某种法则）。\n` +
+      `    - 命名：权能名 = 「X权能·自悟名」或「领域名」样式，与角色气质/职业呼应。\n` +
+      `    - 描述需含：发动条件/消耗、持续时间或次数、具体效果、代价（若有）。\n` +
+      `    - 严禁：权能重复、与加护/命格/技能同质化、强度失控（参考同层传说级 NPC 的权能强度）。\n` +
+      `  写入方式（MVU JSONPatch）：\n` +
+      `    { "op": "insert", "path": "${pathPrefix}/${authPatch}/权能名", "value": { "描述": "..." } }\n` +
+      `  同时在本轮回复正文中，用以下标签输出权能详情（前端会渲染）：\n` +
+      `<权能>\n` +
+      `  权能名: XXX·YYY\n` +
+      `  持有者: ${name}\n` +
+      `  类型: 领域 | 个体能力\n` +
+      `  来源职业: ${job}\n` +
+      `  描述: ...\n` +
+      `  领域效果: ...（若为领域型）\n` +
+      `  发动: 条件/消耗\n` +
+      `  代价: ...\n` +
+      `</权能>\n` +
+      `</权能觉醒>\n`;
+  }
+  // 已有权能：若达到神话级，提示可再领悟一条
+  if (mythic && Object.keys(_.get(actor, authPath, {})).length < 2) {
+    return `<权能进化 目标="${name}" 路径="${pathPrefix}.${authPath}" 等级="${lv}">\n` +
+      `  该角色已臻至神话级（Lv.${lv}），可再领悟第二条权能（传说级通常仅一条，神话级突破上限）。\n` +
+      `  请按权能生成规则追加一条新权能，并以 <权能> 标签输出详情。\n` +
+      `</权能进化>\n`;
+  }
+  return '';
+}
+%>
+<权能觉醒检测>
+<% const _out = []; %>
+<%
+const _pOut = _check('主角', _主角, '主角', '资产与能力.权能');
+if (_pOut) _out.push(_pOut);
+for (const [_cn, _cp] of Object.entries(_同伴)) {
+  const _cOut = _check(_cn, _cp, `同伴.${_cn}`, '权能');
+  if (_cOut) _out.push(_cOut);
+}
+if (_out.length === 0) {
+  print('  当前无角色抵达传说级或权能状态正常，无需觉醒/进化。\n');
+} else {
+  for (const _o of _out) print(_o);
+}
+%>
+</权能觉醒检测>

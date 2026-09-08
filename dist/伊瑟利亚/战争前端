@@ -1,0 +1,511 @@
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: transparent; display: flex; justify-content: center; align-items: flex-start; padding: 8px; font-family: "Noto Serif SC", "Source Han Serif SC", "华文中宋", "楷体", serif; font-weight: 600; overflow-x: hidden; }
+
+        /* ===== 布局骨架 ===== */
+        .stage { width: 100%; max-width: 760px; }
+        .scroll-frame { position: relative; padding: 16px 0 20px; }
+        .scroll { width: 100%; position: relative; overflow: hidden; border-radius: 3px; }
+        .content { position: relative; z-index: 2; line-height: 1.85; font-size: 0.95em; animation: scrollIn .65s ease-out; }
+        @keyframes scrollIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+        /* ===== 卷轴本体：羊皮纸 + 暗角 + 横线 + 噪点 ===== */
+        .scroll {
+            padding: 40px 32px 46px;
+            background:
+                radial-gradient(ellipse at center, transparent 52%, rgba(96,60,20,.20) 100%),
+                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="4" stitchTiles="stitch"/></filter><rect width="120" height="120" filter="url(%23noise)" opacity="0.06"/></svg>'),
+                repeating-linear-gradient(0deg, transparent, transparent 26px, rgba(140,100,50,.04) 26px, rgba(140,100,50,.04) 27px),
+                #f5ead0;
+            color: #3a2718; border: 1px solid #a07840; border-top: 4px double #5a3a1a; border-bottom: 4px double #5a3a1a;
+            box-shadow: 0 12px 30px rgba(0,0,0,.38), inset 0 0 50px rgba(120,80,30,.07), inset 0 -18px 40px rgba(120,80,30,.10);
+        }
+        .stain { position: absolute; border-radius: 50%; pointer-events: none; z-index: 1; }
+        .stain-1 { width: 190px; height: 190px; right: -40px; top: -34px; background: radial-gradient(circle, rgba(150,110,60,.11), transparent 68%); }
+        .stain-2 { width: 150px; height: 150px; left: -36px; bottom: 6px; background: radial-gradient(circle, rgba(120,90,50,.09), transparent 66%); }
+        .scroll::before { content: "⚔"; position: absolute; top: 6px; left: 12px; font-size: 14px; color: #a07828; opacity: .55; z-index: 3; }
+        .scroll::after { content: "✦"; position: absolute; right: 24px; bottom: 24px; width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #f2d8a0; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #a03a2a, #6a1a10 70%); box-shadow: inset 0 2px 6px rgba(255,255,255,.25), 0 2px 5px rgba(0,0,0,.35); z-index: 3; }
+
+        /* ===== 木质滚轴 ===== */
+        .roller { position: absolute; left: 0; right: 0; height: 14px; background: linear-gradient(180deg,#8a5a2a,#6b3f1c 45%,#8a5a2a 92%); border-radius: 7px; box-shadow: 0 2px 5px rgba(0,0,0,.45), inset 0 1px 2px rgba(255,255,255,.28); z-index: 4; }
+        .roller-top { top: 2px; }
+        .roller-bottom { bottom: 6px; }
+        .roller .cap { position: absolute; top: 50%; transform: translateY(-50%); width: 18px; height: 24px; background: linear-gradient(90deg,#7a4a22,#54300f 60%,#7a4a22); border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,.4); }
+        .roller .cap.c-l { left: -10px; }
+        .roller .cap.c-r { right: -10px; }
+
+        /* ===== 卷首题头 ===== */
+        .scroll-header { text-align: center; margin-bottom: 12px; }
+        .head-orn { color: #a07828; letter-spacing: 6px; font-size: .9em; }
+        .head-title { font-size: 1.55em; font-weight: 800; letter-spacing: 10px; color: #5a3a08; text-shadow: 0 1px 0 rgba(255,255,255,.45); }
+        .head-sub { font-size: .78em; color: #8a6a3a; letter-spacing: 2px; margin-top: 5px; }
+        .head-rule { height: 2px; margin: 12px auto 0; width: 82%; background: linear-gradient(90deg, transparent, #c4a050 20%, #d4af37 50%, #c4a050 80%, transparent); }
+
+        /* ===== 军事沙盘横幅 ===== */
+        .war-band { margin: 4px 0 14px; padding: 12px 14px; background: linear-gradient(135deg, rgba(214,196,180,.35), rgba(232,214,178,.22)); border: 1px solid rgba(140,100,60,.35); border-left: 3px solid #7a5a2a; border-radius: 4px; box-shadow: inset 0 0 18px rgba(120,80,30,.08); }
+        .war-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; border-bottom: 1px dashed rgba(140,100,60,.4); padding-bottom: 8px; }
+        .war-title { font-size: 1.15em; font-weight: 800; color: #5a3a08; letter-spacing: 1px; }
+        .war-day { font-size: .82em; color: #8a6a3a; border: 1px solid rgba(140,100,60,.35); background: rgba(255,250,230,.6); padding: 2px 10px; border-radius: 10px; }
+        .faction-row { display: flex; align-items: stretch; gap: 8px; }
+        .faction-card { flex: 1; min-width: 0; padding: 10px 12px; border-radius: 4px; border: 1px solid; position: relative; }
+        .faction-card.atk { background: linear-gradient(135deg, rgba(154,59,42,.10), rgba(154,59,42,.03)); border-color: rgba(154,59,42,.45); }
+        .faction-card.def { background: linear-gradient(135deg, rgba(42,74,138,.10), rgba(42,74,138,.03)); border-color: rgba(42,74,138,.45); }
+        .faction-head { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+        .faction-side { font-size: .7em; padding: 1px 8px; border-radius: 8px; color: #fff; font-weight: 800; letter-spacing: 1px; }
+        .faction-card.atk .faction-side { background: #9a3b2a; }
+        .faction-card.def .faction-side { background: #2a4a8a; }
+        .faction-name { font-size: 1.02em; font-weight: 800; color: #3a2718; word-break: break-word; }
+        .f-stat { display: flex; align-items: center; gap: 6px; margin: 4px 0; font-size: .84em; }
+        .f-k { color: #7a5020; font-weight: 700; flex-shrink: 0; }
+        .f-v { color: #3a2718; font-weight: 800; }
+        .f-v.troop { font-size: 1.25em; }
+        .faction-card.atk .f-v.troop { color: #9a3b2a; }
+        .faction-card.def .f-v.troop { color: #2a4a8a; }
+        .supply { display: inline-block; padding: 1px 8px; border-radius: 8px; font-size: .78em; font-weight: 800; border: 1px solid; }
+        .supply-full { background: rgba(31,106,58,.14); border-color: #2f7a4f; color: #0e3a22; }
+        .supply-ok { background: rgba(154,154,40,.14); border-color: #7a7a2a; color: #3a3a0e; }
+        .supply-low { background: rgba(154,110,31,.16); border-color: #9a6a1f; color: #5a3a0e; }
+        .supply-empty { background: rgba(154,31,31,.16); border-color: #9a1f1f; color: #7a1414; }
+        .war-vs { display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: .95em; font-weight: 900; color: #a07828; border: 2px solid #a07828; border-radius: 50%; width: 42px; height: 42px; align-self: center; background: rgba(255,250,230,.7); }
+
+        /* ===== 战局天平 ===== */
+        .tide { margin: 10px 0 6px; }
+        .tide-track { position: relative; height: 8px; border-radius: 4px; background: linear-gradient(90deg, rgba(154,59,42,.28), rgba(160,120,64,.28) 50%, rgba(42,74,138,.28)); border: 1px solid rgba(140,100,60,.3); }
+        .tide-fill { position: absolute; top: -4px; width: 16px; height: 16px; border-radius: 50%; background: #a07828; border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.4); transform: translateX(-50%); transition: left .4s; }
+        .tide-labels { display: flex; justify-content: space-between; font-size: .72em; color: #8a6a3a; margin-top: 3px; }
+        .tide-mark { text-align: center; font-size: .82em; font-weight: 800; color: #6b4e31; margin-top: 2px; letter-spacing: 1px; }
+        .war-focus { margin-top: 6px; font-size: .82em; color: #6b4e31; padding: 4px 8px; background: rgba(255,250,230,.5); border-left: 2px solid #a07828; border-radius: 0 3px 3px 0; }
+        .war-situation { margin-top: 6px; font-size: .88em; font-style: italic; color: #5a3a20; padding: 6px 10px; background: rgba(255,248,225,.55); border: 1px dashed rgba(140,100,60,.4); border-radius: 3px; line-height: 1.6; }
+
+        /* ===== 判定区块（战役类型色由 --phase/--wash 注入） ===== */
+        .phase-block { position: relative; margin: 10px 0 16px; padding: 8px 14px 12px 12px; background: linear-gradient(135deg, var(--wash, rgba(232,214,178,.32)), rgba(232,214,178,.30)); border: 1px solid rgba(160,120,64,.28); border-left: 2px solid var(--phase, #c4a050); border-radius: 4px; box-shadow: inset 0 1px 8px rgba(120,80,30,.09), inset 0 -2px 10px rgba(120,80,30,.06); }
+        .phase-block::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; background: linear-gradient(180deg, transparent, var(--phase, #c4a050), transparent); border-radius: 2px; }
+        .phase-marker { text-align: center; margin: 2px 0 10px; padding: 4px 0; position: relative; }
+        .phase-title { display: inline-block; padding: 4px 18px; background: var(--wash, linear-gradient(135deg, rgba(180,150,60,.16), rgba(160,130,50,.08))); border: 1px solid var(--phase, #c4a050); border-radius: 3px; color: #5a3a08; font-weight: 700; font-size: 1.0em; letter-spacing: 3px; box-shadow: 0 1px 2px rgba(120,80,30,.15); }
+        .phase-icon { display: inline-block; margin: 0 6px; font-size: 0.85em; color: var(--phase, #a07828); }
+
+        /* ===== 数据行 ===== */
+        .data-row { display: flex; flex-wrap: wrap; align-items: center; padding: 5px 0 5px 10px; margin: 3px 0; gap: 5px 10px; border-left: 2px solid rgba(160,120,64,.25); border-radius: 0 3px 3px 0; }
+        .data-row:hover { background: rgba(255,248,225,.6); border-left-color: #d4af37; }
+        .row-icon { color: #a07828; font-size: .85em; margin-right: 2px; opacity: .9; }
+        .data-row.crit-row { background: linear-gradient(90deg, rgba(212,175,55,.22), rgba(255,248,200,.06)); border-left-color: #d4af37; }
+        .data-row.fail-row { background: linear-gradient(90deg, rgba(154,31,31,.10), transparent); border-left-color: #9a1f1f; }
+        .data-row.turn-row { background: linear-gradient(90deg, rgba(160,120,64,.12), rgba(160,120,64,.03)); border-left-color: #a07828; }
+        .data-row.turn-row .row-icon { color: #a07828; }
+
+        /* ===== 键值（长文本可折行） ===== */
+        .kv { display: inline-flex; align-items: flex-start; gap: 4px; max-width: 100%; flex-wrap: wrap; word-break: break-word; overflow-wrap: anywhere; }
+        .key { font-weight: 700; color: #3a2718; font-size: .87em; letter-spacing: .5px; flex-shrink: 0; }
+        .key::after { content: ":"; margin-left: 1px; margin-right: 4px; color: #7a5020; }
+
+        /* ===== 标签（水彩化） ===== */
+        .tag { display: inline-block; padding: 2px 9px; border-radius: 3px; font-weight: 700; font-family: "Noto Serif SC", "华文中宋", serif; font-size: 0.9em; border: 1px solid; line-height: 1.5; letter-spacing: 0.3px; margin: 0 2px; max-width: 100%; word-break: break-word; overflow-wrap: anywhere; }
+        .tag-atk { background: linear-gradient(180deg, rgba(154,59,42,.18), rgba(154,59,42,.05)); border-color: #9a3b2a; color: #7a2415; }
+        .tag-def { background: linear-gradient(180deg, rgba(42,74,138,.18), rgba(42,74,138,.05)); border-color: #2a4a8a; color: #12245a; }
+        .tag-supply { background: linear-gradient(180deg, rgba(140,110,40,.18), rgba(140,110,40,.05)); border-color: #8a6a28; color: #4a3a10; }
+        .tag-troop { background: linear-gradient(135deg, #f2e4c8, #e8d4ac); border-color: #a07840; color: #4a2f08; box-shadow: inset 0 1px 3px rgba(120,80,30,.2); font-weight: 800; }
+        .tag-char { background: linear-gradient(135deg, #e4d8c6, #d6c6b2); border-color: #5a4030; color: #241208; box-shadow: inset 0 1px 3px rgba(80,50,30,.18); }
+        .tag-crit { background: linear-gradient(135deg, #fff3c0, #f7df86); border-color: #d4af37; color: #4a2f00; animation: goldGlow 1.5s ease-in-out infinite alternate; }
+        @keyframes goldGlow { from { box-shadow: 0 0 4px rgba(212,175,55,.35); } to { box-shadow: 0 0 12px rgba(212,175,55,.7); } }
+        .tag-fail { background: linear-gradient(135deg, #e3c0bc, #d4a09a); border-color: #8a1f1f; color: #5a0f0f; }
+        .tag-hit { background: linear-gradient(135deg, #d0e4cc, #bad6b4); border-color: #2f7a4f; color: #0e3a22; }
+        .tag-dice { background: linear-gradient(135deg, #f8f0e0, #efe2cc); border-color: #7a5a30; color: #2a1a08; box-shadow: inset 0 1px 3px rgba(100,70,30,.2), 0 1px 3px rgba(0,0,0,.12); font-size: 0.95em; padding: 2px 10px; font-weight: 800; }
+        .tag-dice::before { content: "⚄ "; font-size: 0.9em; opacity: 0.7; }
+        .tag-dmg { background: linear-gradient(135deg, #f8e0c8, #f0d4b0); border-color: #a06020; color: #5a2a00; box-shadow: inset 0 1px 3px rgba(160,96,32,.2); font-weight: 800; }
+        .tag-general { background: linear-gradient(135deg, #f0e8d8, #e8dfc8); border-color: #9a8060; color: #3a2a18; box-shadow: inset 0 1px 2px rgba(120,100,70,.1); }
+        .tag-change-down { background: linear-gradient(135deg, #f0d0c0, #e8c0b0); border-color: #8b3a2a; color: #5a1010; }
+        .tag-change-down::before { content: "▼ "; font-size: 0.7em; }
+        .tag-change-up { background: linear-gradient(135deg, #d0e8d0, #c4dcc4); border-color: #3a6b3a; color: #0a3a0a; }
+        .tag-change-up::before { content: "▲ "; font-size: 0.7em; }
+        .val-text { color: #3a2718; font-weight: 600; word-break: break-word; overflow-wrap: anywhere; }
+
+        /* ===== 资源条（士气比例条） ===== */
+        .res-tag { position: relative; overflow: hidden; padding: 0; }
+        .res-fill { position: absolute; left: 0; top: 0; bottom: 0; }
+        .res-text { position: relative; display: inline-block; padding: 2px 10px; z-index: 1; }
+        .res-tag.tag-atk .res-fill { background: rgba(154,59,42,.30); }
+        .res-tag.tag-def .res-fill { background: rgba(42,74,138,.28); }
+
+        /* ===== 叙事 ===== */
+        .narrative { margin: 8px 0; padding: 8px 14px; font-style: italic; font-weight: 500; color: #4a3018; border-left: 3px solid #c4a050; background: linear-gradient(90deg, rgba(255,248,225,.5), transparent); border-radius: 0 4px 4px 0; line-height: 1.9; }
+
+        /* ===== 推演区 ===== */
+        .war-tactics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+        @media (max-width: 520px) { .war-tactics { grid-template-columns: 1fr; } }
+        .tactic-col { padding: 8px 10px; border-radius: 4px; font-size: .84em; line-height: 1.6; }
+        .tactic-col .tc-title { font-weight: 800; letter-spacing: 1px; margin-bottom: 4px; }
+        .tactic-col.atk { background: linear-gradient(135deg, rgba(154,59,42,.10), rgba(154,59,42,.02)); border: 1px dashed rgba(154,59,42,.4); }
+        .tactic-col.atk .tc-title { color: #9a3b2a; }
+        .tactic-col.def { background: linear-gradient(135deg, rgba(42,74,138,.10), rgba(42,74,138,.02)); border: 1px dashed rgba(42,74,138,.4); }
+        .tactic-col.def .tc-title { color: #2a4a8a; }
+
+        /* ===== 事件结算 ===== */
+        .divider { height: 1px; margin: 10px auto; width: 70%; background: linear-gradient(90deg, transparent, #c4a050, transparent); border: none; }
+        .sub-head { margin: 8px 0 2px; padding: 2px 10px; font-size: .85em; font-weight: 700; color: #5a3a08; background: linear-gradient(90deg, rgba(180,150,60,.10), transparent); border-left: 2px solid #c4a050; letter-spacing: 1px; }
+        .label-row { margin: 12px 0 3px; font-size: .82em; font-weight: 700; color: #8a6a3a; letter-spacing: 2px; border-bottom: 1px dashed rgba(160,120,64,.35); padding-bottom: 2px; }
+
+        /* ===== 落款 ===== */
+        .scroll-footer { margin-top: 22px; padding-top: 10px; text-align: center; color: #8a6a3a; font-size: .85em; letter-spacing: 2px; border-top: 1px dashed rgba(160,120,64,.4); }
+        .foot-orn { margin: 0 8px; color: #a07828; }
+        .foot-seal { display: inline-block; margin-left: 10px; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #b04030, #7a1a10 75%); color: #f2d8a0; font-size: 9px; line-height: 22px; text-align: center; box-shadow: inset 0 1px 3px rgba(255,255,255,.3), 0 1px 3px rgba(0,0,0,.35); }
+
+        /* ===== 响应式 ===== */
+        @media screen and (max-width: 480px) {
+            .scroll-frame { padding: 14px 0 18px; }
+            .scroll { padding: 34px 16px 40px; }
+            .content { font-size: 0.85em; line-height: 1.7; }
+            .data-row { padding: 4px 0 4px 8px; gap: 4px 6px; }
+            .key { font-size: 0.82em; }
+            .tag { padding: 2px 6px; font-size: 0.82em; }
+            .head-title { font-size: 1.25em; letter-spacing: 6px; }
+            .head-sub { font-size: 0.72em; }
+            .phase-block { padding: 6px 10px 10px; }
+            .phase-title { padding: 3px 12px; font-size: 0.88em; letter-spacing: 2px; }
+            .roller { height: 11px; }
+            .narrative { padding: 6px 10px; font-size: 0.88em; line-height: 1.7; }
+            .faction-row { flex-direction: column; }
+            .war-vs { transform: rotate(90deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="rawData" style="display:none;">$1</div>
+    <div class="stage">
+        <div class="scroll-frame">
+            <div class="roller roller-top"><i class="cap c-l"></i><i class="cap c-r"></i></div>
+            <div class="scroll">
+                <span class="stain stain-1"></span>
+                <span class="stain stain-2"></span>
+                <div class="content" id="battleContent">
+                    <div style="text-align:center; color:#8b6914; font-weight:600; letter-spacing:2px;">─ 展开军情战报中 ─</div>
+                </div>
+            </div>
+            <div class="roller roller-bottom"><i class="cap c-l"></i><i class="cap c-r"></i></div>
+        </div>
+    </div>
+    <script>
+        // ===== 战役类型配色（伊瑟利亚军事沙盘：攻城=赭红 / 会战=群青 / 围城=灰蓝 / 突袭=暗红 / 议和=鎏金 / 默认=金棕） =====
+        function hexA(hex, a) {
+            var n = parseInt(hex.slice(1), 16);
+            return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+        }
+        function phaseMeta(name) {
+            if (/攻城/.test(name)) return { c: '#9a3b2a', i: '⚔' };
+            if (/会战|决战/.test(name)) return { c: '#2a4a8a', i: '⚔' };
+            if (/围城|围困/.test(name)) return { c: '#5a6a7a', i: '⛨' };
+            if (/突围|奇袭|伏击/.test(name)) return { c: '#8a2a1a', i: '⚔' };
+            if (/遭遇/.test(name)) return { c: '#a06020', i: '⚔' };
+            if (/议和|外交|谈判|休战/.test(name)) return { c: '#b8892a', i: '☮' };
+            if (/推演|战局/.test(name)) return { c: '#a07828', i: '✦' };
+            if (/结算|结果|终局/.test(name)) return { c: '#d4af37', i: '⚔' };
+            return { c: '#a07828', i: '⚔' };
+        }
+        // 粮草档位样式
+        function supplyCls(v) {
+            var s = String(v || '');
+            if (/充裕/.test(s)) return 'supply-full';
+            if (/充足/.test(s)) return 'supply-ok';
+            if (/紧缺/.test(s)) return 'supply-low';
+            if (/告急|耗尽/.test(s)) return 'supply-empty';
+            return 'supply-ok';
+        }
+        // 键值标签分类（国战版：攻/守方、兵力/士气、粮草、变化、结果等）
+        function getTagClass(key, value) {
+            var k = (key || '').toLowerCase();
+            var v = (value || '').toLowerCase();
+            // 数值变化优先（支持小数与「万」单位）：X -> Y
+            if (/^\s*[\d.]+\s*万?\s*(?:->|→)\s*[\d.]+\s*万?\s*$/.test(v)) {
+                var nums = v.match(/([\d.]+)\s*(万)?\s*(?:→|->)\s*([\d.]+)\s*(万)?/);
+                if (nums && nums.length >= 5) {
+                    // 带「万」的数值先 ×10000 再比较，避免 1万 vs 9100 误判
+                    var chg1 = parseFloat(nums[1]) * (nums[2] ? 10000 : 1);
+                    var chg2 = parseFloat(nums[3]) * (nums[4] ? 10000 : 1);
+                    return chg2 < chg1 ? 'tag tag-change-down' : 'tag tag-change-up';
+                }
+            }
+            if (/^攻方|^攻军/.test(k)) return 'tag tag-atk';
+            if (/^守方|^守军/.test(k)) return 'tag tag-def';
+            if (/^主帅|^将领|^指挥官/.test(k)) return 'tag tag-char';
+            if (/^粮草|^补给|^后勤/.test(k)) return 'tag tag-supply';
+            if (/^兵力|^军力/.test(k)) return 'tag tag-troop';
+            if (/^策略判定$|^策略掷骰$|^策略骰$/.test(k)) return 'tag tag-dice';
+            if (/^策略伤害$/.test(k)) return 'tag tag-dmg';
+            if (/^判定结果$/.test(k)) {
+                if (/大成功|暴击|自然20|完胜/.test(v)) return 'tag tag-crit';
+                if (/大失败|自然1|惨败|溃败/.test(v)) return 'tag tag-fail';
+                if (/失败/.test(v)) return 'tag tag-fail';
+                if (/成功/.test(v)) return 'tag tag-hit';
+            }
+            if (/^结果$|^战果$/.test(k)) {
+                if (/破城|溃败|大捷|全歼|征服|胜利/.test(v)) return 'tag tag-crit';
+                if (/失守|败北|惨败|覆灭|投降|失败/.test(v)) return 'tag tag-fail';
+                if (/守住|成功|击退/.test(v)) return 'tag tag-hit';
+                if (/僵持|休战|议和/.test(v)) return 'tag tag-general';
+            }
+            if (/^转折$|^关键/.test(k)) return 'tag tag-general';
+            return 'tag tag-general';
+        }
+        // 资源条（士气 78/100 之类）
+        function resBar(key, value, cls) {
+            var m = value.match(/^(\d+)\s*\/\s*(\d+)$/);
+            if (!m) return null;
+            var cur = parseInt(m[1], 10), max = parseInt(m[2], 10);
+            var pct = max > 0 ? Math.min(100, Math.round(cur / max * 100)) : 0;
+            var keyHtml = key ? '<span class="key">' + key + '</span>' : '';
+            return '<span class="kv">' + keyHtml + '<span class="tag ' + cls + ' res-tag"><i class="res-fill" style="width:' + pct + '%"></i><span class="res-text">' + value + '</span></span></span> ';
+        }
+        // 势力卡渲染
+        function factionCard(side, name, st, cls) {
+            var h = '<div class="faction-card ' + cls + '">';
+            h += '<div class="faction-head"><span class="faction-side">' + side + '</span><span class="faction-name">' + String(name || '?') + '</span></div>';
+            if (st.兵力) h += '<div class="f-stat"><span class="f-k">兵力</span><span class="f-v troop">' + st.兵力 + '</span></div>';
+            if (st.士气) {
+                var bar = resBar('士气', st.士气, cls === 'atk' ? 'tag tag-atk' : 'tag tag-def');
+                if (bar) h += '<div class="f-stat"><span class="f-k">士气</span>' + bar.replace('<span class="key">士气</span>', '') + '</div>';
+            }
+            if (st.粮草) h += '<div class="f-stat"><span class="f-k">粮草</span><span class="supply ' + supplyCls(st.粮草) + '">' + st.粮草 + '</span></div>';
+            if (st.主帅) h += '<div class="f-stat"><span class="f-k">主帅</span><span class="f-v">' + st.主帅 + '</span></div>';
+            h += '</div>';
+            return h;
+        }
+        // 战局天平
+        function tideHtml(tide) {
+            var left = 50;
+            if (/攻方占优|攻方优势/.test(tide)) left = 70;
+            else if (/守方占优|守方优势/.test(tide)) left = 30;
+            var h = '<div class="tide"><div class="tide-track"><div class="tide-fill" style="left:' + left + '%"></div></div>';
+            h += '<div class="tide-labels"><span>攻方</span><span>胶着</span><span>守方</span></div>';
+            h += '<div class="tide-mark">⚖ 战局：' + tide + '</div></div>';
+            return h;
+        }
+        // 主解析渲染
+        function parseAndRender(rawText) {
+            var contentDiv = document.getElementById('battleContent');
+            if (!rawText || rawText.trim() === '') {
+                contentDiv.innerHTML = '<div style="text-align:center;color:#a0522d;font-weight:600;letter-spacing:2px;">※ 军情未达，战报未书 ※</div>';
+                return;
+            }
+            // 按顶层战报块提取：只渲染战报块内容，忽略 AI 输出中的周围正文。
+            // ★ 协议标准包裹标签为 <战争结算>...</战争结算>（见世界书 [国战回合协议] 模板），兼容旧写 <国战结算>。
+            var warBlocks = rawText.match(/<(战争结算|国战结算)>[\s\S]*?<\/(战争结算|国战结算)>/g);
+            if (warBlocks && warBlocks.length) {
+                rawText = warBlocks.map(function(b) { return b.replace(/<\/?(战争结算|国战结算|国战|战报)>/g, ''); }).join('\n');
+            } else {
+                // ★ 无标准包裹（AI 漏闭合标签 / 城战等未用顶层包裹的格式）：绝不整段渲染，
+                //   否则会把战报前后的正常叙事正文一起吞进前端（污染）。只截取战报特征区并剔除纯散文行。
+                var anchor = rawText.search(/\{国战总览|\{城战结算|\{战争总览|^[^\S\n]*\|[^|]*(战争|攻方|守方|战局)[:：]/m);
+                if (anchor === -1) {
+                    contentDiv.innerHTML = '<div style="text-align:center;color:#a0522d;font-weight:600;letter-spacing:2px;">※ 未检测到战争战报（需含「{国战总览 / {城战结算」或「| 战争:」数据行）※</div>';
+                    return;
+                }
+                var subLines = rawText.slice(anchor).split(/\n/);
+                rawText = subLines.filter(function(l) {
+                    var t = l.trim();
+                    if (t === '') return true;                 // 空行保留
+                    if (/^\{.*\}$/.test(t)) return true;       // 阶段块 {攻城战 - X}
+                    if (/^\[.+\]$/.test(t)) return true;       // 小节标题 [战局推演]
+                    if (t.indexOf('|') !== -1) return true;    // 数据行（| 键: 值）
+                    return false;                              // 纯散文叙事行 → 剔除，防止正文污染
+                }).join('\n');
+            }
+            var lines = rawText.split(/\n/);
+            // ===== 预扫描：国战总览（构建军事沙盘） =====
+            var meta = { war: '', atk: '', def: '', day: '', atkSt: {}, defSt: {}, tide: '', focus: '', situation: '' };
+            var inOverview = false;
+            lines.forEach(function(line) {
+                var t = line.trim();
+                if (/^\{国战总览/.test(t)) { inOverview = true; var dm = t.match(/第\s*(\d+)\s*日/); if (dm) meta.day = dm[1]; return; }
+                if (!inOverview) return;
+                if (/^\{/.test(t)) { inOverview = false; return; }
+                if (t.indexOf('|') === -1) { if (t && !meta.situation) meta.situation = t; return; }
+                var clean = t.replace(/^\|\s*/, '').replace(/\s*\|?\s*$/, '');
+                var pairs = clean.split(/\s*\|\s*/);
+                var first = pairs[0].trim();
+                var fi = first.indexOf(':');
+                if (fi !== -1) {
+                    var fk = first.substring(0, fi).trim();
+                    var fv = first.substring(fi + 1).trim();
+                    if (fk === '战争') {
+                        meta.war = fv;
+                        for (var pi = 1; pi < pairs.length; pi++) {
+                            var qi = pairs[pi].indexOf(':');
+                            if (qi === -1) continue;
+                            var qk = pairs[pi].substring(0, qi).trim();
+                            var qv = pairs[pi].substring(qi + 1).trim();
+                            if (qk === '攻方') meta.atk = qv;
+                            else if (qk === '守方') meta.def = qv;
+                        }
+                        return;
+                    }
+                    if ((fk === '攻方' || fk === '守方') && /兵力/.test(fv)) {
+                        var st = fk === '攻方' ? meta.atkSt : meta.defSt;
+                        st.兵力 = fv.replace(/^兵力\s*/, '');
+                        // 后续裸项/带冒号项：士气 78/100 / 粮草 充足 / 主帅 X / 兵力 Y
+                        for (var pj = 1; pj < pairs.length; pj++) {
+                            var seg = pairs[pj].trim();
+                            var sm = seg.match(/^(士气|粮草|主帅|兵力)\s*[:：]?\s*(.+)$/);
+                            if (!sm) continue;
+                            var sk2 = sm[1], sv2 = sm[2].trim();
+                            if (sk2 === '士气') st.士气 = sv2;
+                            else if (sk2 === '粮草') st.粮草 = sv2;
+                            else if (sk2 === '主帅') st.主帅 = sv2;
+                            else if (sk2 === '兵力') st.兵力 = sv2;
+                        }
+                        return;
+                    }
+                    if (fk === '战局') meta.tide = fv;
+                    else if (fk === '焦点') meta.focus = fv;
+                    else if (fk === '态势') meta.situation = fv;
+                }
+            });
+            // ===== 渲染 =====
+            var html = '';
+            // 卷首题头
+            html += '<div class="scroll-header"><div class="head-orn">⚔ ─── ✦ ─── ⚔</div><div class="head-title">国战战报</div><div class="head-sub">' + (meta.war ? meta.war : '势力纷争 · 战局纪要') + '</div><div class="head-rule"></div></div>';
+            // 军事沙盘
+            if (meta.atk || meta.def || meta.tide || meta.situation) {
+                html += '<div class="war-band">';
+                html += '<div class="war-head"><span class="war-title">⚔ ' + (meta.war || '国战') + '</span>' + (meta.day ? '<span class="war-day">战争第 ' + meta.day + ' 日</span>' : '') + '</div>';
+                if (meta.atk || meta.def) {
+                    html += '<div class="faction-row">';
+                    if (meta.atkSt) html += factionCard('攻方', meta.atk, meta.atkSt, 'atk');
+                    html += '<div class="war-vs">VS</div>';
+                    if (meta.defSt) html += factionCard('守方', meta.def, meta.defSt, 'def');
+                    html += '</div>';
+                }
+                if (meta.tide) html += tideHtml(meta.tide);
+                if (meta.focus) html += '<div class="war-focus">📌 焦点：' + meta.focus + '</div>';
+                if (meta.situation) html += '<div class="war-situation">' + meta.situation + '</div>';
+                html += '</div>';
+            }
+            // 主循环：渲染总览之外的行
+            var inBlock = false;
+            var inOverview = false;
+            lines.forEach(function(line) {
+                var t = line.trim();
+                if (t === '') return;
+                if (inOverview) {
+                    if (/^\{/.test(t)) inOverview = false;
+                    else return; // 跳过总览块内的行（已沙盘化）
+                }
+                if (/^\{国战总览/.test(t)) { inOverview = true; return; }
+                if (/^\{.+\}$/.test(t)) {
+                    var name = t.replace(/[{}]/g, '');
+                    if (inBlock) html += '</div>';
+                    var pm = phaseMeta(name);
+                    html += '<div class="phase-block" style="--phase:' + pm.c + ';--wash:linear-gradient(135deg,' + hexA(pm.c, .16) + ',' + hexA(pm.c, .06) + ')">';
+                    inBlock = true;
+                    html += '<div class="phase-marker"><span class="phase-title"><span class="phase-icon">' + pm.i + '</span>' + name + '<span class="phase-icon">' + pm.i + '</span></span></div>';
+                    return;
+                }
+                if (t.indexOf('|') !== -1) {
+                    var clean = t.replace(/^\|\s*/, '').replace(/\s*\|?\s*$/, '');
+                    if (!/\|[^|]+:/.test(t)) { html += '<div class="narrative">' + clean + '</div>'; return; }
+                    var pairs = clean.split(/\s*\|\s*/);
+                    var isTurn = false;
+                    // 行图标：策略判定 ⚄ / 策略伤害 💥 / 判定结果 ✦☠
+                    var rowIcon = '';
+                    var keysList = [];
+                    pairs.forEach(function(p) { var ii = p.indexOf(':'); if (ii !== -1) keysList.push(p.substring(0, ii).trim()); });
+                    if (keysList.indexOf('策略判定') !== -1) rowIcon = '⚄';
+                    else if (keysList.indexOf('策略伤害') !== -1) rowIcon = '💥';
+                    else if (keysList.indexOf('判定结果') !== -1) {
+                        var jv = '';
+                        pairs.forEach(function(p) { var ii = p.indexOf(':'); if (ii !== -1 && p.substring(0, ii).trim() === '判定结果') jv = p.substring(ii + 1).trim(); });
+                        if (/大成功|暴击|完胜/.test(jv)) rowIcon = '✦';
+                        else if (/大失败|惨败/.test(jv)) rowIcon = '☠';
+                    }
+                    var rowHtml = '<div class="data-row' + (isTurn ? '' : '') + '">';
+                    if (rowIcon) rowHtml += '<span class="row-icon">' + rowIcon + '</span>';
+                    pairs.forEach(function(pair) {
+                        if (!pair.trim()) return;
+                        var idx = pair.indexOf(':');
+                        if (idx !== -1) {
+                            var key = pair.substring(0, idx).trim();
+                            var value = pair.substring(idx + 1).trim();
+                            if (!value) value = '---';
+                            var cls = getTagClass(key, value);
+                            if (/^转折$|^关键/.test(key)) { isTurn = true; }
+                            rowHtml += '<span class="kv"><span class="key">' + key + '</span><span class="' + cls + '">' + value + '</span></span> ';
+                        } else {
+                            var fragment = pair.trim();
+                            if (/^\s*[\d.]+\s*万?\s*(?:->|→)\s*[\d.]+\s*万?\s*$/.test(fragment)) {
+                                var fn = fragment.match(/([\d.]+)\s*(万)?\s*(?:→|->)\s*([\d.]+)\s*(万)?/);
+                                var fchg1 = parseFloat(fn[1]) * (fn[2] ? 10000 : 1);
+                                var fchg2 = parseFloat(fn[3]) * (fn[4] ? 10000 : 1);
+                                var fcls = fchg2 < fchg1 ? 'tag tag-change-down' : 'tag tag-change-up';
+                                rowHtml += '<span class="' + fcls + '">' + fragment + '</span> ';
+                            } else if (/→|->/.test(fragment)) {
+                                rowHtml += '<span class="tag tag-general">' + fragment + '</span> ';
+                            } else if (fragment) {
+                                rowHtml += '<span class="kv"><span class="val-text">' + fragment + '</span></span> ';
+                            }
+                        }
+                    });
+                    if (isTurn) rowHtml = rowHtml.replace('<div class="data-row', '<div class="data-row turn-row') + '<span class="row-icon" style="float:right;opacity:.6;">✦</span>';
+                    rowHtml += '</div>';
+                    html += rowHtml;
+                    return;
+                }
+                if (/^-{2,}$/.test(t)) { html += '<div class="divider"></div>'; return; }
+                if (/^\[战局推演\]$/.test(t)) { html += '<div class="sub-head">⚔ 战局推演</div>'; return; }
+                if (/^\[.+\]$/.test(t)) { html += '<div class="sub-head">' + t.replace(/[\[\]]/g, '') + '</div>'; return; }
+                // 推演内容（攻方优势/隐患 | 守方优势/隐患）→ 分栏
+                if (/攻方优势|守方优势|攻方隐患|守方隐患/.test(t) && t.indexOf('|') !== -1) {
+                    var tc = t.replace(/^\|\s*/, '').replace(/\s*\|?\s*$/, '').split(/\s*\|\s*/);
+                    html += '<div class="war-tactics">';
+                    tc.forEach(function(seg) {
+                        var si = seg.indexOf(':');
+                        if (si === -1) return;
+                        var sk = seg.substring(0, si).trim();
+                        var sv = seg.substring(si + 1).trim();
+                        var isAtk = /攻方/.test(sk);
+                        html += '<div class="tactic-col ' + (isAtk ? 'atk' : 'def') + '"><div class="tc-title">' + (isAtk ? '⚔ 攻方' : '⛨ 守方') + ' · ' + (/优势/.test(sk) ? '优势' : '隐患') + '</div>' + sv + '</div>';
+                    });
+                    html += '</div>';
+                    return;
+                }
+                if (/^(结果|影响|战果|损失|态势|焦点|战争|攻方兵力|守方兵力|攻方士气|守方士气)$/.test(t)) { html += '<div class="label-row">' + t + '</div>'; return; }
+                html += '<div class="narrative">' + t + '</div>';
+            });
+            if (inBlock) html += '</div>';
+            html += '<div class="scroll-footer"><span class="foot-orn">─ ✦ ─</span><span>战报记 · 军情处</span><span class="foot-orn">─ ✦ ─</span><span class="foot-seal">报</span></div>';
+            contentDiv.innerHTML = html;
+        }
+        // 获取楼层原文：优先 #rawData（$1 占位，测试环境可能已填充）；否则从当前楼层聊天记录读取（酒馆助手标准方式）
+        function getRawText() {
+            var rawEl = document.getElementById('rawData');
+            if (rawEl) {
+                var t = rawEl.innerText || rawEl.textContent || '';
+                if (t && t.trim() !== '' && t.indexOf('$1') === -1) return t;
+            }
+            try {
+                var mid = getCurrentMessageId();
+                var msgs = getChatMessages(mid);
+                if (msgs && msgs.length && msgs[0].message) {
+                    return msgs[0].message;
+                }
+            } catch (e) {
+                console.warn('⚠ 读取楼层原文失败:', e);
+            }
+            return '';
+        }
+        function init() {
+            try {
+                var raw = getRawText();
+                parseAndRender(raw);
+            } catch (e) {
+                document.getElementById('battleContent').innerHTML = '<div style="color:#8b2222; text-align:center;font-weight:600;">※ 战报损毁，无法解读 ※</div>';
+            }
+        }
+        $(function() { init(); });
+    </script>
+</body>
+</html>
+```

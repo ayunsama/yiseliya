@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>盲目的莉莉娅 · 时间残响对话框</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: transparent; padding: 10px; }
+
+        .lilith-wrapper {
+            position: relative;
+            display: flex;
+            align-items: stretch;
+            max-width: 720px;
+            margin: 5px auto;
+            background: linear-gradient(160deg, #241a10 0%, #3a2b1c 45%, #2a2016 70%, #1c140c 100%);
+            border: 1px solid #e2b96f;
+            border-radius: 18px;
+            box-shadow: 0 4px 22px rgba(15, 10, 40, 0.6), inset 0 0 24px rgba(226, 185, 111, 0.06);
+            overflow: hidden;
+            animation: fadeInLilith 0.5s ease-in-out;
+            gap: 0;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .lilith-wrapper:hover {
+            box-shadow: 0 8px 34px rgba(226, 185, 111, 0.24), inset 0 0 28px rgba(226, 185, 111, 0.08);
+            border-color: #f0c870;
+        }
+        @keyframes fadeInLilith {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 时钟刻度微纹理 */
+        .lilith-wrapper::before {
+            content: '';
+            position: absolute; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                repeating-conic-gradient(from 0deg at 50% 18%, rgba(226, 185, 111, 0.10) 0deg 1deg, transparent 1deg 30deg),
+                radial-gradient(ellipse 90% 40% at 50% 0%, rgba(240, 212, 138, 0.10), transparent 70%);
+        }
+        .lilith-wrapper::after {
+            content: '✧ ⌛ ✦ ⌛ ✧';
+            position: absolute; top: 6px; right: 16px; z-index: 0; pointer-events: none;
+            font-size: 10px; letter-spacing: 12px; color: rgba(226, 185, 111, 0.22);
+            animation: lilith-drift 3.6s ease-in-out infinite;
+        }
+        @keyframes lilith-drift {
+            0%, 100% { opacity: 0.22; transform: translateY(0); }
+            50% { opacity: 0.55; transform: translateY(3px); }
+        }
+        .lilith-corner {
+            position: absolute; width: 15px; height: 15px; z-index: 3; pointer-events: none;
+            border-color: #e2b96f; border-style: solid; opacity: 0.55;
+        }
+        .lilith-corner.tl { top: 5px; left: 5px; border-width: 2px 0 0 2px; }
+        .lilith-corner.tr { top: 5px; right: 5px; border-width: 2px 2px 0 0; }
+
+        .lilith-avatar {
+            flex-shrink: 0; width: 108px; min-height: 108px;
+            display: flex; align-items: center; justify-content: center;
+            padding: 14px 0 14px 16px; align-self: center; position: relative; z-index: 2;
+        }
+        .lilith-avatar .avatar-ring {
+            position: absolute; top: 50%; left: 50%; width: 96px; height: 96px;
+            transform: translate(-46%, -50%);
+            border-radius: 50%; border: 1.5px dashed rgba(226, 185, 111, 0.55);
+            animation: lilith-spin 26s linear infinite; pointer-events: none;
+        }
+        @keyframes lilith-spin { to { transform: translate(-46%, -50%) rotate(360deg); } }
+        .lilith-avatar img {
+            position: relative; display: block; width: 84px; height: 84px;
+            object-fit: cover; object-position: center top; border-radius: 50%;
+            border: 2px solid rgba(226, 185, 111, 0.85);
+            box-shadow: 0 0 18px rgba(226, 185, 111, 0.3), 0 0 38px rgba(226, 185, 111, 0.12);
+            opacity: 0; transition: transform 0.4s ease, opacity 0.5s ease; z-index: 1;
+        }
+        .lilith-avatar img.img-loaded { opacity: 1; }
+        .lilith-wrapper:hover .lilith-avatar img { transform: scale(1.05) rotate(-2deg); }
+        .lilith-avatar .avatar-fallback {
+            position: absolute; top: 50%; left: 50%; width: 84px; height: 84px;
+            transform: translate(-46%, -50%);
+            border-radius: 50%; border: 2px solid rgba(226, 185, 111, 0.6);
+            background: radial-gradient(circle at 35% 30%, rgba(226, 185, 111, 0.16), rgba(60, 40, 20, 0.1));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 36px; color: #f0d48a; text-shadow: 0 0 18px rgba(240, 212, 138, 0.6);
+            pointer-events: none; z-index: 0;
+        }
+        .lilith-avatar.has-img .avatar-fallback { display: none; }
+
+        .lilith-dialogue {
+            flex-grow: 1; padding: 20px 22px 18px 14px; display: flex; flex-direction: column;
+            justify-content: center; min-width: 0; position: relative; z-index: 2;
+        }
+        .lilith-text-card {
+            position: relative; padding: 10px 14px; border-radius: 10px;
+            background: linear-gradient(180deg, rgba(240, 212, 138, 0.05), rgba(226, 185, 111, 0.03));
+            border: 1px solid rgba(226, 185, 111, 0.18);
+            box-shadow: inset 0 1px 6px rgba(240, 212, 138, 0.05);
+        }
+        .lilith-text-card::before, .lilith-text-card::after {
+            content: ''; position: absolute; top: 30%; bottom: 30%; width: 1px;
+            background: linear-gradient(180deg, transparent, rgba(226, 185, 111, 0.5), transparent);
+        }
+        .lilith-text-card::before { left: 5px; }
+        .lilith-text-card::after { right: 5px; }
+
+        .lilith-name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 10px; }
+        .lilith-name {
+            font-size: 15px; font-weight: 700; letter-spacing: 1px; white-space: nowrap;
+            background: linear-gradient(90deg, #fff6d8, #f0d48a, #b8860b);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .lilith-title-tag {
+            font-size: 10px; padding: 2px 10px; border-radius: 10px; font-weight: 500; letter-spacing: 0.5px;
+            white-space: nowrap; background: rgba(226, 185, 111, 0.12); color: #d8b870;
+            border: 1px solid rgba(226, 185, 111, 0.3);
+        }
+        .lilith-moods { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; max-width: 100%; }
+        .lilith-mood {
+            display: inline-flex; align-items: center; font-size: 12px; font-weight: 500;
+            padding: 3px 14px; border-radius: 20px; letter-spacing: 0.3px; line-height: 1.5;
+            white-space: nowrap; transition: all 0.25s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .lilith-mood:hover { transform: translateY(-1px); box-shadow: 0 3px 12px rgba(240, 212, 138, 0.22); }
+        .lilith-mood.mood-positive { background: linear-gradient(135deg, rgba(226,185,111,0.2), rgba(226,185,111,0.1)); border: 1px solid rgba(226,185,111,0.5); color: #ffe9b0; }
+        .lilith-mood.mood-neutral { background: linear-gradient(135deg, rgba(180,190,210,0.14), rgba(180,190,210,0.06)); border: 1px solid rgba(180,190,210,0.3); color: #a8b4c8; }
+        .lilith-mood.mood-negative { background: linear-gradient(135deg, rgba(142,108,190,0.16), rgba(142,108,190,0.08)); border: 1px solid rgba(142,108,190,0.4); color: #c3a8e8; }
+        .lilith-mood.mood-dramatic { background: linear-gradient(135deg, rgba(240,212,138,0.22), rgba(240,212,138,0.1)); border: 1px solid rgba(240,212,138,0.55); color: #ffe9b0; }
+
+        .lilith-text { font-size: 15px; color: #d4d4dc; line-height: 1.8; word-wrap: break-word; overflow-wrap: break-word; }
+        .lilith-footer {
+            display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px;
+            font-size: 11px; color: #d8b870; opacity: 0.4; letter-spacing: 2px;
+        }
+        .lilith-footer .line { width: 40px; height: 1px; background: linear-gradient(90deg, transparent, #d4b478); }
+        .lilith-footer .line.r { background: linear-gradient(-90deg, transparent, #d4b478); }
+
+        @media (max-width: 540px) {
+            .lilith-wrapper { margin: 5px 0; border-radius: 14px; }
+            .lilith-avatar { width: 76px; min-height: 76px; padding: 10px 0 10px 10px; }
+            .lilith-avatar img, .lilith-avatar .avatar-fallback { width: 60px; height: 60px; font-size: 26px; }
+            .lilith-avatar .avatar-ring { width: 70px; height: 70px; }
+            .lilith-dialogue { padding: 14px 16px 14px 8px; }
+            .lilith-name { font-size: 13px; }
+            .lilith-mood { font-size: 11px; padding: 2px 12px; }
+            .lilith-text { font-size: 14px; line-height: 1.7; }
+        }
+        @media (max-width: 380px) {
+            .lilith-avatar { width: 58px; min-height: 58px; padding: 8px 0 8px 6px; }
+            .lilith-avatar img, .lilith-avatar .avatar-fallback { width: 46px; height: 46px; font-size: 20px; }
+            .lilith-avatar .avatar-ring { width: 54px; height: 54px; }
+            .lilith-dialogue { padding: 10px 12px 10px 6px; }
+            .lilith-name { font-size: 12px; }
+            .lilith-title-tag { font-size: 9px; padding: 0 8px; }
+            .lilith-mood { font-size: 10px; padding: 1px 10px; }
+            .lilith-text { font-size: 13px; line-height: 1.6; }
+        }
+    </style>
+</head>
+<body>
+    <div id="main-container"></div>
+
+    <script>
+        function getMoodTheme(emotion) {
+            const positive = ['开心', '快乐', '微笑', '温柔', '温暖', '感动', '欣慰', '得意', '俏皮', '调皮', '活泼', '兴奋', '期待', '害羞', '脸红', '甜蜜', '灿烂', '阳光', '自信', '惊喜', '激动', '爱慕', '心动', '傲娇', '天然', '元气'];
+            const negative = ['难过', '悲伤', '失落', '沮丧', '忧郁', '孤独', '愤怒', '生气', '恼火', '嫉妒', '焦虑', '恐惧', '害怕', '不安', '病娇', '黑化', '绝望', '悲悯'];
+            const dramatic = ['惊喜', '感动', '激动', '震撼', '疯狂', '痴迷', '崇拜', '爱慕', '心动', '傲娇', '病娇', '黑化', '威严', '庄严'];
+            if (dramatic.includes(emotion)) return 'dramatic';
+            if (positive.includes(emotion)) return 'positive';
+            if (negative.includes(emotion)) return 'negative';
+            return 'neutral';
+        }
+        function splitEmotions(raw) {
+            if (!raw || typeof raw !== 'string') return [];
+            return raw.split(/[,，、\/\s|]+/).map(s => s.trim()).filter(s => s.length > 0);
+        }
+        function init() {
+            try {
+                let emotionRaw = `$1`;
+                let textRaw = `$2`;
+                const emotionList = splitEmotions(emotionRaw);
+                const finalEmotions = emotionList.length > 0 ? emotionList : ['平静'];
+                const text = textRaw.trim();
+                if (!text || text === '$2') return;
+                const avatarUrl = 'https://zora404.dpdns.org/file/1787590937509_image.png';
+                let moodsHtml = '';
+                finalEmotions.forEach((emotion, index) => {
+                    const theme = getMoodTheme(emotion);
+                    moodsHtml += `<span class="lilith-mood mood-${theme}" style="animation: fadeInLilith 0.4s ease ${index * 50}ms both;">${emotion}</span>`;
+                });
+                const html = `
+                    <div class="lilith-wrapper">
+                        <span class="lilith-corner tl"></span><span class="lilith-corner tr"></span>
+                        <div class="lilith-avatar" id="lilith-avatar-container">
+                            <div class="avatar-ring"></div>
+                            <div class="avatar-fallback">⌛</div>
+                            <img src="${avatarUrl}" alt="盲目的莉莉娅" loading="lazy" onload="this.classList.add('img-loaded'); document.getElementById('lilith-avatar-container').classList.add('has-img');" onerror="this.remove();">
+                        </div>
+                        <div class="lilith-dialogue">
+                            <div class="lilith-name-row">
+                                <span class="lilith-name">✧ 盲目的莉莉娅</span>
+                                <span class="lilith-title-tag">回溯的英灵 · 时之祭司</span>
+                                <div class="lilith-moods">${moodsHtml}</div>
+                            </div>
+                            <div class="lilith-text-card"><div class="lilith-text">${text}</div></div>
+                            <div class="lilith-footer"><span class="line"></span>⌛ ✦ 时间回响 ✦ ⌛<span class="line r"></span></div>
+                        </div>
+                    </div>`;
+                document.getElementById('main-container').innerHTML = html;
+            } catch (error) {
+                console.error('[莉莉娅渲染] 错误:', error);
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>索利昂 · 圣辉对话框</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: transparent; padding: 10px; }
+
+        .soleia-wrapper {
+            position: relative;
+            display: flex;
+            align-items: stretch;
+            max-width: 720px;
+            margin: 5px auto;
+            background: linear-gradient(160deg, #1b2a4a 0%, #243b66 45%, #3a4a7a 70%, #2b3a5e 100%);
+            border: 1px solid #e8c878;
+            border-radius: 18px;
+            box-shadow: 0 4px 22px rgba(20, 30, 70, 0.6), inset 0 0 24px rgba(232, 200, 120, 0.06);
+            overflow: hidden;
+            animation: fadeInSoleia 0.5s ease-in-out;
+            gap: 0;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .soleia-wrapper:hover {
+            box-shadow: 0 8px 34px rgba(232, 200, 120, 0.24), inset 0 0 28px rgba(232, 200, 120, 0.08);
+            border-color: #f5d990;
+        }
+        @keyframes fadeInSoleia {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 顶层柔光 */
+        .soleia-wrapper::before {
+            content: '';
+            position: absolute; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 90% 40% at 50% 0%, rgba(255, 244, 210, 0.16), transparent 70%),
+                radial-gradient(ellipse 70% 30% at 50% 100%, rgba(232, 200, 120, 0.10), transparent 70%);
+        }
+        /* 星辉粒子 */
+        .soleia-wrapper::after {
+            content: '✧ ☀ ✦ ✧ ☀ ✦';
+            position: absolute; top: 6px; right: 16px; z-index: 0; pointer-events: none;
+            font-size: 10px; letter-spacing: 14px; color: rgba(240, 212, 138, 0.22);
+            animation: soleia-drift 3.4s ease-in-out infinite;
+        }
+        @keyframes soleia-drift {
+            0%, 100% { opacity: 0.22; transform: translateY(0); }
+            50% { opacity: 0.55; transform: translateY(3px); }
+        }
+        /* 四角圣辉饰角 */
+        .soleia-corner {
+            position: absolute; width: 15px; height: 15px; z-index: 3; pointer-events: none;
+            border-color: #e8c878; border-style: solid; opacity: 0.55;
+        }
+        .soleia-corner.tl { top: 5px; left: 5px; border-width: 2px 0 0 2px; }
+        .soleia-corner.tr { top: 5px; right: 5px; border-width: 2px 2px 0 0; }
+
+        .soleia-avatar {
+            flex-shrink: 0; width: 108px; min-height: 108px;
+            display: flex; align-items: center; justify-content: center;
+            padding: 14px 0 14px 16px; align-self: center; position: relative; z-index: 2;
+        }
+        .soleia-avatar .avatar-ring {
+            position: absolute; top: 50%; left: 50%; width: 96px; height: 96px;
+            transform: translate(-46%, -50%);
+            border-radius: 50%; border: 1.5px solid rgba(232, 200, 120, 0.5);
+            animation: soleia-halo 3s ease-in-out infinite; pointer-events: none;
+        }
+        @keyframes soleia-halo {
+            0%, 100% { box-shadow: 0 0 10px rgba(240, 212, 138, 0.2); opacity: 0.7; }
+            50% { box-shadow: 0 0 24px rgba(240, 212, 138, 0.5); opacity: 1; }
+        }
+        .soleia-avatar img {
+            position: relative; display: block; width: 84px; height: 84px;
+            object-fit: cover; object-position: center top; border-radius: 50%;
+            border: 2px solid rgba(232, 200, 120, 0.85);
+            box-shadow: 0 0 18px rgba(232, 200, 120, 0.3), 0 0 38px rgba(232, 200, 120, 0.12);
+            opacity: 0; transition: transform 0.4s ease, opacity 0.5s ease; z-index: 1;
+        }
+        .soleia-avatar img.img-loaded { opacity: 1; }
+        .soleia-wrapper:hover .soleia-avatar img { transform: scale(1.05) rotate(2deg); }
+        .soleia-avatar .avatar-fallback {
+            position: absolute; top: 50%; left: 50%; width: 84px; height: 84px;
+            transform: translate(-46%, -50%);
+            border-radius: 50%; border: 2px solid rgba(232, 200, 120, 0.6);
+            background: radial-gradient(circle at 35% 30%, rgba(232, 200, 120, 0.18), rgba(90, 120, 200, 0.08));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 38px; color: #f0d48a; text-shadow: 0 0 18px rgba(240, 212, 138, 0.6);
+            pointer-events: none; z-index: 0;
+        }
+        .soleia-avatar.has-img .avatar-fallback { display: none; }
+
+        .soleia-dialogue {
+            flex-grow: 1; padding: 20px 22px 18px 14px; display: flex; flex-direction: column;
+            justify-content: center; min-width: 0; position: relative; z-index: 2;
+        }
+        /* 正文浮层卡片 */
+        .soleia-text-card {
+            position: relative; padding: 10px 14px; border-radius: 10px;
+            background: linear-gradient(180deg, rgba(255, 244, 210, 0.05), rgba(232, 200, 120, 0.03));
+            border: 1px solid rgba(232, 200, 120, 0.18);
+            box-shadow: inset 0 1px 6px rgba(255, 244, 210, 0.05);
+        }
+        .soleia-text-card::before, .soleia-text-card::after {
+            content: ''; position: absolute; top: 30%; bottom: 30%; width: 1px;
+            background: linear-gradient(180deg, transparent, rgba(240, 212, 138, 0.5), transparent);
+        }
+        .soleia-text-card::before { left: 5px; }
+        .soleia-text-card::after { right: 5px; }
+
+        .soleia-name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 10px; }
+        .soleia-name {
+            font-size: 15px; font-weight: 700; letter-spacing: 1px; white-space: nowrap;
+            background: linear-gradient(90deg, #fff6d8, #f0d48a, #c89a3c);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .soleia-title-tag {
+            font-size: 10px; padding: 2px 10px; border-radius: 10px; font-weight: 500; letter-spacing: 0.5px;
+            white-space: nowrap; background: rgba(232, 200, 120, 0.12); color: #e0b96f;
+            border: 1px solid rgba(232, 200, 120, 0.3);
+        }
+        .soleia-moods { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; max-width: 100%; }
+        .soleia-mood {
+            display: inline-flex; align-items: center; font-size: 12px; font-weight: 500;
+            padding: 3px 14px; border-radius: 20px; letter-spacing: 0.3px; line-height: 1.5;
+            white-space: nowrap; transition: all 0.25s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .soleia-mood:hover { transform: translateY(-1px); box-shadow: 0 3px 12px rgba(240, 212, 138, 0.22); }
+        .soleia-mood.mood-positive { background: linear-gradient(135deg, rgba(240,212,138,0.2), rgba(240,212,138,0.1)); border: 1px solid rgba(240,212,138,0.5); color: #ffe9b0; }
+        .soleia-mood.mood-neutral { background: linear-gradient(135deg, rgba(150,180,230,0.16), rgba(150,180,230,0.08)); border: 1px solid rgba(150,180,230,0.35); color: #b8cce8; }
+        .soleia-mood.mood-negative { background: linear-gradient(135deg, rgba(130,110,190,0.18), rgba(130,110,190,0.08)); border: 1px solid rgba(130,110,190,0.45); color: #c8b8e8; }
+        .soleia-mood.mood-dramatic { background: linear-gradient(135deg, rgba(255,244,210,0.22), rgba(255,244,210,0.1)); border: 1px solid rgba(255,244,210,0.55); color: #fff8e0; }
+
+        .soleia-text { font-size: 15px; color: #e8e2d4; line-height: 1.8; word-wrap: break-word; overflow-wrap: break-word; }
+        .soleia-footer {
+            display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px;
+            font-size: 11px; color: #e0b96f; opacity: 0.4; letter-spacing: 2px;
+        }
+        .soleia-footer .line { width: 40px; height: 1px; background: linear-gradient(90deg, transparent, #d4b478); }
+        .soleia-footer .line.r { background: linear-gradient(-90deg, transparent, #d4b478); }
+
+        @media (max-width: 540px) {
+            .soleia-wrapper { margin: 5px 0; border-radius: 14px; }
+            .soleia-avatar { width: 76px; min-height: 76px; padding: 10px 0 10px 10px; }
+            .soleia-avatar img, .soleia-avatar .avatar-fallback { width: 60px; height: 60px; font-size: 26px; }
+            .soleia-avatar .avatar-ring { width: 70px; height: 70px; }
+            .soleia-dialogue { padding: 14px 16px 14px 8px; }
+            .soleia-name { font-size: 13px; }
+            .soleia-mood { font-size: 11px; padding: 2px 12px; }
+            .soleia-text { font-size: 14px; line-height: 1.7; }
+        }
+        @media (max-width: 380px) {
+            .soleia-avatar { width: 58px; min-height: 58px; padding: 8px 0 8px 6px; }
+            .soleia-avatar img, .soleia-avatar .avatar-fallback { width: 46px; height: 46px; font-size: 20px; }
+            .soleia-avatar .avatar-ring { width: 54px; height: 54px; }
+            .soleia-dialogue { padding: 10px 12px 10px 6px; }
+            .soleia-name { font-size: 12px; }
+            .soleia-title-tag { font-size: 9px; padding: 0 8px; }
+            .soleia-mood { font-size: 10px; padding: 1px 10px; }
+            .soleia-text { font-size: 13px; line-height: 1.6; }
+        }
+    </style>
+</head>
+<body>
+    <div id="main-container"></div>
+
+    <script>
+        function getMoodTheme(emotion) {
+            const positive = ['开心', '快乐', '微笑', '温柔', '温暖', '感动', '欣慰', '得意', '俏皮', '调皮', '活泼', '兴奋', '期待', '害羞', '脸红', '甜蜜', '灿烂', '阳光', '自信', '惊喜', '激动', '爱慕', '心动', '傲娇', '天然', '元气'];
+            const negative = ['难过', '悲伤', '失落', '沮丧', '忧郁', '孤独', '愤怒', '生气', '恼火', '嫉妒', '焦虑', '恐惧', '害怕', '不安', '病娇', '黑化', '绝望', '悲悯'];
+            const dramatic = ['惊喜', '感动', '激动', '震撼', '疯狂', '痴迷', '崇拜', '爱慕', '心动', '傲娇', '病娇', '黑化', '威严', '庄严'];
+            if (dramatic.includes(emotion)) return 'dramatic';
+            if (positive.includes(emotion)) return 'positive';
+            if (negative.includes(emotion)) return 'negative';
+            return 'neutral';
+        }
+        function splitEmotions(raw) {
+            if (!raw || typeof raw !== 'string') return [];
+            return raw.split(/[,，、\/\s|]+/).map(s => s.trim()).filter(s => s.length > 0);
+        }
+        function init() {
+            try {
+                let emotionRaw = `$1`;
+                let textRaw = `$2`;
+                const emotionList = splitEmotions(emotionRaw);
+                const finalEmotions = emotionList.length > 0 ? emotionList : ['活泼'];
+                const text = textRaw.trim();
+                if (!text || text === '$2') return;
+                const avatarUrl = 'https://zora404.dpdns.org/file/1787589637320_image.png';
+                let moodsHtml = '';
+                finalEmotions.forEach((emotion, index) => {
+                    const theme = getMoodTheme(emotion);
+                    moodsHtml += `<span class="soleia-mood mood-${theme}" style="animation: fadeInSoleia 0.4s ease ${index * 50}ms both;">${emotion}</span>`;
+                });
+                const html = `
+                    <div class="soleia-wrapper">
+                        <span class="soleia-corner tl"></span><span class="soleia-corner tr"></span>
+                        <div class="soleia-avatar" id="soleia-avatar-container">
+                            <div class="avatar-ring"></div>
+                            <div class="avatar-fallback">☀</div>
+                            <img src="${avatarUrl}" alt="索利昂" loading="lazy" onload="this.classList.add('img-loaded'); document.getElementById('soleia-avatar-container').classList.add('has-img');" onerror="this.remove();">
+                        </div>
+                        <div class="soleia-dialogue">
+                            <div class="soleia-name-row">
+                                <span class="soleia-name">✧ 索利昂</span>
+                                <span class="soleia-title-tag">圣光之神 · 黎明化身</span>
+                                <div class="soleia-moods">${moodsHtml}</div>
+                            </div>
+                            <div class="soleia-text-card"><div class="soleia-text">${text}</div></div>
+                            <div class="soleia-footer"><span class="line"></span>☀ ✦ 晨光不熄 ✦ ☀<span class="line r"></span></div>
+                        </div>
+                    </div>`;
+                document.getElementById('main-container').innerHTML = html;
+            } catch (error) {
+                console.error('[索利昂渲染] 错误:', error);
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>

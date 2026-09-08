@@ -612,11 +612,43 @@
             if (fav < 90) return '#8a6a10';
             return '#c94f7c';
         }
+        // 出生年月日 → 当前年龄（按 世界.日期 自动计算；解析 "圣光历1467年3月1日" / "1467-03-01"）
+        // 出生年月日一经确定不改；年龄不再由 AI/手动改写（命令层另有只读守卫）
+        function parseEraDate(str) {
+            var s = String(str || '').trim();
+            if (!s) return null;
+            // 严格格式优先（带分隔）：1467-03-01 / 1467/3/1 / 1467年3月1日
+            var m = s.match(/(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})/);
+            // 中文宽松兜底（必须带"年"字）：1467年3月 / 圣光历1467年3月1日
+            if (!m) m = s.match(/(\d{3,4})年\s*(\d{1,2})?月\s*(\d{1,2})?日?/);
+            if (!m) return null;
+            return { y: parseInt(m[1], 10), mo: parseInt(m[2] || 1, 10), d: parseInt(m[3] || 1, 10) };
+        }
+        function calcActorAge(actor) {
+            try {
+                if (!actor || typeof actor !== 'object') return null;
+                var birth = parseEraDate(actor.出生年月日);
+                if (!birth) return (parseInt(actor.年龄, 10) > 0 ? parseInt(actor.年龄, 10) : null);
+                var all = typeof getAllVariables === 'function' ? getAllVariables() : {};
+                var nowStr = _.get(all, 'stat_data.世界.日期', '') || '';
+                var now = parseEraDate(nowStr);
+                if (!now) return null;
+                var age = now.y - birth.y;
+                if (now.mo < birth.mo || (now.mo === birth.mo && now.d < birth.d)) age -= 1;
+                return Math.max(0, age);
+            } catch (e) { return null; }
+        }
         function relmapDetailHtml(name, v) {
             var fav = _.clamp(parseInt(v.好感度, 10) || 0, -100, 100);
             var h = '<div class="tt">' + escapeAttr(name) + ' <span style="color:' + relmapFavColor(fav) + ';">♥ ' + fav + '</span></div>';
             if (v.身份) h += '<div class="row">🪪 身份：' + escapeAttr(v.身份) + '</div>';
-            if (v.年龄 || v.年龄 === 0) h += '<div class="row">🎂 年龄：' + escapeAttr(String(v.年龄)) + '</div>';
+            if (v.当前位置) h += '<div class="row">📍 当前位置：' + escapeAttr(v.当前位置) + '</div>';
+            // 年龄：有出生年月日 → 按当前日期自动计算（不再手动维护）；出生年月日单独成栏
+            var vAge = calcActorAge(v);
+            if (v.出生年月日) h += '<div class="row">📅 出生年月日：' + escapeAttr(v.出生年月日) + '</div>';
+            if (vAge !== null && vAge !== undefined) {
+                h += '<div class="row">🎂 年龄：' + escapeAttr(String(vAge)) + '岁</div>';
+            }
             if (v.关系描述) h += '<div class="ttl">💬 关系</div><div>' + escapeAttr(v.关系描述) + '</div>';
             if (v.关键事件) h += '<div class="ttl">⚔ 关键事件</div><div>' + escapeAttr(v.关键事件) + '</div>';
             var tl = Array.isArray(v.关系时间线) ? v.关系时间线 : [];
@@ -664,7 +696,11 @@
             names.forEach(function (nm) {
                 var v = npcs[nm] || {};
                 var fav = _.clamp(parseInt(v.好感度, 10) || 0, -100, 100);
-                var cat = v.关系分类 || '初识';
+                // 关系分类缺失/无效 → 按好感度自动归类（规则约定；旧档/开场白旧结构兜底）：
+                // 仇敌<0 / 陌生人0~9 / 熟识10~29 / 盟友30~79 / 家人80+
+                function relmapAutoCat(fv) { return fv < 0 ? '仇敌' : (fv < 10 ? '陌生人' : (fv < 30 ? '熟识' : (fv < 80 ? '盟友' : '家人'))); }
+                var cat = v.关系分类;
+                if (!cat || ['家人', '盟友', '熟识', '陌生人', '初识', '仇敌'].indexOf(cat) === -1) cat = relmapAutoCat(fav);
                 if (cat === '萍水相逢') cat = '初识'; // 旧名归一
                 if (!cats[cat]) cat = '初识';
                 cats[cat].items.push({ name: nm, v: v, fav: fav });
@@ -682,6 +718,7 @@
                         '<span class="dn">' + escapeAttr(it.name) + '</span>' +
                         '<button class="jrpg-del-tag" data-del-path="主要NPC.' + it.name + '" title="删除该NPC">🗑</button>' +
                         (v.身份 ? '<span class="did">' + escapeAttr(v.身份) + '</span>' : '') +
+                        (v.当前位置 ? '<span class="dloc" style="font-size:10px;color:#2980b9;margin-left:4px;">📍 ' + escapeAttr(v.当前位置) + '</span>' : '') +
                         '<span class="dfav" style="color:' + relmapFavColor(it.fav) + ';">♥ ' + it.fav + '</span>' +
                         (v.关系描述 ? '<span class="drel">' + escapeAttr(v.关系描述) + '</span>' : '') +
                         '</div>';
@@ -795,8 +832,20 @@
             if (typeof Mvu === 'undefined') return;
             // 规范化旧格式同伴数据（顶层 等级/HP/MP/SP → 基础状态），保证弹窗内数据正确
             normalizeCompanionData();
-            var mvuData = Mvu.getMvuData({ type: 'message', message_id: 'latest' });
+            // 当前楼层确认：优先读最新楼层，若无该同伴（如最新一层是玩家消息、其 stat_data 快照缺失）则回退 chat/全局变量，
+            // 保证任何楼层都能打开并确认同伴档案
+            var mvuData = null;
+            try { mvuData = Mvu.getMvuData({ type: 'message', message_id: 'latest' }); } catch (e) {}
             var c = _.get(mvuData, ['stat_data', '同伴', compName], null);
+            if (!c) {
+                try { var chatD = Mvu.getMvuData({ type: 'chat' }); c = _.get(chatD, ['stat_data', '同伴', compName], null); } catch (e) {}
+            }
+            if (!c) {
+                try { var vars = getVariables({ type: 'chat' }); c = _.get(vars, ['stat_data', '同伴', compName], null); } catch (e) {}
+            }
+            if (!c) {
+                try { var all = (typeof getAllVariables === 'function') ? getAllVariables() : {}; c = _.get(all, ['stat_data', '同伴', compName], null); } catch (e) {}
+            }
             if (!c) return;
 
             var fav = _.clamp(c.好感度 || 0, 0, 100);
@@ -817,7 +866,12 @@
             html += '<div style="display:flex; justify-content:flex-end; margin-top:4px;"><button class="jrpg-comp-full-lock-btn' + (c._全锁定 ? ' locked' : '') + '" data-comp="' + escapeAttr(compName) + '" title="' + (c._全锁定 ? '已一键锁定：点击解除全锁（属性+物品栏恢复可写）' : '一键锁定：属性+物品栏只读，拒绝 AI 删除/修改') + '">' + (c._全锁定 ? '🔒 解除全锁' : '🔐 一键全锁') + '</button></div>';
             html += '<div style="display:flex; align-items:center; gap:6px; font-size:14px;"><span style="color:' + favColor + ';">❤</span><div class="jrpg-npc-bar" style="width:80px; margin:0;"><div class="jrpg-npc-bar-fill" style="width:' + fav + '%;background:' + favColor + ';"></div></div><span class="jrpg-edit-val" data-path="同伴.' + compName + '.好感度" style="font-weight:bold; color:' + favColor + ';">' + fav + '</span></div>';
             html += '</div>';
-            html += '<div style="font-size:13px; color:#6b4e31; margin-bottom:4px;">' + (c.年龄 ? '<span class="jrpg-edit-val" data-path="同伴.' + compName + '.年龄">' + safeStr(c.年龄) + '</span>岁 · ' : '') + (safeStr(c.种族) ? '<span class="jrpg-edit-val" data-path="同伴.' + compName + '.种族">' + safeStr(c.种族) + '</span> · ' : '') + 'Lv.' + (_.get(c, '基础状态.总等级', 1)) + ' · ' + '<span class="jrpg-edit-val" data-path="同伴.' + compName + '.身份">' + safeStr(c.身份, '-') + '</span></div>';
+            // 年龄：有出生年月日 → 按当前日期自动计算（不再手动维护）；出生年月日单独成栏
+            var compAge = calcActorAge(c);
+            html += '<div style="font-size:13px; color:#6b4e31; margin-bottom:4px;">' + (compAge !== null && compAge !== undefined ? safeStr(compAge) + '岁' + ' · ' : '') + (safeStr(c.种族) ? '<span class="jrpg-edit-val" data-path="同伴.' + compName + '.种族">' + safeStr(c.种族) + '</span> · ' : '') + 'Lv.' + (_.get(c, '基础状态.总等级', 1)) + ' · ' + '<span class="jrpg-edit-val" data-path="同伴.' + compName + '.身份">' + safeStr(c.身份, '-') + '</span>' + (c.当前位置 ? ' · 📍 <span class="jrpg-edit-val" data-path="同伴.' + escapeAttr(compName) + '.当前位置">' + safeStr(c.当前位置) + '</span>' : '') + '</div>';
+            if (c.出生年月日) {
+                html += '<div style="font-size:12px; color:#8b6b4a; margin-bottom:4px;">📅 出生年月日：<span class="jrpg-edit-val" data-path="同伴.' + escapeAttr(compName) + '.出生年月日">' + escapeAttr(c.出生年月日) + '</span>' + (compAge !== null && compAge !== undefined ? '（年龄自动计算）' : '') + '</div>';
+            }
             html += '</div>';
             html += '</div>';
 
@@ -849,7 +903,7 @@
                 html += '<div class="jrpg-stat-item"><span>' + aname + '</span><span><span class="jrpg-stat-val jrpg-edit-val" data-path="同伴.' + compName + '.基础属性.' + aname + '">' + val + '</span> <span class="jrpg-stat-mod">(' + getModifier(val) + ')</span></span></div>';
             });
             html += '</div>';
-            html += '<div class="jrpg-level-row"><span>未分配属性点: ' + (_.get(c, '基础属性.未分配点数', 0)) + '</span><span>待分配职业等级: ' + (_.get(c, '基础状态.待分配职业等级', 0)) + '</span></div>';
+            html += '<div class="jrpg-level-row"><span>未分配属性点: <span class="jrpg-edit-val" data-path="同伴.' + escapeAttr(compName) + '.基础属性.未分配点数">' + (_.get(c, '基础属性.未分配点数', 0)) + '</span></span><span>待分配职业等级: <span class="jrpg-edit-val" data-path="同伴.' + escapeAttr(compName) + '.基础状态.待分配职业等级">' + (_.get(c, '基础状态.待分配职业等级', 0)) + '</span></span></div>';
             html += '</div>';
 
             // 自身状态
@@ -897,7 +951,7 @@
             if (Object.keys(skills).length > 0) {
                 html += '<div class="jrpg-box" style="margin-bottom:15px;"><div class="jrpg-box-title">技能</div><div class="jrpg-list">';
                 Object.entries(skills).forEach(function(skEntry){
-                    html += '<div class="jrpg-list-item"><div class="jrpg-item-header"><span>' + skEntry[0] + '</span></div><div class="jrpg-item-desc">' + (skEntry[1].描述 || '') + '</div></div>';
+                    html += '<div class="jrpg-list-item"><div class="jrpg-item-header"><span>' + skEntry[0] + '</span><button class="jrpg-del-tag" data-del-path="同伴.' + compName + '.技能.' + skEntry[0] + '" title="删除该技能">🗑</button></div><div class="jrpg-item-desc">' + (skEntry[1].描述 || '') + '</div></div>';
                 });
                 html += '</div></div>';
             }
@@ -1086,7 +1140,8 @@
             var totalLv = _.get(all, 'stat_data.主角.基础状态.总等级', 1);
             var unallocAttr = _.get(all, 'stat_data.主角.基础属性.未分配点数', 0);
             var unallocProf = _.get(all, 'stat_data.主角.基础状态.待分配职业等级', 0);
-            $('#level-info-row').html('<span>总等级: <strong>' + totalLv + '</strong></span>' + (unallocAttr > 0 ? '<span class="has-points">未分配属性点: ' + unallocAttr + '</span>' : '<span>未分配属性点: 0</span>') + (unallocProf > 0 ? '<span class="has-points">待分配职业等级: ' + unallocProf + '</span>' : '<span>待分配职业等级: 0</span>'));
+            // 全局修改器：总等级 / 未分配属性点 / 待分配职业等级 可直接点击修改（jrpg-edit-val 仅在修改模式下生效）
+            $('#level-info-row').html('<span>总等级: <strong class="jrpg-edit-val" data-path="主角.基础状态.总等级">' + totalLv + '</strong></span>' + (unallocAttr > 0 ? '<span class="has-points">未分配属性点: <span class="jrpg-edit-val" data-path="主角.基础属性.未分配点数">' + unallocAttr + '</span></span>' : '<span>未分配属性点: <span class="jrpg-edit-val" data-path="主角.基础属性.未分配点数">0</span></span>') + (unallocProf > 0 ? '<span class="has-points">待分配职业等级: <span class="jrpg-edit-val" data-path="主角.基础状态.待分配职业等级">' + unallocProf + '</span></span>' : '<span>待分配职业等级: <span class="jrpg-edit-val" data-path="主角.基础状态.待分配职业等级">0</span></span>'));
 
             var upgradeNotify = _.get(all, 'stat_data.主角.基础状态.自身状态.升级通知', null);
             if (upgradeNotify && upgradeNotify.描述) {
@@ -1129,10 +1184,14 @@
             circuitHtml += '</div>';
             $('#list-circuit').html(circuitHtml);
 
+            /* ============ 资质（只读展示，与魔回路/种族同级；设置在首页创建器） ============ */
+            if (typeof renderTalentInfo === 'function') { try { renderTalentInfo(); } catch (e) {} }
+
             renderRecord($('#list-classes'), _.get(all, 'stat_data.主角.基础状态.职业信息', {}), function(k, v) {
                 var keyAttr = getJobKeyAttrs(k);
                 var attrText = keyAttr ? ' | 关键属性: <strong style="color:#d35400;">' + keyAttr + '</strong>' : '';
-                return '<div class="jrpg-list-item"><div class="jrpg-item-header"><span>⚔️ ' + k + '</span><span>Lv.' + (v.等级 || 1) + '</span></div><div class="jrpg-item-desc">剩余技能点: ' + (v.技能点 || 0) + attrText + '</div></div>';
+                // 全局修改器：职业等级 / 剩余技能点 可直接点击修改（等级改大后升级脚本自动补 HP/MP/SP/技能点与总等级）
+                return '<div class="jrpg-list-item"><div class="jrpg-item-header"><span>⚔️ ' + k + '</span><span>Lv.<span class="jrpg-edit-val" data-path="主角.基础状态.职业信息.' + escapeAttr(k) + '.等级">' + (v.等级 || 1) + '</span></span></div><div class="jrpg-item-desc">剩余技能点: <span class="jrpg-edit-val" data-path="主角.基础状态.职业信息.' + escapeAttr(k) + '.技能点">' + (v.技能点 || 0) + '</span>' + attrText + '</div></div>';
             }, '暂无职业');
 
             /* ================= 主角资产与能力 ================= */
@@ -1143,10 +1202,10 @@
                 return '<div class="jrpg-list-item"><div class="jrpg-item-header"><span>' + k + '</span><button class="jrpg-del-tag" data-del-path="主角.资产与能力.角色技能.' + k + '" title="删除该技能">🗑</button><span>Lv.' + (v.等级 || 0) + '</span></div><div class="jrpg-item-desc">' + (v.描述 || '') + '</div></div>';
             }, '未掌握技能');
             renderRecord($('#list-magic'), _.get(all, 'stat_data.主角.资产与能力.魔法栏', {}), function(k, v) {
-                return '<div class="jrpg-list-item"><div class="jrpg-item-header"><span style="color:#2980b9;">✦ ' + k + '</span><span>Lv.' + (v.等级 || 0) + '</span></div><div class="jrpg-item-desc">MP消耗: ' + (v.消耗MP || 0) + ' | ' + (v.描述 || '') + '</div></div>';
+                return '<div class="jrpg-list-item"><div class="jrpg-item-header"><span style="color:#2980b9;">✦ ' + k + '</span><button class="jrpg-del-tag" data-del-path="主角.资产与能力.魔法栏.' + k + '" title="删除该魔法">🗑</button><span>Lv.' + (v.等级 || 0) + '</span></div><div class="jrpg-item-desc">MP消耗: ' + (v.消耗MP || 0) + ' | ' + (v.描述 || '') + '</div></div>';
             }, '未掌握魔法');
             renderRecord($('#list-divine'), _.get(all, 'stat_data.主角.资产与能力.神术栏', {}), function(k, v) {
-                return '<div class="jrpg-list-item"><div class="jrpg-item-header"><span style="color:#f1c40f;">✧ ' + k + '</span><span>Lv.' + (v.等级 || 0) + '</span></div><div class="jrpg-item-desc">MP消耗: ' + (v.消耗MP || 0) + ' | ' + (v.描述 || '') + '</div></div>';
+                return '<div class="jrpg-list-item"><div class="jrpg-item-header"><span style="color:#f1c40f;">✧ ' + k + '</span><button class="jrpg-del-tag" data-del-path="主角.资产与能力.神术栏.' + k + '" title="删除该神术">🗑</button><span>Lv.' + (v.等级 || 0) + '</span></div><div class="jrpg-item-desc">MP消耗: ' + (v.消耗MP || 0) + ' | ' + (v.描述 || '') + '</div></div>';
             }, '未信仰神明');
             renderRecord($('#list-blessings'), _.get(all, 'stat_data.主角.资产与能力.加护', {}), function(k, v) {
                 return '<div class="jrpg-list-item"><div class="jrpg-item-header"><span style="color:#e67e22;">🌟 ' + k + '</span><span>Lv.' + (v.等级 || 0) + '</span></div><div class="jrpg-item-desc">' + (v.描述 || '') + '</div></div>';
@@ -1162,19 +1221,95 @@
                 return '<div class="jrpg-list-item"><div class="jrpg-item-header"><span>📋 ' + k + '</span><button class="jrpg-del-tag" data-del-path="主角.任务.' + k + '" title="删除该任务">🗑</button><span class="jrpg-quest-status ' + statusClass + '">' + (v.状态 || '进行中') + '</span></div><div class="jrpg-quest-meta"><span class="jrpg-quest-rank ' + rankClass + '">' + (v.等级 || '普通') + '</span><span>📂 ' + (v.类型 || '-') + '</span><span>📨 ' + (v.来源 || '-') + '</span></div><div class="jrpg-quest-content">' + (v.内容 || '') + '</div></div>';
             }, '暂无接取的任务');
 
-            /* ================= 契约英灵 ================= */
+            /* ================= 契约英灵（英灵共鸣系统 v2） ================= */
+            /* ---- 英灵静态档案：英灵固定，直接按名字匹配（执念文案/被动/英灵技名）；
+                   运行时数值（残响/羁绊/进度/冷却）从 stat_data.英灵 读取 ---- */
+            function matchSpiritArchive(name) {
+                var archive = {
+                    '断钢的勇者·艾莉卡': { 执念: '这一次，没有人再需要被牺牲。', 英灵技: '绝境斩杀·残响', 被动: [['钢铁执念Ⅰ', '力量+1'], ['断钢之志Ⅱ', '力量+2；每日1次，HP归零时以1HP存活'], ['绝境之势Ⅲ', '对精英级及以上敌人首次攻击伤害骰+1']] },
+                    '燃尽的贤者·伊利亚': { 执念: '证明知识可以救下所有人。', 英灵技: '万象真理·残响', 被动: [['真理之眼Ⅰ', '智力+1'], ['万象解析Ⅱ', '智力+2；每日1次，施法失败可重投'], ['燃尽之理Ⅲ', 'MP上限+10%；每日1次，免疫一次魔力反噬']] },
+                    '末代的神龙·科里维坦': { 执念: '极光……还亮着吗。', 英灵技: '半龙化 / 绝对零度龙息', 被动: [['龙威Ⅰ', '精英级以下魔兽自动恐惧（先攻检定+2）'], ['极寒之血Ⅱ', '寒冰抗性；体质+1'], ['龙之躯壳Ⅲ', '体质+2；每日1次，受到致命一击时伤害减半']] },
+                    '被夺的魔女·莉莉丝': { 执念: '把我的东西……还给我。', 英灵技: '湮灭法则·残响', 被动: [['混沌腐蚀Ⅰ', '攻击附带暗属性腐蚀（每回合额外1d4伤害，持续2回合）'], ['异端之眼Ⅱ', '对深渊教廷相关法术/结界/伪装的侦测检定自动成功'], ['湮灭法则Ⅲ', '对"有信仰/有神明加护"的目标伤害+1d6']] },
+                    '初代勇者雷恩': { 执念: '那兽人替老子去送了死……得知道他是谁。', 英灵技: '不讲武德的痛击', 被动: [['烂人的直觉Ⅰ', '暴击率+5%'], ['下三滥战术Ⅱ', '对精英级以下敌人命中+2'], ['活下来的本事Ⅲ', '敏捷+2；每日1次，逃跑/脱离检定自动成功']] },
+                    '第四代魔女莎提拉': { 执念: '他到底……去了哪里？', 英灵技: '血祭·幽魂之拥', 被动: [['死气共鸣Ⅰ', '感知周围1公里内亡者（位置/死因/死亡时间）'], ['血祭之体Ⅱ', '对活物伤害+1d4（暗属性）；自身HP<50%时再+1d4'], ['幽魂之拥Ⅲ', '击杀敌人时回复自身HP上限5%']] },
+                    '指引妖精莉耶芙': { 执念: '把这出戏，演到落幕。', 英灵技: '森之降临', 被动: [['甜美谎言Ⅰ', '说服/欺骗检定+1'], ['命运的巧合Ⅱ', '每日1次，让一次不利判定重投（结果可能更好——也可能更糟）'], ['黑山羊之吻Ⅲ', '濒死时获得一次"恶意祝福"：攻击+2持续3轮，但沾染深渊气息']] },
+                    '小圣女索菲亚': { 执念: '那场讨伐……最后成功了吗？', 英灵技: '绝境圣壁', 被动: [['微光庇护Ⅰ', '受到伤害-1'], ['信仰之池Ⅱ', '每日1次，HP<30%时回复1d6+2'], ['绝境圣壁Ⅲ', '每日1次，抵挡一次精英级致命一击']] },
+                    '小魔王伊莉丝': { 执念: '为什么我被创造出来……就是送死？', 英灵技: '弱者的反击', 被动: [['魔兽感知Ⅰ', '感知周围魔兽的情绪/饥饿/敌意方向'], ['陷阱大师Ⅱ', '布置/识破陷阱检定+2'], ['弱小者的反击Ⅲ', '受到史诗级及以上存在攻击时，第一次伤害-50%']] },
+                    '盲目的莉莉娅': { 执念: '这世上……有没有不必用眼睛去换的结局？', 英灵技: '死亡回溯', 被动: [['结局之眼Ⅰ', '每场战斗开始前，获得一条关于本场战斗的模糊警示'], ['历史切片Ⅱ', '对"过去十年内"的事件记忆全知；历史/预言/考古检定+2'], ['因果偏移Ⅲ', '每日1次，在冒险者即将承受致命伤害时改写"那个瞬间"（代价：莉莉丝当晚无法对话）']] },
+                    '圣光神索利昂': { 执念: '看见由她指引的勇者，走到自己选择的结局。', 英灵技: '神恩降临·残响', 被动: [['神选之眼Ⅰ', '社交洞察+1：感知交谈对象的意图与"勇者潜质"'], ['拂晓祝福Ⅱ', '每日1次，黎明时刻（或每日首次行动）的下一次检定+2'], ['神恩共鸣Ⅲ', 'HP<30%时，受到的下一次致命伤害转化为等同数值的HP回复（每日1次）']] },
+                    '深渊的魅魔·阿丝茉德': { 执念: '体验一次"不被魅惑的爱"——让一个人真心爱上她，而不是被魔法迷住。', 英灵技: '魅魔领域·残响', 被动: [['天生媚骨Ⅰ', '魅力相关检定+1'], ['欲望低语Ⅱ', '对意志检定低于冒险者的目标，说服/魅惑/审讯检定+2'], ['沉沦之拥Ⅲ', '攻击被"沉沦/魅惑"状态影响的目标时伤害+1d6；击杀时回复自身HP上限5%']] }
+                };
+                if (!name) return null;
+                /* 名称归一化：去掉 ·・/ 空格与「英灵」前缀，兼容 AI 写入的多种写法 */
+                function normName(s) { return String(s).replace(/[·・\/\s]/g, '').replace(/^英灵/, ''); }
+                var n = normName(name);
+                for (var key in archive) {
+                    if (archive.hasOwnProperty(key) && (n.indexOf(normName(key)) >= 0 || normName(key).indexOf(n) >= 0)) return archive[key];
+                }
+                return null;
+            }
+            /* 被动列表块：按羁绊档位显示解锁状态，匹配 stat_data.英灵.被动效果 判定"生效中" */
+            function passiveBlockHtml(archive, bondTier, passives) {
+                if (!archive || !archive.被动) return '';
+                var unlockAt = [30, 60, 90];
+                var html = '<div style="font-size:11px; margin:8px 0 3px; color:#6b2e6b;">共鸣被动</div>';
+                for (var i = 0; i < archive.被动.length; i++) {
+                    var p = archive.被动[i];
+                    var idx = i + 1;
+                    var unlocked = bondTier >= idx;
+                    var active = false;
+                    for (var k in passives) {
+                        if (passives.hasOwnProperty(k) && (String(k).indexOf(p[0]) >= 0 || p[0].indexOf(String(k)) >= 0)) { active = true; break; }
+                    }
+                    html += '<div style="font-size:10px; line-height:1.6; ' + (unlocked ? 'color:#1e8449;' : 'color:#b2a49a;') + '">' +
+                        (unlocked ? '●' : '○') + ' ' + p[0] + '：' + p[1] +
+                        (unlocked && active ? ' <span style="color:#27ae60; font-weight:bold;">✔ 生效中</span>' : '') +
+                        (unlocked && !active ? ' <span style="color:#7f8c8d;">（待AI写入生效）</span>' : '') +
+                        (!unlocked ? ' <span style="color:#7f8c8d;">（羁绊' + unlockAt[i] + '解锁）</span>' : '') +
+                        '</div>';
+                }
+                return html;
+            }
+
             var spiritName = _.get(all, 'stat_data.英灵.名称', '');
             var $spiritContainer = $('#list-spirit');
             if (!spiritName) {
                 $spiritContainer.html('<div class="jrpg-list-empty">暂无契约英灵</div>');
             } else {
-                var spiritPower = _.get(all, 'stat_data.英灵.残响之力', 0);
+                var spiritPower = _.clamp(_.get(all, 'stat_data.英灵.残响之力', 0), 0, 100);
                 var spiritStatus = _.get(all, 'stat_data.英灵.状态', '苏醒');
+                var spiritBond = _.clamp(_.get(all, 'stat_data.英灵.羁绊值', 0), 0, 100);
+                var passives = _.get(all, 'stat_data.英灵.被动效果', {}) || {};
+                var obsession = _.get(all, 'stat_data.英灵.执念', {}) || {};
+                var skillInfo = _.get(all, 'stat_data.英灵.英灵技', {}) || {};
                 var statusClass = spiritStatus === '苏醒' ? 'awake' : 'sleeping';
+                var archive = matchSpiritArchive(spiritName);
+                var obsText = (obsession.内容 && String(obsession.内容).trim()) ? obsession.内容 : (archive ? archive.执念 : '');
+                var obsProgress = _.clamp(_.get(obsession, '进度', 0), 0, 100);
+                var obsDone = !!obsession.是否完成;
+                var skillName = (skillInfo.名称 && String(skillInfo.名称).trim()) ? skillInfo.名称 : (archive ? archive.英灵技 : '');
+                var skillCd = _.get(skillInfo, '冷却', 0);
+                var skillUsed = _.get(skillInfo, '已释放', 0);
+                var bondTier = spiritBond >= 90 ? 3 : (spiritBond >= 60 ? 2 : (spiritBond >= 30 ? 1 : 0));
+                var tierNames = ['未解锁', '被动Ⅰ', '被动Ⅱ', '被动Ⅲ'];
+
                 var spiritHtml = '<div class="jrpg-spirit-card">' +
                     '<div class="jrpg-spirit-header"><span class="jrpg-spirit-name">' + spiritName + '</span><span class="jrpg-spirit-status ' + statusClass + '">' + spiritStatus + '</span></div>' +
-                    '<div style="font-size:11px; margin-bottom:4px; color:#6b2e6b;">残响之力</div>' +
+                    /* 残响 */
+                    '<div style="font-size:11px; margin-bottom:4px; color:#6b2e6b;">残响之力' + (spiritPower >= 100 && spiritStatus === '苏醒' && skillCd <= 0 ? ' <span style="color:#27ae60; font-weight:bold;">⚡ 可释放英灵技</span>' : '') + '</div>' +
                     '<div class="jrpg-resonance-bar-bg"><div class="jrpg-resonance-fill" style="width:' + spiritPower + '%;"></div><div class="jrpg-resonance-text">' + spiritPower + '%</div></div>' +
+                    /* 羁绊 */
+                    '<div style="display:flex; justify-content:space-between; font-size:11px; margin:8px 0 3px; color:#6b2e6b;"><span>羁绊值</span><span style="font-weight:bold; color:#1e8449;">' + spiritBond + ' <span style="color:#7f8c8d; font-weight:normal;">· ' + tierNames[bondTier] + '</span></span></div>' +
+                    '<div style="background:#d4c4b7; height:10px; border-radius:5px; border:1px solid #27ae60; overflow:hidden; position:relative;"><div style="background:linear-gradient(90deg,#27ae60,#82e0aa); height:100%; width:' + spiritBond + '%; border-radius:5px;"></div></div>' +
+                    /* 被动 */
+                    passiveBlockHtml(archive, bondTier, passives) +
+                    /* 执念 */
+                    (obsText ? '<div style="font-size:11px; margin:8px 0 3px; color:#6b2e6b;">执念' + (obsDone ? ' <span style="color:#27ae60; font-weight:bold;">✔ 已完成</span>' : '') + '</div>' +
+                        '<div style="font-size:10px; color:#4a3623; line-height:1.5; margin-bottom:4px;">「' + obsText + '」</div>' +
+                        '<div style="background:#d4c4b7; height:10px; border-radius:5px; border:1px solid #c0392b; overflow:hidden; position:relative;"><div style="background:linear-gradient(90deg,#c0392b,#e8a878); height:100%; width:' + obsProgress + '%; border-radius:5px;"></div><div style="position:absolute; top:0; left:0; right:0; bottom:0; text-align:center; font-size:9px; font-weight:bold; color:#4a3623; line-height:10px;">' + obsProgress + '%</div></div>' : '') +
+                    /* 英灵技 */
+                    (skillName ? '<div style="font-size:11px; margin:8px 0 3px; color:#6b2e6b;">英灵技 · ' + skillName + '</div>' +
+                        '<div style="font-size:10px; color:#7f8c8d;">' + (skillCd > 0 ? '⏳ 冷却中（剩余 ' + skillCd + '）' : '✓ 可用') + ' · 已释放 ' + skillUsed + ' 次</div>' : '') +
                     '</div>';
                 $spiritContainer.html(spiritHtml);
             }
@@ -1201,7 +1336,7 @@
                     compHtml += '<div class="jrpg-comp-header-info">';
                     compHtml += '<div class="jrpg-comp-header-top"><div><span class="jrpg-comp-name">' + name + '</span><button class="jrpg-del-tag" data-del-path="同伴.' + name + '" title="删除该同伴（离队）">🗑</button>' + (c._全锁定 ? ' <span class="jrpg-item-lock-badge" title="已一键锁定：属性+物品栏只读，拒绝删除">🔒 全锁定</span>' : (c._属性锁定 ? ' <span class="jrpg-item-lock-badge" title="属性已锁定：AI 禁止修改，只能通过升级分配写入">🔒 属性锁定</span>' : '')) + '<span class="jrpg-comp-tier ' + getCompTierClass(cTier) + '">' + cTier + '</span></div><button class="jrpg-comp-full-lock-btn' + (c._全锁定 ? ' locked' : '') + '" data-comp="' + escapeAttr(name) + '" title="' + (c._全锁定 ? '点击解除全锁' : '一键锁定：属性+物品栏只读，拒绝删除') + '" style="margin-left:4px;">' + (c._全锁定 ? '🔒' : '🔐') + '</button></div>';
 
-                    compHtml += '<div class="jrpg-comp-meta">' + (c.年龄 ? safeStr(c.年龄) + '岁 · ' : '') + (safeStr(c.种族) ? safeStr(c.种族) + ' · ' : '') + 'Lv.' + (_.get(c, '基础状态.总等级', 1)) + ' · ' + (safeStr(c.身份, '-')) + '</div>';
+                    compHtml += '<div class="jrpg-comp-meta">' + (calcActorAge(c) !== null && calcActorAge(c) !== undefined ? calcActorAge(c) + '岁 · ' : '') + (safeStr(c.种族) ? safeStr(c.种族) + ' · ' : '') + 'Lv.' + (_.get(c, '基础状态.总等级', 1)) + ' · ' + (safeStr(c.身份, '-')) + '</div>';
                     
                     // 状态条简显
                     var hpCur = _.get(c, '基础状态.HP.当前', 0), hpMax = _.get(c, '基础状态.HP.最大', 0);
@@ -1345,7 +1480,7 @@
                     ctrHtml += '<div class="jrpg-summon-avatar"><img src="' + getAvatarUrl(cName) + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"></div>';
                     ctrHtml += '<div class="jrpg-comp-header-info">';
                     ctrHtml += '<div class="jrpg-comp-header-top"><div><span class="jrpg-comp-name">' + cName + '</span><span class="jrpg-summon-badge">🐾 契约兽</span><span class="jrpg-comp-tier ' + getCompTierClass(cTier) + '">' + cTier + '</span></div></div>';
-                    ctrHtml += '<div class="jrpg-comp-meta">' + (safeStr(c.种族) ? safeStr(c.种族) + ' · ' : '') + (safeStr(c.职业) ? '职业·' + safeStr(c.职业) + ' · ' : '') + 'Lv.' + (_.get(c, '基础状态.总等级', _.get(c, '等级', 1))) + '</div>';
+                    ctrHtml += '<div class="jrpg-comp-meta">' + (safeStr(c.种族) ? safeStr(c.种族) + ' · ' : '') + (safeStr(c.职业) ? '职业·' + safeStr(c.职业) + ' · ' : '') + 'Lv.' + (_.get(c, '基础状态.总等级', _.get(c, '等级', 1))) + (c.当前位置 ? ' · 📍 ' + safeStr(c.当前位置) : '') + '</div>';
                     ctrHtml += '</div></div>'; // header
 
                     // 契约兽特有信息（契约主 / 体型 / 元素 / 速度 / 先攻）
@@ -1471,7 +1606,7 @@
 
                 return '<div class="jrpg-list-item" style="' + opacityStyle + '">' +
                     '<div class="jrpg-item-header">' +
-                    '<span>' + (isExpired ? '📰' : '📢') + ' <strong>' + k + '</strong>' + expiredTag + '</span>' +
+                    '<span>' + (isExpired ? '📰' : '📢') + ' <strong>' + k + '</strong>' + expiredTag + ' <button class="jrpg-del-tag" data-del-path="世界.世界见闻.动态新闻.' + escapeAttr(k) + '" title="删除该见闻">🗑</button></span>' +
                     '<span style="color:' + impColor + ';font-weight:bold;">' + importance + '</span>' +
                     '</div>' +
                     '<div style="font-size:11px;color:#4a3623;line-height:1.5;margin:4px 0;">' + (v.内容 || '') + '</div>' +
@@ -2073,24 +2208,24 @@ var TRT_TECH = {
                 { lvl: 3, n: "嘲讽", c: 2, d: "SP3 | 迫使一名敌人接下来2轮优先攻击你" },
                 { lvl: 3, n: "战斗架势", c: 2, d: "SP2切换 | 战斗开始时免费选一：猛攻（攻+2防-2）/固守（防+2攻-2）/均衡" },
                 { lvl: 5, n: "武器大师", c: 3, d: "[被动] 所有武器攻击检定+1" },
-                { lvl: 5, n: "二次攻击", c: 3, d: "[被动] 每轮1次额外攻击" },
+                { lvl: 5, n: "二次攻击", c: 3, d: "[被动·SP3/轮] 每轮最快额外1次攻击：需本轮开始前消耗SP3，不足则本轮无额外攻击" },
                 { lvl: 5, n: "死战", c: 3, d: "[被动·升级不屈] DC降至10" },
                 { lvl: 5, n: "反击", c: 3, d: "SP2 [反应] 被近战攻击后反击一次，1次/轮" },
-                { lvl: 7, n: "三次攻击", c: 4, d: "[被动] 每轮2次额外攻击" },
+                { lvl: 7, n: "三次攻击", c: 4, d: "[被动·SP5/轮] 每轮最快额外2次攻击：需本轮开始前消耗SP5，不足则按比例减少次数" },
                 { lvl: 7, n: "武器专精大师", c: 4, d: "[被动] 已选武器暴击范围19-20" },
-                { lvl: 9, n: "四次攻击", c: 5, d: "[被动] 每轮3次额外攻击" },
+                { lvl: 9, n: "四次攻击", c: 5, d: "[被动·SP8/轮] 每轮最快额外3次攻击：需本轮开始前消耗SP8，不足则按比例减少次数；连击上限=3次额外" },
                 { lvl: 9, n: "钢铁意志", c: 5, d: "[被动] 免疫恐惧、魅惑；精神类效果豁免优势" },
                 { lvl: 9, n: "压制打击", c: 5, d: "SP4 | 近战命中后目标力量或敏捷豁免DC18，失败则缴械或击倒（选一）" },
-                { lvl: 11, n: "武器至尊", c: 6, d: "[被动·升级] 已选武器暴击范围18-20，暴击伤害骰×3" },
+                { lvl: 11, n: "武器至尊", c: 6, d: "[被动·升级] 已选武器暴击范围19-20，暴击伤害骰×2（与Lv7叠加后维持18-20）" },
                 { lvl: 11, n: "势不可挡", c: 6, d: "[被动] 移动不因敌人借机攻击而中断；冲锋期间免疫束缚和倒地" },
                 { lvl: 11, n: "破甲", c: 6, d: "SP5 | 下一次攻击无视目标一半防御值" },
-                { lvl: 13, n: "战争化身", c: 7, d: "SP8 | 进入战争状态：攻击检定+3，每轮额外攻击再+1，持续5轮，结束后力竭2轮" },
+                { lvl: 13, n: "战争化身", c: 7, d: "SP8 | 进入战争状态：攻击检定+3，本轮额外攻击+1，持续5轮；期间连击SP减半（向上取整），结束后力竭2轮" },
                 { lvl: 13, n: "绝对反击", c: 7, d: "[被动·升级] 每轮可反击次数=力量修正，且反击命中追加一次额外攻击" },
-                { lvl: 15, n: "传说一击", c: 8, d: "SP10 | 1次/战斗，单次攻击伤害骰全部取最大值+力量修正×3" },
+                { lvl: 15, n: "传说一击", c: 8, d: "SP10 | 1次/战斗，单次攻击伤害骰全部取最大值+力量修正×2" },
                 { lvl: 15, n: "不死战魂", c: 8, d: "[被动·升级] HP归零时自动成功保留1HP，且接下来2轮攻击优势；2次/日" },
                 { lvl: 17, n: "万军之敌", c: 9, d: "[被动] 被3名以上敌人包围时全属性修正+2，所有攻击获优势" },
-                { lvl: 17, n: "终焉之剑", c: 9, d: "SP12 | 1次/日，宣告一名敌人为终焉目标：对其所有攻击自动暴击，持续至目标死亡或3轮结束" },
-                { lvl: 19, n: "剑圣", c: 10, d: "[被动] 所有武器攻击检定+3；暴击范围17-20；暴击伤害骰×4；每轮攻击次数无上限（受SP限制）" }
+                { lvl: 17, n: "终焉之剑", c: 9, d: "SP12 | 1次/日，宣告一名敌人为终焉目标：对其所有攻击改为优势（不再无条件自动暴击），持续至目标死亡或3轮结束" },
+                { lvl: 19, n: "剑圣", c: 10, d: "[被动] 所有武器攻击检定+3；暴击范围18-20；暴击伤害骰×3；每轮额外攻击上限仍为3次（SP规则同上）" }
             ],
             "骑士": [
                 { lvl: 1, n: "盾牌专精", c: 1, d: "[被动] 持盾防御额外+1" },
@@ -2203,7 +2338,7 @@ var TRT_TECH = {
                 { lvl: 15, n: "毁灭打击", c: 8, d: "SP10 | 1次/战斗。舍弃兵器耐久的全力一击，单次伤害数值 = 武器基础伤害骰 × 力量修正倍数（最少×3），极易导致普通武器当场粉碎" },
                 { lvl: 17, n: "原初狂暴", c: 9, d: "SP15 | 1次/日，进入原初返祖状态：力量与体质修正额外+5，免疫大部分非高阶魔法的心智控制；武器掷骰只要并非自然1，统统视同触发暴击；持续3轮，结束后HP必定降至1且陷入瘫痪" },
                 { lvl: 17, n: "战场支配", c: 9, d: "[被动·狂暴中] 野兽威压：R30尺内任何弱于自身阶级的敌人必须通过意志豁免DC22，失败者由于极度战栗，不可将包含你在内的区域作为物理反击首选目标" },
-                { lvl: 19, n: "肉身战神", c: 10, d: "[被动] 终极阈值：狂暴状态下力量修正+8，暴击范围15-20，暴击伤害×3。你获得全系元素的物理基础抗性（伤害减半）。HP归零时靠死前执念继续挥刃，唯一的制止条件是：单次承受伤害超越你最大HP，肉体被完全解构或粉烂。" }
+                { lvl: 19, n: "肉身战神", c: 10, d: "[被动] 终极阈值：狂暴状态下力量修正+6，暴击范围17-20，暴击伤害×3。你获得全系元素的物理基础抗性（伤害减半）。但狂暴结束后的力竭升级为2级（大幅削弱行动与检定，需长休恢复）；HP归零时靠死前执念继续挥刃，唯一的制止条件是：单次承受伤害超越你最大HP，肉体被完全解构或粉烂。" }
             ],
             "元素法师": [
                 { lvl: 1, n: "火球", c: 1, d: "MP2 | R60尺，1d8火焰，溅射5尺（敏捷豁免减半）" },
@@ -2843,6 +2978,48 @@ var TRT_TECH = {
             return map;
         }
 
+        // ===== 健壮 JSON 提取（AI 输出常带围栏/尾随说明/多余字符）：优先 fenced，否则按配对括号提取 =====
+        function extractJsonArray(text) {
+            var raw = String(text == null ? '' : text);
+            var cand = null;
+            // 1) fenced block
+            var fm = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+            if (fm) cand = fm[1];
+            else cand = raw;
+            // 2) 配对括号提取（跳过字符串内括号，防描述中 ] 干扰）
+            var start = cand.indexOf('[');
+            if (start === -1) start = cand.indexOf('{');
+            if (start !== -1) {
+                var opener = cand[start], closer = opener === '[' ? ']' : '}';
+                var depth = 0, end = -1;
+                for (var i = start; i < cand.length; i++) {
+                    var ch = cand[i];
+                    if (ch === '"') {
+                        i++;
+                        while (i < cand.length) {
+                            if (cand[i] === '\\') { i += 2; continue; }
+                            if (cand[i] === '"') break;
+                            i++;
+                        }
+                    } else if (ch === opener) depth++;
+                    else if (ch === closer) { depth--; if (depth === 0) { end = i; break; } }
+                }
+                if (end !== -1) cand = cand.substring(start, end + 1);
+            }
+            // 3) 去闭合括号前的尾随逗号 + 行尾分隔符
+            cand = cand.replace(/,\s*([\]}])/g, '$1');
+            cand = cand.replace(/[,;]+\s*$/g, '');
+            // 4) 解析：修复尾随逗号重试；仍失败抛带预览错误
+            try { return JSON.parse(cand); }
+            catch (e) {
+                var fixed = cand.replace(/,\s*([\]}])/g, '$1');
+                try { return JSON.parse(fixed); }
+                catch (e2) {
+                    throw new Error('JSON解析失败：' + e2.message + ' | 原文尾部: …' + cand.slice(-120));
+                }
+            }
+        }
+
         /* ================= 自创职业检测与定制技能树（AI 生成 1-20 级技能树） ================= */
         // 官方职业判定：dbSkills 内置职业 + 升级代码「职业每级成长」表中的职业（跨文件保持一致）
         // 元素流派后缀职业（如「元素法师（水、火）」）按基础名判定
@@ -2859,16 +3036,23 @@ var TRT_TECH = {
                 Object.keys(dbSkills).forEach(function (k) { if (OFFICIAL_JOB_NAMES.indexOf(k) === -1) OFFICIAL_JOB_NAMES.push(k); });
             }
         })();
-        // 剥离元素流派后缀：元素法师（水、火）→ 元素法师
+        // 剥离元素流派后缀：「元素法师（水、火）」或「元素法师·水」→「元素法师」
         function officialJobBase(jobName) {
-            var m = String(jobName || '').match(/^(.*?)（([^）]*)）$/);
-            return (m ? m[1].trim() : String(jobName || '').trim());
+            var s = String(jobName || '').trim();
+            var m = s.match(/^(.*?)（([^）]*)）$/);
+            if (m) return m[1].trim();
+            var families = ['元素法师', '符文师', '塑能师', '死灵法师', '召唤师', '魔导技师', '精灵术士', '药剂师', '圣光法师', '邪术师'];
+            var parts = s.split('·');
+            if (parts.length >= 2 && families.indexOf(parts[0].trim()) !== -1) return parts[0].trim();
+            return s;
         }
-        // 是否官方职业（含契约兽近似名宽松匹配：冰霜巨龙→巨龙、风狼→魔兽、远古灵木→古树）
-        function isOfficialJob(jobName) {
+        // 是否官方职业（isBeast=true 仅契约兽走近似匹配：冰霜巨龙→巨龙、风狼→魔兽、远古灵木→古树；
+        //  人形角色（主角/同伴）一律精确按官方名单判定，防止「龙战士」「树语者」等自定义职业被误判为官方而不弹窗）
+        function isOfficialJob(jobName, isBeast) {
             if (!jobName) return true;
             var base = officialJobBase(jobName);
             if (OFFICIAL_JOB_NAMES.indexOf(base) !== -1) return true;
+            if (!isBeast) return false;   // 人形：非官方名单即视为自创职业，触发定制技能树弹窗
             if (/龙|蛇|蜥蜴/.test(base)) return true;
             if (/树|木|森|藤|枝/.test(base)) return true;
             if (/兽|狼|狐|熊|虎|狮|豹|鹰|雕|犬|马|鹿|猿|猴|猫|牛|羊|猪/.test(base)) return true;
@@ -2881,13 +3065,13 @@ var TRT_TECH = {
             var trees = stat.$customSkillTrees || {};
             var jobs = {};
             var targets = [];
-            if (stat.主角) targets.push({ label: '主角', actor: stat.主角 });
-            Object.keys(stat.同伴 || {}).forEach(function (n) { targets.push({ label: '同伴·' + n, actor: stat.同伴[n] }); });
-            Object.keys(stat.契约兽 || {}).forEach(function (n) { targets.push({ label: '契约兽·' + n, actor: stat.契约兽[n] }); });
+            if (stat.主角) targets.push({ label: '主角', actor: stat.主角, isBeast: false });
+            Object.keys(stat.同伴 || {}).forEach(function (n) { targets.push({ label: '同伴·' + n, actor: stat.同伴[n], isBeast: false }); });
+            Object.keys(stat.契约兽 || {}).forEach(function (n) { targets.push({ label: '契约兽·' + n, actor: stat.契约兽[n], isBeast: true }); });
             targets.forEach(function (t) {
                 var jobInfo = _.get(t.actor, '基础状态.职业信息', {});
                 Object.keys(jobInfo).forEach(function (job) {
-                    if (isOfficialJob(job)) return;
+                    if (isOfficialJob(job, t.isBeast)) return;
                     var tree = trees[job] && trees[job]['定制技能树'];
                     if (tree && Array.isArray(tree.skills) && tree.skills.length) return;
                     if (!jobs[job]) jobs[job] = [];
@@ -3033,6 +3217,9 @@ var TRT_TECH = {
                 promptText += '```json\n[\n  { "n": "技能名称", "t": "类型（技能/魔法/神术）", "c": "学习消耗（技能点数，1~10）", "lvl": "所需职业等级（1~20）", "d": "技能效果描述，说明机制与数值" },\n  ...\n]\n```';
 
                 if (window.toastr) toastr.info('🤖 正在为自创职业「' + jobName + '」生成定制技能树（' + style + '风格，1-20级）…');
+                // 非 RP 生成标志：跳过紧张度脚本的【世界动态】注入，避免叙事指令污染"只输出 JSON"任务
+                window.__ISURIA_NON_RP__ = true;
+                try {
                 var result = await generateRaw({
                     user_input: promptText,
                     should_silence: true,
@@ -3042,11 +3229,8 @@ var TRT_TECH = {
                         dialogue_examples: '', chat_history: { prompts: [] }
                     }
                 });
-                var jsonMatch = String(result).match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-                var jsonStr = jsonMatch ? jsonMatch[1] : String(result);
-                var s = jsonStr.indexOf('['), e = jsonStr.lastIndexOf(']');
-                if (s !== -1 && e !== -1) jsonStr = jsonStr.substring(s, e + 1);
-                var parsed = JSON.parse(jsonStr);
+                } finally { window.__ISURIA_NON_RP__ = false; }
+                var parsed = extractJsonArray(result);
                 if (!Array.isArray(parsed)) throw new Error('返回数据不是数组');
                 var validSkills = [];
                 parsed.forEach(function (sk) {
@@ -3115,12 +3299,19 @@ var TRT_TECH = {
             }
             return found;
         }
-        // 解析职业名后缀：元素法师（水、火）→ { base:'元素法师', elements:['水','火'] }
+        // 解析职业名后缀（元素法师流派）：
+        //   括号（兼容旧档）：元素法师（水、火）→ { base:'元素法师', elements:['水','火'] }
+        //   点号（现行规范）：元素法师·水 / 元素法师·水·火  → base + elements（元素法师家族一律用「·」分隔流派）
         function jobElemFilter(jobName) {
-            var m = String(jobName || '').match(/^(.*?)（([^）]*)）$/);
-            if (!m) return { base: String(jobName || ''), elements: null };
-            var elems = m[2].split(/[、,，\s]+/).filter(Boolean);
-            return { base: m[1].trim(), elements: elems.length ? elems : null };
+            var s = String(jobName || '');
+            var m = s.match(/^(.*?)（([^）]*)）$/);
+            if (m) { var e = m[2].split(/[、,，\s]+/).filter(Boolean); return { base: m[1].trim(), elements: e.length ? e : null }; }
+            var families = ['元素法师', '符文师', '塑能师', '死灵法师', '召唤师', '魔导技师', '精灵术士', '药剂师', '圣光法师', '邪术师'];
+            var m2 = s.split('·');
+            if (m2.length >= 2 && families.indexOf(m2[0].trim()) !== -1) {
+                return { base: m2[0].trim(), elements: m2.slice(1).map(function(x) { return x.trim(); }).filter(Boolean) };
+            }
+            return { base: s, elements: null };
         }
         // 该技能是否被职业后缀允许（无后缀→全允许；无元素通用→允许；有元素→需与后缀有交集）
         function jobSkillAllowed(jobName, sk) {
@@ -3450,11 +3641,7 @@ var TRT_TECH = {
                 html += '<option value="' + escapeAttr(n) + '"' + (n === companionSkillTarget ? ' selected' : '') + '>' + escapeAttr(n) + ' (Lv.' + lv + ')</option>';
             });
             html += '</select></div>';
-            html += '<div style="flex:1;min-width:110px;"><div style="font-size:11px;color:#6b4e31;margin-bottom:3px;">技能数量</div><select id="cs-count" style="width:100%;padding:5px;font-size:12px;background:#fff;border:1px solid #8b6b4a;border-radius:3px;color:#4a3623;">';
-            [6, 8, 10, 12, 15].forEach(function(n) {
-                html += '<option value="' + n + '"' + (n === 10 ? ' selected' : '') + '>' + n + ' 个技能</option>';
-            });
-            html += '</select></div>';
+            html += '<div style="flex:1;min-width:110px;"><div style="font-size:11px;color:#6b4e31;margin-bottom:3px;">技能数量（自定义填写）</div><input id="cs-count" type="number" min="3" max="40" value="10" style="width:100%;padding:5px;font-size:12px;background:#fff;border:1px solid #8b6b4a;border-radius:3px;color:#4a3623;"></div>';
             html += '<div style="flex:1;min-width:170px;"><div style="font-size:11px;color:#6b4e31;margin-bottom:3px;">生成方式</div><div style="font-size:11px;color:#7f8c8d;padding:5px 0;">🧠 generateRaw（屏蔽预设/上下文，只读同伴变量）</div></div>';
             html += '</div>';
             html += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">';
@@ -3546,6 +3733,9 @@ var TRT_TECH = {
             $status.show().html('🔄 正在为「' + escapeAttr(companionName) + '」生成专属技能树（generateRaw 屏蔽预设/上下文，只读同伴变量）…').css('color', '#8e44ad');
             try {
                 // generateRaw + overrides 屏蔽预设与上下文：只发送上面构造的提示词
+                // 非 RP 生成标志：跳过紧张度脚本的【世界动态】注入
+                window.__ISURIA_NON_RP__ = true;
+                try {
                 var result = await generateRaw({
                     user_input: promptText,
                     should_silence: true,
@@ -3560,12 +3750,9 @@ var TRT_TECH = {
                         chat_history: { prompts: [] }
                     }
                 });
+                } finally { window.__ISURIA_NON_RP__ = false; }
                 $status.html('✅ AI 响应完成，正在解析…').css('color', '#8e44ad');
-                var jsonMatch = String(result).match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-                var jsonStr = jsonMatch ? jsonMatch[1] : String(result);
-                var s = jsonStr.indexOf('['), e = jsonStr.lastIndexOf(']');
-                if (s !== -1 && e !== -1) jsonStr = jsonStr.substring(s, e + 1);
-                var parsed = JSON.parse(jsonStr);
+                var parsed = extractJsonArray(result);
                 if (!Array.isArray(parsed)) throw new Error('返回数据不是数组');
                 var validSkills = [];
                 parsed.forEach(function(sk) {
@@ -3750,13 +3937,21 @@ var TRT_TECH = {
             promptText += '```json\n[\n  { "n": "技能名称", "t": "类型（技能/魔法/神术）", "c": "学习消耗（技能点数值，1~5）", "lvl": "所需融合职业等级（必须为关键等级之一：' + keyLevels.join('/') + '）", "d": "技能效果描述，需同时体现 ' + a + ' 与 ' + b + ' 的特色，说明机制与数值" },\n  ...\n]\n```';
 
             try {
-                var result = await generate({ user_input: promptText, should_silence: true });
+                // 职业融合用 generateRaw（屏蔽预设/上下文）→ 同样打非 RP 标志，跳过紧张度世界动态注入
+                window.__ISURIA_NON_RP__ = true;
+                try {
+                var result = await generateRaw({
+                user_input: promptText,
+                should_silence: true,
+                overrides: {
+                    world_info_before: '', world_info_after: '', persona_description: '',
+                    char_description: '', char_personality: '', scenario: '',
+                    dialogue_examples: '', chat_history: { prompts: [] }
+                }
+            });
+                } finally { window.__ISURIA_NON_RP__ = false; }
                 $status.html('✅ AI 响应完成，正在解析…').css('color', '#8e44ad');
-                var jsonMatch = result.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-                var jsonStr = jsonMatch ? jsonMatch[1] : result;
-                var s = jsonStr.indexOf('['), e = jsonStr.lastIndexOf(']');
-                if (s !== -1 && e !== -1) jsonStr = jsonStr.substring(s, e + 1);
-                var parsed = JSON.parse(jsonStr);
+                var parsed = extractJsonArray(result);
                 if (!Array.isArray(parsed)) throw new Error('返回数据不是数组');
                 var validSkills = [];
                 parsed.forEach(function(sk) {
@@ -4058,6 +4253,10 @@ var TRT_TECH = {
             if (a > 1) return Math.round((a - 1) * 0.75);
             return 0;
         }
+        // 年龄成长系统开关（首页创建器可关）：关闭后主动/被动都不再发放年龄成长点
+        function ageGrowthEnabled() {
+            try { return localStorage.getItem('isuria_age_growth') !== '0'; } catch (e) { return true; }
+        }
         // 年龄成长补点：基础属性（扣种族加成）基线 48，1-18 岁累计 20 购点，不足则补到未分配点数
                 // 计算年龄成长差额（主动/被动共用；skip=true 表示无年龄）
         // 只认 $flags.年龄成长 发放记录，不看总属性——升级所得属性点不干扰年龄成长
@@ -4094,6 +4293,7 @@ var TRT_TECH = {
         }
         // 主动（按钮）：弹提示
         async function applyAgeGrowth(target) {
+            if (!ageGrowthEnabled()) return alert('年龄成长系统已关闭（请在首页创建器的"年龄成长系统"开关中开启）。');
             if (typeof Mvu === 'undefined') return alert('MVU 框架未初始化');
             var mvuData = currentMvuData();
             var stat = mvuData.stat_data;
@@ -4124,11 +4324,15 @@ var TRT_TECH = {
         // 被动（每层静默）：只要年龄在成长区间且未发满，就自动补
         async function passiveAgeGrowthCheck() {
             if (typeof Mvu === 'undefined') return;
+            if (!ageGrowthEnabled()) return; // 首页开关关闭 → 完全不发放
             try {
                 var mvuData = currentMvuData();
                 var stat = mvuData.stat_data;
                 var actor = allocActor(stat, '主角');
                 if (!actor) return;
+                var age = parseInt(_.get(actor, '基础信息.年龄', 0), 10) || 0;
+                // 已成年（>18岁）不再补发：18 岁那天领满 20，之后完全停止，避免成年后仍被补全
+                if (age > 18) return;
                 var r = calcAgeGrowth(stat, actor);
                 if (r.skip) return;
                 if (r.firstTime) {
@@ -4610,17 +4814,22 @@ var TRT_TECH = {
                 _.set(target, path, Math.max(0, cur + sign * bonus[k]));
             });
         }
-        // 装备栏显示：面板效果全键通用渲染（防御+2 / 敏捷+1 / HP上限+10 …）
+        // 装备栏显示：面板效果全键通用渲染（防御+2 / 敏捷+1 / HP上限+10 …）+ 词条 + 特别机制
         function renderEquipEffects(item) {
             var html = '';
             var bp = item && item.面板效果 ? item.面板效果 : null;
-            if (!bp) return html;
-            Object.keys(bp).forEach(function (k) {
-                var v = bp[k];
-                if (v === undefined || v === null || v === '') return;
-                var color = (k === '防御值' || k.indexOf('上限') !== -1) ? '#2980b9' : (k === '攻击力' ? '#c0392b' : '#8e44ad');
-                html += ' <span style="color:' + color + ';">' + k + '+' + v + '</span>';
-            });
+            if (bp) {
+                Object.keys(bp).forEach(function (k) {
+                    var v = bp[k];
+                    if (v === undefined || v === null || v === '') return;
+                    var color = (k === '防御值' || k.indexOf('上限') !== -1) ? '#2980b9' : (k === '攻击力' ? '#c0392b' : '#8e44ad');
+                    html += ' <span style="color:' + color + ';">' + k + '+' + v + '</span>';
+                });
+            }
+            var tc = item && item.附加词条 && typeof item.附加词条 === 'object' ? Object.keys(item.附加词条).map(function (k) { return item.附加词条[k]; }).filter(function (v) { return v; }).join('；') : '';
+            if (tc) html += ' <span style="color:#a06020;">词条：' + escapeAttr(tc) + '</span>';
+            var spec = item && item.特别机制 ? String(item.特别机制).trim() : '';
+            if (spec) html += ' <span style="color:#8e44ad;font-weight:bold;">特：' + escapeAttr(spec) + '</span>';
             return html;
         }
 
@@ -4931,58 +5140,6 @@ var TRT_TECH = {
         }
 
         function initVarEditor() {
-            // AI 变量更新
-            $('#btn-ai-update').on('click', function() {
-                if (typeof Mvu === 'undefined') return alert('MVU框架未初始化');
-                $('#ai-update-prompt').val('');
-                $('#ai-update-status').hide();
-                $('#btn-submit-ai-update').prop('disabled', false);
-                $('#ai-update-modal').css('display', 'flex');
-            });
-
-            $('#btn-close-ai-update, #btn-cancel-ai-update').on('click', function() {
-                $('#ai-update-modal').css('display', 'none');
-            });
-
-            $('#btn-submit-ai-update').on('click', async function() {
-                var promptVal = $('#ai-update-prompt').val().trim();
-                if (!promptVal) return alert('请输入要求内容');
-                if (typeof Mvu === 'undefined' || typeof generate === 'undefined') return alert('环境不支持');
-
-                var $status = $('#ai-update-status');
-                var $btn = $('#btn-submit-ai-update');
-                $status.show().text('🔄 正在请求AI进行变量更新...').css('color', '#8e44ad');
-                $btn.prop('disabled', true);
-
-                try {
-                    // 获取旧变量
-                    const oldData = Mvu.getMvuData({ type: 'message', message_id: 'latest' });
-                    
-                    // 构造提示词，让AI输出MVU更新命令
-                    const fullPrompt = `请根据以下要求更新变量状态。\n要求：${promptVal}\n请输出MVU变量更新命令来修改状态。除了更新命令以外不要输出任何其他内容。`;
-
-                    // 请求 AI 生成
-                    const resultMessage = await generate({ user_input: fullPrompt, should_silence: true });
-                    
-                    $status.text('⚙️ 正在解析更新命令...');
-                    
-                    // 解析生成结果
-                    const newData = await Mvu.parseMessage(resultMessage, oldData);
-                    
-                    // 将更新后的变量写回楼层
-                    await Mvu.replaceMvuData(newData, { type: 'message', message_id: 'latest' });
-                    
-                    if (window.toastr) toastr.success('AI 变量更新完成！');
-                    $('#ai-update-modal').css('display', 'none');
-                    // 刷新状态栏显示
-                    populateCharacterData();
-                } catch (e) {
-                    console.error('AI 变量更新失败:', e);
-                    $status.text('❌ 更新失败: ' + (e.message || String(e))).css('color', '#c0392b');
-                    $btn.prop('disabled', false);
-                }
-            });
-
             // ★ 全局修改器：点击进入/退出「修改模式」（数值点击直接编辑、条目垃圾桶删除，自动写回+热加载）
             $('#btn-open-editor').on('click', function() {
                 if (typeof Mvu === 'undefined') return alert('MVU框架未初始化');
@@ -5176,6 +5333,205 @@ var TRT_TECH = {
         }
 
         // ============================================================
+        //  ★ 追踪记录硬拦截：世界.追踪记录 只允许 insert（新增一条流水）
+        //  replace/remove/add/move 一律丢弃 —— AI 可见可写但不可覆盖/删除历史流水
+        // ============================================================
+        function filterTrackRecordCommands(commands) {
+            if (!commands || !commands.length) return;
+            function hitTrackSegs(segs) {
+                if (!segs || segs.length < 2) return false;
+                if (segs[0] === 'stat_data' || segs[0] === 'status_current_variables') segs = segs.slice(1);
+                if (segs.length < 2 || segs[0] !== '世界' || segs[1] !== '追踪记录') return false;
+                return true;
+            }
+            for (var i = commands.length - 1; i >= 0; i--) {
+                var cmd = commands[i];
+                if (!cmd || !cmd.args || !cmd.args.length) continue;
+                var segs = pathToSegments(cmd.args[0]);
+                if (segs[0] === 'stat_data' || segs[0] === 'status_current_variables') segs = segs.slice(1);
+                var isTrack = hitTrackSegs(segs);
+                var isMoveToTrack = false;
+                if (cmd.type === 'move' && cmd.args.length > 1) {
+                    var toSegs = pathToSegments(cmd.args[1]);
+                    if (toSegs[0] === 'stat_data' || toSegs[0] === 'status_current_variables') toSegs = toSegs.slice(1);
+                    isMoveToTrack = hitTrackSegs(toSegs);
+                }
+                // 命中追踪记录：仅放行「向容器新增单条」的 insert（路径恰好 世界/追踪记录/记录ID）
+                var isOneInsert = cmd.type === 'insert' && segs.length === 3;
+                if (isTrack || isMoveToTrack) {
+                    if (isOneInsert) continue;               // 放行：新增一条流水
+                    commands.splice(i, 1);                   // 其余一律丢弃
+                    if (typeof toastr !== 'undefined' && toastr.warning) toastr.warning('⚠️ 已拦截 AI 对 追踪记录 的 ' + cmd.type + ' 操作（仅允许新增流水）', '追踪记录');
+                }
+            }
+        }
+
+        // ============================================================
+        //  名字段规范化 + 已有键 insert 合并（主要NPC/同伴/契约兽/召唤物）
+        //  解决：① AI 把「亚伦·伍德」写成 亚伦_伍德 / 亚伦.伍德 / 亚伦・伍德
+        //        → 多出残缺条目、同名分叉、只有一句心里话的"幽灵NPC"
+        //        ② insert 整条到已存在键 → 覆盖丢字段
+        //  做法：字符归一（_/・/•/．→·）+ 被拆断的名字段合并（与现有键对齐）
+        //        + insert 目标已存在时展开为逐字段 set（只更新出现字段，不覆盖其他）
+        // ============================================================
+        function normalizeNpcNameCommands(commands) {
+            if (!commands || !commands.length) return;
+            var CONTAINERS = ['主要NPC', '同伴', '契约兽', '召唤物'];
+            var FIELDS = {
+                '主要NPC': ['好感度', '心里话', '年龄', '身份', '当前位置', '关键事件', '关系描述', '关系时间线', '关系分类'],
+                '同伴': ['好感度', '心里话', '外貌', '性格', '背景故事', '所属势力', '种族', '身份', '当前位置', '等阶', '基础属性', '基础状态', '防御值', '技能', '物品栏', '装备栏', '资质', '_属性锁定'],
+                '契约兽': ['种族', '职业', '契约主', '当前位置', '等阶', '等级', '体型', '元素属性', '羁绊', '防御值', '移动速度', '先攻修正', '外貌', '性格', '所属势力', '背景故事', '状态', '基础属性', '基础状态', '攻击', '能力', '吐息'],
+                '召唤物': []   // 动态字段：不做段合并（仅字符归一+现有键对齐）
+            };
+            var stat = null;
+            try { stat = _.get(Mvu.getMvuData({ type: 'message', message_id: 'latest' }), 'stat_data', {}); } catch (e) { return; }
+            function fixNameChar(s) { return String(s).replace(/[_\u30fb\u2022\uff0e.]/g, '·'); }
+            // 名字段规范化：容器 + 名字（字符归一、拆段合并、与现有键对齐）
+            function normNameSegs(segs) {
+                var container = segs[0];
+                var fields = FIELDS[container] || [];
+                // 召唤物：仅字符归一（字段动态，不能按白名单合段）
+                if (container === '召唤物') {
+                    var n0 = fixNameChar(segs[1]);
+                    var k0 = null;
+                    var cur0 = (stat && stat[container]) || {};
+                    Object.keys(cur0).forEach(function (k) { if (!k0 && (k === n0 || fixNameChar(k) === n0)) k0 = k; });
+                    return [container, k0 || n0].concat(segs.slice(2));
+                }
+                var nameParts = [segs[1]];
+                var i = 2;
+                while (i < segs.length && fields.indexOf(segs[i]) === -1) { nameParts.push(segs[i]); i++; }
+                var nameStr = fixNameChar(nameParts.join('·'));
+                var known = null;
+                var cur = (stat && stat[container]) || {};
+                Object.keys(cur).forEach(function (k) { if (!known && (k === nameStr || fixNameChar(k) === nameStr)) known = k; });
+                return [container, known || nameStr].concat(segs.slice(i));
+            }
+            function addSegs(segs) {
+                if (segs[0] === 'stat_data' || segs[0] === 'status_current_variables') return segs.slice(1);
+                return segs;
+            }
+            // insert 整条到已存在键 → 展开为逐字段 set（不覆盖未出现的字段）
+            function expandInsert(baseSegs, value, out) {
+                var isObj = value && typeof value === 'object' && !Array.isArray(value);
+                if (!isObj) {
+                    if (value !== undefined) out.push({ type: 'set', full_match: '', args: [baseSegs.join('.'), JSON.stringify(value === null ? '' : value)], reason: '[名字规范化] 已有条目字段写入' });
+                    return;
+                }
+                var keys = Object.keys(value);
+                if (!keys.length) { out.push({ type: 'set', full_match: '', args: [baseSegs.join('.'), '{}'], reason: '[名字规范化] 已有条目字段写入' }); return; }
+                keys.forEach(function (k) { expandInsert(baseSegs.concat([k]), value[k], out); });
+            }
+            function mergeIfExisting(commands, idx, segs) {
+                var cmd = commands[idx];
+                var container = segs[0], name = segs[1];
+                var cur = (stat[container] || {});
+                if (cmd.type !== 'insert' || segs.length !== 2 || !cur[name]) return false;
+                var merged = [];
+                expandInsert(segs, cmd.args[1], merged);
+                if (!merged.length) return false;
+                commands.splice(idx, 1);                 // 移除原 insert
+                for (var m = 0; m < merged.length; m++) commands.splice(idx + m, 0, merged[m]);
+                return true;
+            }
+            for (var i = 0; i < commands.length; i++) {
+                var cmd = commands[i];
+                if (!cmd || !cmd.args || !cmd.args.length) continue;
+                var segs = addSegs(pathToSegments(cmd.args[0]));
+                if (segs.length < 2 || CONTAINERS.indexOf(segs[0]) === -1) continue;
+                var newSegs = normNameSegs(segs);
+                var changed = newSegs.join('.') !== segs.join('.');
+                if (cmd.type === 'move' && cmd.args.length > 1) {
+                    var tSegs = addSegs(pathToSegments(cmd.args[1]));
+                    if (tSegs.length >= 2 && CONTAINERS.indexOf(tSegs[0]) !== -1) {
+                        var ntSegs = normNameSegs(tSegs);
+                        if (ntSegs.join('.') !== tSegs.join('.')) cmd.args[1] = ntSegs.join('.');
+                    }
+                }
+                if (changed) {
+                    cmd.args[0] = newSegs.join('.');
+                    cmd.reason = (cmd.reason ? cmd.reason + '；' : '') + '[名字规范化] ' + segs.join('.') + ' → ' + newSegs.join('.');
+                    if (mergeIfExisting(commands, i, newSegs)) i += mergedLenHint(commands, i, newSegs);
+                } else if (mergeIfExisting(commands, i, newSegs)) {
+                    i += mergedLenHint(commands, i, newSegs);
+                }
+            }
+            // 返回本次展开新增的命令数（insert 已被移除，改从当前位置继续）
+            function mergedLenHint(commands, idx, segs) {
+                var added = 0;
+                for (var j = idx; j < commands.length; j++) {
+                    if (commands[j] && commands[j].reason && commands[j].reason.indexOf('[名字规范化] 已有条目字段写入') !== -1) added++;
+                    else break;
+                }
+                return Math.max(0, added - 1);
+            }
+        }
+        window.normalizeNpcNameCommands = normalizeNpcNameCommands;
+
+        // ============================================================
+        //  出生年月日/年龄 只读守卫：出生年月日一经确定不改；年龄由系统按当前日期自动计算
+        //  拦截 主要NPC/同伴 的 .年龄 与 .出生年月日 的 replace/insert/remove/add
+        // ============================================================
+        function filterImmutableNpcFields(commands) {
+            if (!commands || !commands.length) return;
+            var stat = null;
+            try { stat = _.get(Mvu.getMvuData({ type: 'message', message_id: 'latest' }), 'stat_data', {}); } catch (e) {}
+            // 由年龄反推出生年月日：当前纪年日期 倒扣 年龄（月日保留同日，2/29 边界取 28）
+            function genBirthFromAge(age, nowStr) {
+                var m = String(nowStr || '').match(/(\d{4})年?\s*(\d{1,2})?月?\s*(\d{1,2})?日?/);
+                if (!m) return '';
+                var y = parseInt(m[1], 10), mo = parseInt(m[2] || 1, 10), d = parseInt(m[3] || 1, 10);
+                var by = y - (parseInt(age, 10) || 0);
+                if (mo === 2 && d === 29 && by % 4 !== 0) d = 28;
+                return '圣光历' + by + '年' + mo + '月' + d + '日';
+            }
+            for (var i = commands.length - 1; i >= 0; i--) {
+                var cmd = commands[i];
+                if (!cmd || !cmd.args || !cmd.args.length) continue;
+                var segs = pathToSegments(cmd.args[0]);
+                if (segs[0] === 'stat_data' || segs[0] === 'status_current_variables') segs = segs.slice(1);
+                if (segs.length < 2 || (segs[0] !== '主要NPC' && segs[0] !== '同伴')) continue;
+                var actor = (stat && stat[segs[0]]) ? stat[segs[0]][segs[1]] : null;
+                var nowStr = _.get(stat, '世界.日期', '') || '';
+                // ── 情况 A：写子路径 /名/年龄 ──
+                if (segs.length === 3 && segs[2] === '年龄') {
+                    if (actor && actor.出生年月日) {
+                        // 已有出生年月日：年龄由系统计算，改写一律拦截
+                        commands.splice(i, 1);
+                        if (typeof toastr !== 'undefined' && toastr.warning) toastr.warning('⛔ 已拦截对 ' + segs[0] + '「' + segs[1] + '」的年龄改写：出生年月日已定（' + actor.出生年月日 + '），年龄按当前日期自动计算', '状态栏');
+                    } else {
+                        // 无出生年月日：把「写年龄」自动转换为「写出生年月日」（当前纪年倒扣年龄），年龄由系统接管
+                        var birthVal = genBirthFromAge(cmd.args[1], nowStr);
+                        if (birthVal) {
+                            cmd.type = 'replace';
+                            cmd.args[0] = segs[0] + '.' + segs[1] + '.出生年月日';
+                            cmd.args[1] = birthVal;
+                            cmd.reason = (cmd.reason ? cmd.reason + '；' : '') + '[年龄换算] 由年龄 ' + cmd.args[1] + '（当前纪年倒扣）自动生成出生年月日，年龄将按日期自动计算';
+                            if (typeof toastr !== 'undefined' && toastr.info) toastr.info('🔄 已将 ' + segs[0] + '「' + segs[1] + '」的年龄换算为出生年月日：' + birthVal + '（此后年龄自动计算）', '状态栏');
+                        }
+                    }
+                    continue;
+                }
+                // ── 情况 B：insert 整条新角色且 value 含 年龄（无出生年月日）→ 自动补出生年月日 ──
+                if (cmd.type === 'insert' && segs.length === 2 && cmd.args[1] && typeof cmd.args[1] === 'object' && !cmd.args[1].出生年月日 && cmd.args[1].年龄) {
+                    var bv = genBirthFromAge(cmd.args[1].年龄, nowStr);
+                    if (bv) {
+                        cmd.args[1].出生年月日 = bv;
+                        delete cmd.args[1].年龄;   // 由出生日期接管（不残留固定年龄）
+                        if (typeof toastr !== 'undefined' && toastr.info) toastr.info('🔄 收录 ' + segs[0] + '「' + segs[1] + '」时已自动生成出生年月日：' + bv + '（原年龄换算，此后年龄自动计算；出生年月日一经确定不改）', '状态栏');
+                    }
+                    continue;
+                }
+                // ── 情况 C：写/删 出生年月日 子路径：首次 insert 放行，改写/删除拦截 ──
+                if (segs.length === 3 && segs[2] === '出生年月日') {
+                    if (cmd.type === 'insert' && !(actor && actor.出生年月日)) continue;
+                    commands.splice(i, 1);
+                    if (typeof toastr !== 'undefined' && toastr.warning) toastr.warning('⛔ 已拦截对 ' + segs[0] + '「' + segs[1] + '」的出生年月日修改：一经确定不改（当前：' + ((actor && actor.出生年月日) || '未设置') + '）', '状态栏');
+                }
+            }
+        }
+
+        // ============================================================
         //  同伴母路径锁定（AI 不能删除/替换整条同伴，但可修改其下属性）
         //  同伴物品栏物品锁定（支持写入·拒绝删除整件锁定物品）
         // ============================================================
@@ -5189,6 +5545,50 @@ var TRT_TECH = {
             }
             // MVU 点号路径：同伴.莉莉丝.好感度
             return String(path).split('.');
+        }
+
+        // ============================================================
+        //  ★ 经验值增加弹窗确认：拦截 AI 通过指令增加「经验值.当前」，必须点击允许才写入
+        //  （只拦 +delta 的 add；replace/整体经验值仍由 filterProtagonistReadonlyCommands 拦截）
+        // ============================================================
+        function filterExperienceConfirmCommands(commands) {
+            if (!commands || !commands.length) return;
+            var hasPending = false;
+            for (var i = commands.length - 1; i >= 0; i--) {
+                var cmd = commands[i];
+                if (!cmd || !cmd.args || !cmd.args.length) continue;
+                if (cmd.type !== 'add') continue;                    // 只拦增量增加
+                var segs = pathToSegments(cmd.args[0]);
+                if (segs[0] === 'stat_data' || segs[0] === 'status_current_variables') segs = segs.slice(1);
+                if (segs.join('.') !== '主角.基础状态.经验值.当前') continue;
+                var amt = parseInt(cmd.args[1], 10) || 0;
+                if (amt <= 0) continue;                              // 只拦增加经验
+                // 从原命令流移除（无论允许与否都由本函数落账，避免二次加 / 丢失）
+                commands.splice(i, 1);
+                hasPending = true;
+                // 点击允许才写入
+                var ok = false;
+                try { ok = confirm('⚠️ AI 试图增加经验 +' + amt + '\n\n是否允许写入（经验值.当前）？\n「确定」= 写入 · 「取消」= 忽略该条经验'); } catch (e) { ok = false; }
+                if (ok) {
+                    try {
+                        var mvuD = Mvu.getMvuData({ type: 'message', message_id: 'latest' });
+                        if (mvuD && mvuD.stat_data && mvuD.stat_data.主角) {
+                            mvuD.stat_data.主角.基础状态 = mvuD.stat_data.主角.基础状态 || {};
+                            mvuD.stat_data.主角.基础状态.经验值 = mvuD.stat_data.主角.基础状态.经验值 || { 当前: 0, 升级所需: 100 };
+                            mvuD.stat_data.主角.基础状态.经验值.当前 = (parseInt(mvuD.stat_data.主角.基础状态.经验值.当前, 10) || 0) + amt;
+                            Mvu.replaceMvuData(mvuD, { type: 'message', message_id: 'latest' });
+                        }
+                        // 记录经验获取（并入追踪记录流水账）
+                        try { trackPush({ 时间: '', 类型: '经验获取', 金额: amt, 物品: '', 数量: 0, 余额: -1, 说明: '主角经验 +' + amt + '（点击允许写入）' }); } catch (e) {}
+                        if (typeof toastr !== 'undefined' && toastr.success) toastr.success('已允许写入经验 +' + amt, '经验确认');
+                    } catch (e) {
+                        if (typeof toastr !== 'undefined' && toastr.error) toastr.error('写入经验失败：' + e.message);
+                    }
+                } else {
+                    if (typeof toastr !== 'undefined' && toastr.warning) toastr.warning('已忽略本次经验 +' + amt, '经验确认');
+                }
+            }
+            if (hasPending && typeof populateCharacterData === 'function') setTimeout(populateCharacterData, 50);
         }
 
         function filterLockedCompanionCommands(commands) {
@@ -5230,6 +5630,8 @@ var TRT_TECH = {
                 // 整件锁定物品
                 // 一键全锁：物品栏任意深度（含子字段如 .数量/.描述）完全只读，拒绝 AI 修改/删除
                 if (segs.length >= 3 && segs[2] === '物品栏' && fullLockedComps[segs[1]]) return true;
+                // 一键全锁：装备栏同样只读（拒绝 AI 修改/删除/替换装备），跨楼层经 persistLocks 持久
+                if (segs.length >= 3 && segs[2] === '装备栏' && fullLockedComps[segs[1]]) return true;
                 if (segs.length === 4 && segs[2] === '物品栏' &&
                     lockedItemPaths[segs[1]] && lockedItemPaths[segs[1]].indexOf(segs[3]) !== -1) return true;
                 return false;
@@ -5696,7 +6098,7 @@ var TRT_TECH = {
                     var toRemove = pendingNewComps.slice();
                     pendingNewComps = [];
                     $('#comp-confirm-modal').css('display', 'none');
-                    Mvu.replaceMvuData(mv, { type: 'message', message_id: 'latest' }).then(function () {
+                    Promise.resolve(Mvu.replaceMvuData(mv, { type: 'message', message_id: 'latest' })).then(function () {
                         populateCharacterData();
                         isCompConfirmBusy = false;
                     });
@@ -5728,8 +6130,15 @@ var TRT_TECH = {
 
             // 同伴母路径锁定：AI 不能删除/替换整条同伴，但可修改其下属性（好感度/心里话/基础属性等）
             eventOn(Mvu.events.COMMAND_PARSED, filterLockedCompanionCommands);
+            // 追踪记录硬拦截：只允许 insert 追加流水，禁止 replace/remove/add/move 覆盖或删除
+            eventOn(Mvu.events.COMMAND_PARSED, filterTrackRecordCommands);
+            // 名字段规范化：主要NPC/同伴/契约兽/召唤物 名字写错（_/・/拆段）自动修正并与现有键对齐（防同名分叉/幽灵条目）
+            eventOn(Mvu.events.COMMAND_PARSED, normalizeNpcNameCommands);
+            // 出生年月日/年龄只读：出生年月日一经确定不改；年龄按当前日期自动计算（AI 禁写）
+            eventOn(Mvu.events.COMMAND_PARSED, filterImmutableNpcFields);
             // 主角系统字段只读：总等级 / 经验值.升级所需（AI 不可写；同伴不受影响）
             eventOn(Mvu.events.COMMAND_PARSED, filterProtagonistReadonlyCommands);
+            eventOn(Mvu.events.COMMAND_PARSED, filterExperienceConfirmCommands);
             // 被动年龄成长：每次变量更新结束（每层）静默检测，够就自动补、不够不管
             try {
                 if (typeof Mvu !== 'undefined' && Mvu.events && Mvu.events.VARIABLE_UPDATE_ENDED) {
@@ -5746,6 +6155,7 @@ var TRT_TECH = {
                 $wrapper.find('.jrpg-tab-content').removeClass('active');
                 $this.addClass('active');
                 $wrapper.find('#' + tabId).addClass('active');
+                if (tabId === 'tab-track') { if (typeof renderTrackTab === 'function') renderTrackTab(); }
             });
 
             // 物品栏折叠事件（主角物品栏 + 同伴物品栏）
@@ -5757,6 +6167,142 @@ var TRT_TECH = {
                 $arrow.toggleClass('open');
             });
 
+            // ===== 🧺 追踪记录：只读展示（AI 按「变量更新规则·追踪记录」用 MVU insert 写入 世界.追踪记录） =====
+            // 数据流：AI 在叙事中发生 金盾入账/支出、购买/出售/更换物品、物品获得/失去、经验获取、货币变动
+            //        → 用标准 MVU JSONPatch 在 /世界/追踪记录/{记录ID} insert 一条 → 状态栏本页签直接显示流水账
+            function readTrack() {
+                try {
+                    var mvuD = Mvu.getMvuData({ type: 'message', message_id: 'latest' });
+                    var rec = mvuD && mvuD.stat_data && mvuD.stat_data.世界 ? mvuD.stat_data.世界.追踪记录 : null;
+                    if (!rec || typeof rec !== 'object') return [];
+                    return Object.keys(rec).map(function(k) {
+                        var e = rec[k] || {};
+                        return {
+                            时间: String(e.时间 || ''),
+                            类型: String(e.类型 || '其他'),
+                            金额: parseInt(e.金额, 10) || 0,
+                            物品: String(e.物品 || ''),
+                            数量: parseInt(e.数量, 10) || 0,
+                            余额: (e.余额 === undefined || e.余额 === null || e.余额 === '') ? -1 : (parseInt(e.余额, 10) || 0),
+                            说明: String(e.说明 || '')
+                        };
+                    });
+                } catch (e) { return []; }
+            }
+            function renderTrackTab() {
+                var box = document.getElementById('track-inner'); if (!box) return;
+                var arr = readTrack();
+                if (!arr.length) {
+                    box.innerHTML = '<div class="jrpg-list-empty">暂无追踪记录。AI 在叙事中发生金盾入账/支出、购买/更换物品、经验结算时，会按「变量更新规则」写入 世界.追踪记录，本页签直接显示流水账。</div>';
+                    renderTrackMoney();
+                    return;
+                }
+                var html = '<div style="max-height:320px;overflow:auto;">';
+                arr.slice().reverse().forEach(function(e) {
+                    var dt = e.时间 || '—';
+                    var amount = '';
+                    // 经验获取：金额=经验增量，按 EXP 展示（非金盾）
+                    if (e.类型 === '经验获取') amount = '<b style="color:#16a085;">✦ ' + (e.金额 > 0 ? '+' : '') + e.金额 + ' EXP</b>';
+                    // 金额单位=铜盾（与 stat_data.货币 一致），用 formatCurrency 分级显示（金盾/银盾/铜盾）
+                    else if (e.金额 !== 0) amount = '<b style="color:' + (e.金额 >= 0 ? '#27ae60' : '#c0392b') + ';">' + (e.金额 >= 0 ? '+' : '') + formatCurrency(Math.abs(e.金额)) + '</b>';
+                    else if (e.数量 !== 0) amount = '<b style="color:' + (e.数量 >= 0 ? '#27ae60' : '#c0392b') + ';">' + (e.数量 > 0 ? '+' : '') + e.数量 + ' ' + (e.物品 || '') + '</b>';
+                    html += '<div style="border-bottom:1px dashed #d2b48c;padding:4px 2px;font-size:11px;color:#4a3623;">';
+                    html += '<span style="color:#8b6b4a;font-size:10px;">' + escapeAttr(dt) + '</span>　<span style="color:#5a4430;">[' + escapeAttr(e.类型) + ']</span>　' + amount + (e.说明 ? '　<span style="color:#7f8c8d;">' + escapeAttr(e.说明) + '</span>' : '');
+                    html += '</div>';
+                });
+                html += '</div>';
+                html += '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">';
+                var fullMode = readTrackFullFlag();
+                html += '<button id="btn-track-full" class="jrpg-btn-sm" title="切换 状态变量输出 的流水数量：默认近5条省token，全量时AI全文可见" style="padding:3px 10px;font-size:11px;background:' + (fullMode ? '#8e44ad' : '#7f8c8d') + ';color:#fff;border:1px solid ' + (fullMode ? '#8e44ad' : '#7f8c8d') + ';border-radius:4px;">' + (fullMode ? '📜 全量输出' : '📄 近5条') + '</button>';
+                html += '<button id="btn-clear-track" class="jrpg-btn-sm" style="padding:3px 10px;font-size:11px;background:#c0392b;color:#fff;border:1px solid #c0392b;border-radius:4px;">🗑 清空</button>';
+                html += '</div>';
+                box.innerHTML = html;
+                renderTrackMoney();
+            }
+            function readTrackFullFlag() {
+                try {
+                    var mvuD = Mvu.getMvuData({ type: 'message', message_id: 'latest' });
+                    return !!(mvuD && mvuD.stat_data && mvuD.stat_data.$flags && mvuD.stat_data.$flags.追踪记录全量);
+                } catch (e) { return false; }
+            }
+            function renderTrackMoney() {
+                var box = document.getElementById('track-money'); if (!box) return;
+                var mvuD = (window.Mvu && Mvu.getMvuData) ? Mvu.getMvuData({ type: 'message', message_id: 'latest' }) : null;
+                var curMoney = mvuD && mvuD.stat_data && mvuD.stat_data.主角 && mvuD.stat_data.主角.资产与能力 ? mvuD.stat_data.主角.资产与能力.货币 : null;
+                var lastMoney = lastTrackMoney();
+                box.innerHTML = '<div style="font-size:12px;color:#4a3623;">stat_data.货币：<b>' + (curMoney === null ? '（未读取）' : formatCurrency(curMoney)) + '</b>　·　流水账最后余额：<b>' + (lastMoney === null ? '—' : formatCurrency(lastMoney)) + '</b></div>';
+                box.innerHTML += '<div style="margin-top:6px;"><button id="btn-fix-money" class="jrpg-btn-sm" style="padding:3px 10px;font-size:11px;background:#27ae60;color:#fff;border:1px solid #27ae60;border-radius:4px;">🔧 一键修正货币为流水账余额</button><span style="font-size:11px;color:#7f8c8d;margin-left:6px;">若不一致，点击后把 stat_data.货币 写为流水账最后余额。</span></div>';
+            }
+            function lastTrackMoney() {
+                var me = readTrack(), last = null;
+                // 跳过经验获取条（与货币无关，余额恒 -1）与未知余额（-1），取最近一条有效货币余额
+                me.forEach(function(e) { if (e.类型 !== '经验获取' && e.余额 !== undefined && e.余额 !== null && e.余额 >= 0) last = e.余额; });
+                return last;
+            }
+            $('.jrpg-status-wrapper').on('click', '#btn-track-full', function() {
+                try {
+                    var mvuD = (window.Mvu && Mvu.getMvuData) ? Mvu.getMvuData({ type: 'message', message_id: 'latest' }) : null;
+                    if (!mvuD || !mvuD.stat_data) return alert('MVU 未初始化');
+                    mvuD.stat_data.$flags = mvuD.stat_data.$flags || {};
+                    mvuD.stat_data.$flags.追踪记录全量 = !(mvuD.stat_data.$flags.追踪记录全量);
+                    Promise.resolve(Mvu.replaceMvuData(mvuD, { type: 'message', message_id: 'latest' })).then(function() {
+                        renderTrackTab();
+                        toastr.success(mvuD.stat_data.$flags.追踪记录全量 ? '已切换：状态输出全量流水' : '已切换：状态输出近5条流水', '追踪记录');
+                    });
+                } catch (e) { toastr.error('切换失败：' + e.message); }
+            });
+            $('.jrpg-status-wrapper').on('click', '#btn-clear-track', function() {
+                if (!confirm('确定清空所有追踪记录？此操作会清空 stat_data.世界.追踪记录 容器！')) return;
+                try {
+                    var mvuD = (window.Mvu && Mvu.getMvuData) ? Mvu.getMvuData({ type: 'message', message_id: 'latest' }) : null;
+                    if (!mvuD || !mvuD.stat_data) return alert('MVU 未初始化');
+                    if (!mvuD.stat_data.世界) return toastr.warning('世界容器不存在，无需清空');
+                    mvuD.stat_data.世界.追踪记录 = {};
+                    Promise.resolve(Mvu.replaceMvuData(mvuD, { type: 'message', message_id: 'latest' })).then(function() { renderTrackTab(); toastr.success('追踪记录已清空'); });
+                } catch (e) { toastr.error('清空失败：' + e.message); }
+            });
+            $('.jrpg-status-wrapper').on('click', '#btn-fix-money', function() {
+                try {
+                    var target = lastTrackMoney(); if (target === null) return toastr.warning('流水账暂无余额记录，无法修正');
+                    var mvuD = (window.Mvu && Mvu.getMvuData) ? Mvu.getMvuData({ type: 'message', message_id: 'latest' }) : null;
+                    if (!mvuD || !mvuD.stat_data) return alert('MVU 未初始化');
+                    mvuD.stat_data.主角 = mvuD.stat_data.主角 || {};
+                    mvuD.stat_data.主角.资产与能力 = mvuD.stat_data.主角.资产与能力 || {};
+                    mvuD.stat_data.主角.资产与能力.货币 = Math.max(0, target);
+                    Promise.resolve(Mvu.replaceMvuData(mvuD, { type: 'message', message_id: 'latest' })).then(function() { toastr.success('货币已一键修正为 ' + Math.max(0, target)); renderTrackMoney(); });
+                } catch (e) { toastr.error('修正失败：' + e.message); }
+            });
+            $('.jrpg-status-wrapper').on('click', '#btn-item-audit', function() {
+                try {
+                    var msg = '[系统·物品核对] 请核对你在近期叙事中涉及的所有物品售卖/删减/购买动作，与主角当前物品栏及各同伴物品栏逐条比对：若叙事中让角色获得或失去物品却未在对应物品栏体现，请立即在下一轮变量更新中修正；严禁把物品误写入主角或同伴之外的容器。';
+                    if (typeof createChatMessages === 'function') createChatMessages([{ role: 'system', message: msg }]);
+                    else if (typeof sendSystemMessage === 'function') sendSystemMessage('system', msg);
+                    toastr.success('物品核对指令已发送');
+                } catch (e) { toastr.error('发送失败：' + e.message); }
+            });
+            // 经验获取记录由经验确认弹窗回调 trackPush 写入（见 filterExperienceConfirmCommands）
+            function trackPush(entry) {
+                try {
+                    var mvuD = (window.Mvu && Mvu.getMvuData) ? Mvu.getMvuData({ type: 'message', message_id: 'latest' }) : null;
+                    if (!mvuD || !mvuD.stat_data) return;
+                    mvuD.stat_data.世界 = mvuD.stat_data.世界 || {};
+                    mvuD.stat_data.世界.追踪记录 = mvuD.stat_data.世界.追踪记录 || {};
+                    var d = new Date();
+                    var pad = function(n) { return (n < 10 ? '0' : '') + n; };
+                    var key = '' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds()) + '-' + Math.floor(Math.random() * 900 + 100);
+                    if (mvuD.stat_data.世界.追踪记录[key]) { key = key + '-' + (Object.keys(mvuD.stat_data.世界.追踪记录).length + 1); }
+                    mvuD.stat_data.世界.追踪记录[key] = {
+                        时间: String(entry.时间 || (d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()))),
+                        类型: String(entry.类型 || '其他'),
+                        金额: parseInt(entry.金额, 10) || 0,
+                        物品: String(entry.物品 || ''),
+                        数量: parseInt(entry.数量, 10) || 0,
+                        余额: (entry.余额 === undefined || entry.余额 === null || entry.余额 === '') ? -1 : (parseInt(entry.余额, 10) || 0),
+                        说明: String(entry.说明 || '')
+                    };
+                    Mvu.replaceMvuData(mvuD, { type: 'message', message_id: 'latest' });
+                } catch (e) {}
+            }
             // 同伴物品栏整体折叠事件
             $('.jrpg-status-wrapper').on('click', '.jrpg-comp-inv-toggle', function() {
                 var compName = $(this).data('comp');
@@ -5775,6 +6321,17 @@ var TRT_TECH = {
                 $arrow.toggleClass('open');
             });
 
+            // ===== 🧬 资质：只读展示（与 魔力回路/种族修正 同级；设置在首页创建器，花购点购买） =====
+            function renderTalentInfo() {
+                try {
+                    var s = Mvu.getMvuData({ type: 'message', message_id: 'latest' });
+                    var bi = s && s.stat_data && s.stat_data.主角 && s.stat_data.主角.基础信息;
+                    var talEl = document.getElementById('talent-display'); if (!talEl) return;
+                    var t = (bi && bi.资质 && bi.资质.等级) || '平庸';
+                    var d = (bi && bi.资质 && bi.资质.描述) || '';
+                    talEl.innerHTML = '<div class="jrpg-list-item"><div class="jrpg-item-header"><span>🧬 ' + escapeAttr(t) + '</span></div>' + (d ? '<div class="jrpg-item-desc">' + escapeAttr(d) + '</div>' : '') + '</div>';
+                } catch (e) {}
+            }
             // 同伴详情模态框事件
             $('.jrpg-status-wrapper').on('click', '.jrpg-comp-card', function(e) {
                 if ($(e.target).hasClass('jrpg-comp-avatar')) return; // 避免与头像上传冲突
@@ -6104,9 +6661,80 @@ var TRT_TECH = {
     </script>
 </head>
 <body>
+    <script>
+    /* ============================================================
+       聊天正文美化（羊皮纸多风格）· 设置持久化补丁
+       ------------------------------------------------------------
+       BUG 原因：世界书/正则注入消息的 HTML 中 <script> 会被
+       SillyTavern 净化器剥离，因此「聊天背景_多风格羊皮纸.html」
+       自带的 localStorage 持久化脚本从不执行 —— 当层切换靠纯 CSS
+       即时生效，但每层新消息都是默认主题/字号（看起来像“又变回默认”）。
+       本补丁随状态栏脚本每层执行：仅首次把“修改监听 + 新楼层回放”
+       安装到所有可达宿主文档（本窗口 / parent / top），
+       任一层切换的主题/字号写入 localStorage，后续所有楼层自动回放。
+       幂等：宿主 window.__isuriaPtPersist 标记，只安装一次。
+       访问不到宿主（跨域等）时静默跳过，不影响羊皮纸本身显示。
+       ============================================================ */
+    (function () {
+        try {
+            var PT_T = 'pt_theme', PT_F = 'pt_font';
+            function install(win) {
+                try {
+                    if (!win || win.__isuriaPtPersist) return;
+                    win.__isuriaPtPersist = true;
+                    var doc = win.document;
+                    if (!doc || !doc.addEventListener || !doc.querySelectorAll) return;
+                    var ls = win.localStorage;
+                    function readSaved() {
+                        var t = null, f = null;
+                        try { t = ls.getItem(PT_T); } catch (e) {}
+                        try { f = ls.getItem(PT_F); } catch (e) {}
+                        return { t: t, f: f };
+                    }
+                    function applyBox(box, t, f) {
+                        if (!box || box.__ptApplied) return;
+                        box.__ptApplied = true;
+                        if (t) {
+                            var rs = box.querySelectorAll('input[name="pt-theme"]');
+                            for (var i = 0; i < rs.length; i++) if (rs[i].value === t) { rs[i].checked = true; break; }
+                        }
+                        if (f) {
+                            var fs = box.querySelectorAll('input[name="pt-font"]');
+                            for (var j = 0; j < fs.length; j++) if (fs[j].value === f) { fs[j].checked = true; break; }
+                        }
+                    }
+                    function rescan() {
+                        if (!doc.querySelectorAll) return;
+                        var saved = readSaved();
+                        if (!saved.t && !saved.f) return;
+                        var boxes = doc.querySelectorAll('[data-parchment]');
+                        for (var k = 0; k < boxes.length; k++) applyBox(boxes[k], saved.t, saved.f);
+                    }
+                    // ① 用户修改主题/字号 → 写 localStorage（捕获阶段，防止被中间 handler 拦截）
+                    doc.addEventListener('change', function (ev) {
+                        var el = ev && ev.target;
+                        if (!el || !el.name) return;
+                        if (el.name !== PT_T && el.name !== PT_F) return;
+                        try { ls.setItem(el.name, el.value); } catch (e) {}
+                    }, true);
+                    // ② 已存在的历史楼层回放
+                    rescan();
+                    // ③ 后续新楼层：消息注入时自动回放（安装一次即持续生效）
+                    if (typeof MutationObserver !== 'undefined' && doc.body) {
+                        new MutationObserver(function () { rescan(); }).observe(doc.body, { childList: true, subtree: true });
+                    } else if (doc.addEventListener) {
+                        doc.addEventListener('DOMNodeInserted', function () { rescan(); }, true);
+                    }
+                } catch (e) { /* 跨域/只读环境静默 */ }
+            }
+            install(window);
+            try { install(window.parent); } catch (e) {}
+            try { if (window.top && window.top !== window.parent) install(window.top); } catch (e) {}
+        } catch (e) { console.warn('[正文美化持久化] 安装失败（不影响羊皮纸显示）:', e); }
+    })();
+    </script>
     <div class="jrpg-status-wrapper">
         <!-- 全局修改按钮 -->
-        <button id="btn-ai-update" class="jrpg-global-edit-btn" style="right: 120px; background: #2980b9; border-color: #1a5276;" title="根据提示词让AI自动更新变量">🪄 AI 变量更新</button>
         <button id="btn-open-editor" class="jrpg-global-edit-btn" title="上帝模式：任意增删改世界变量">⚙️ 全局修改器</button>
 
         <div class="jrpg-world-bar"><span>📅 <span id="val-world-date">-</span></span><span>⏱ <span id="val-world-time">-</span></span><span>🌤 <span id="val-world-weather">-</span></span><span>📍 <span id="val-world-location">-</span></span><span>⚡ <span id="val-world-tension">-</span></span></div>
@@ -6119,10 +6747,10 @@ var TRT_TECH = {
             <div><div class="jrpg-box"><div class="jrpg-box-title">基础属性</div><div class="jrpg-stats-grid"><div class="jrpg-stat-item"><span>力量</span><span id="val-str">10</span></div><div class="jrpg-stat-item"><span>敏捷</span><span id="val-dex">10</span></div><div class="jrpg-stat-item"><span>体质</span><span id="val-con">10</span></div><div class="jrpg-stat-item"><span>智力</span><span id="val-int">10</span></div><div class="jrpg-stat-item"><span>感知</span><span id="val-wis">10</span></div><div class="jrpg-stat-item"><span>魅力</span><span id="val-cha">10</span></div></div><div class="jrpg-level-row" id="level-info-row"></div></div></div>
             <div><div class="jrpg-box"><div class="jrpg-box-title">职业信息</div><div class="jrpg-list" id="list-classes"><div class="jrpg-list-empty">暂无职业</div></div></div></div>
         </div>
-        <div class="jrpg-tabs"><button class="jrpg-tab-btn active" data-tab="tab-basic">状态</button><button class="jrpg-tab-btn" data-tab="tab-assets">能力</button><button class="jrpg-tab-btn" data-tab="tab-quests">任务</button><button class="jrpg-tab-btn" data-tab="tab-knowledge">见闻</button><button class="jrpg-tab-btn" data-tab="tab-party">同伴</button><button class="jrpg-tab-btn" data-tab="tab-advanced">超凡</button><button class="jrpg-tab-btn" data-tab="tab-skilltree">技能树</button><button class="jrpg-tab-btn" data-tab="tab-variant">变体技能</button><button class="jrpg-tab-btn" data-tab="tab-alloc">升级分配</button><button class="jrpg-tab-btn" data-tab="tab-territory">🏰 领地</button></div>
+        <div class="jrpg-tabs"><button class="jrpg-tab-btn active" data-tab="tab-basic">状态</button><button class="jrpg-tab-btn" data-tab="tab-assets">能力</button><button class="jrpg-tab-btn" data-tab="tab-quests">任务</button><button class="jrpg-tab-btn" data-tab="tab-knowledge">见闻</button><button class="jrpg-tab-btn" data-tab="tab-party">同伴</button><button class="jrpg-tab-btn" data-tab="tab-advanced">超凡</button><button class="jrpg-tab-btn" data-tab="tab-skilltree">技能树</button><button class="jrpg-tab-btn" data-tab="tab-variant">变体技能</button><button class="jrpg-tab-btn" data-tab="tab-alloc">升级分配</button><button class="jrpg-tab-btn" data-tab="tab-track">🧺 追踪记录</button><button class="jrpg-tab-btn" data-tab="tab-territory">🏰 领地</button></div>
 
         <div id="tab-basic" class="jrpg-tab-content active"><div class="jrpg-grid-2col"><div><div class="jrpg-box"><div class="jrpg-box-title">自身状态 <button class="edit-add-btn" data-add-path="主角.基础状态.自身状态" title="修改模式下新增状态">➕ 新增</button></div><div class="jrpg-list" id="list-status"><div class="jrpg-list-empty">无异常状态</div></div></div><div class="jrpg-box"><div class="jrpg-box-title">🙏 信仰</div><div class="jrpg-list" id="list-faith"><div class="jrpg-list-empty">未信仰神明</div></div></div></div><div><div class="jrpg-box"><div class="jrpg-box-title">种族</div><div class="jrpg-list" id="list-race"><div class="jrpg-list-empty">—</div></div></div><div class="jrpg-box"><div class="jrpg-box-title">魔力回路</div><div class="jrpg-list" id="list-circuit"><div class="jrpg-list-empty">—</div></div></div></div></div></div>
-        <div id="tab-assets" class="jrpg-tab-content"><div class="jrpg-grid-2col"><div><div class="jrpg-box"><div class="jrpg-box-title">装备栏 <span style="font-weight:normal;font-size:11px;color:#8b6b4a;">（头部/颈部/躯干/腿部/双手）</span></div><div id="list-equipment"><div class="jrpg-list-empty">加载中…</div></div></div><div class="jrpg-box"><div class="jrpg-box-title">🎒 物品栏 <span style="font-weight:normal;font-size:11px;color:#8b6b4a;">（装备类物品可一键装备）</span><button class="edit-add-btn" data-add-path="主角.资产与能力.物品栏" title="修改模式下新增物品">➕ 新增</button></div><div class="jrpg-list" id="list-inventory" style="max-height: 350px;"><div class="jrpg-list-empty">空无一物</div></div></div></div><div><div class="jrpg-box"><div class="jrpg-box-title">⚔️ 角色技能</div><div class="jrpg-list" id="list-skills"><div class="jrpg-list-empty">未掌握技能</div></div></div><div class="jrpg-box"><div class="jrpg-box-title">✦ 魔法栏</div><div class="jrpg-list" id="list-magic"><div class="jrpg-list-empty">未掌握魔法</div></div></div><div class="jrpg-box"><div class="jrpg-box-title">✧ 神术栏</div><div class="jrpg-list" id="list-divine"><div class="jrpg-list-empty">未信仰神明</div></div></div></div></div></div>
+        <div id="tab-assets" class="jrpg-tab-content"><div class="jrpg-grid-2col"><div><div class="jrpg-box"><div class="jrpg-box-title">装备栏</div><div id="list-equipment"><div class="jrpg-list-empty">加载中…</div></div></div><div class="jrpg-box"><div class="jrpg-box-title">🎒 物品栏 <button class="edit-add-btn" data-add-path="主角.资产与能力.物品栏" title="修改模式下新增物品">➕ 新增</button></div><div class="jrpg-list" id="list-inventory" style="max-height: 350px;"><div class="jrpg-list-empty">空无一物</div></div></div></div><div><div class="jrpg-box"><div class="jrpg-box-title">⚔️ 角色技能</div><div class="jrpg-list" id="list-skills"><div class="jrpg-list-empty">未掌握技能</div></div></div><div class="jrpg-box"><div class="jrpg-box-title">✦ 魔法栏</div><div class="jrpg-list" id="list-magic"><div class="jrpg-list-empty">未掌握魔法</div></div></div><div class="jrpg-box"><div class="jrpg-box-title">✧ 神术栏</div><div class="jrpg-list" id="list-divine"><div class="jrpg-list-empty">未信仰神明</div></div></div></div></div></div>
         <div id="tab-quests" class="jrpg-tab-content"><div class="jrpg-box"><div class="jrpg-box-title">📜 任务日志</div><div class="jrpg-list" id="list-quests" style="max-height: 350px;"><div class="jrpg-list-empty">暂无接取的任务</div></div></div></div>
 
         <!-- 见闻区域：世界概况 + 动态新闻 -->
@@ -6146,7 +6774,11 @@ var TRT_TECH = {
             <div class="jrpg-box"><div class="jrpg-box-title">👥 主要NPC</div><div class="jrpg-list" id="list-npcs" style="max-height: 250px;"><div class="jrpg-list-empty">暂无羁绊</div></div></div>
         </div>
 
-        <div id="tab-advanced" class="jrpg-tab-content"><div class="jrpg-grid-2col"><div><div class="jrpg-box"><div class="jrpg-box-title">🌟 加护</div><div class="jrpg-list" id="list-blessings"><div class="jrpg-list-empty">无加护</div></div></div></div><div><div class="jrpg-box"><div class="jrpg-box-title">👑 权能</div><div class="jrpg-list" id="list-authorities"><div class="jrpg-list-empty">无权能</div></div></div></div></div></div>
+        <div id="tab-advanced" class="jrpg-tab-content">
+            <div class="jrpg-box">
+                <div class="jrpg-box-title">🧬 资质</div>
+                <div class="jrpg-list" id="talent-display"><div class="jrpg-list-empty">—</div></div>
+            </div><div class="jrpg-grid-2col"><div><div class="jrpg-box"><div class="jrpg-box-title">🌟 加护</div><div class="jrpg-list" id="list-blessings"><div class="jrpg-list-empty">无加护</div></div></div></div><div><div class="jrpg-box"><div class="jrpg-box-title">👑 权能</div><div class="jrpg-list" id="list-authorities"><div class="jrpg-list-empty">无权能</div></div></div></div></div></div>
 
         <!-- 技能树：读取职业信息 + dbSkills（内置数据，不进上下文/AI 不可见），自动生成 1-20 级技能树 -->
         <div id="tab-skilltree" class="jrpg-tab-content">
@@ -6161,6 +6793,25 @@ var TRT_TECH = {
         <!-- 变体技能：识别 $customSkillTrees 变量，生成可学习技能树 -->
         <div id="tab-variant" class="jrpg-tab-content">
             <div class="jrpg-box"><div class="jrpg-box-title">变体技能</div><div id="list-variant-skills"><div class="jrpg-list-empty">暂无变体技能</div></div></div>
+        </div>
+
+        <!-- 追踪记录：物品栏/货币 变量流水 + 物品整理指令 + 货币一键修正 -->
+        <div id="tab-track" class="jrpg-tab-content">
+            <div class="jrpg-box">
+                <div class="jrpg-box-title">🧺 追踪记录</div>
+                <div id="track-inner"><div class="jrpg-list-empty">加载中…</div></div>
+            </div>
+            <div class="jrpg-box">
+                <div class="jrpg-box-title">🔄 物品整理指令</div>
+                <div style="margin-top:6px;">
+                    <button id="btn-item-audit" class="jrpg-btn-sm" style="padding:3px 10px;font-size:11px;background:#2980b9;color:#fff;border:1px solid #2980b9;border-radius:4px;">📦 物品核对指令</button>
+                    <span style="font-size:11px;color:#7f8c8d;margin-left:6px;">发送后 AI 按当前物品栏核对叙事中的物品变动。</span>
+                </div>
+            </div>
+            <div class="jrpg-box">
+                <div class="jrpg-box-title">💰 货币一键修正</div>
+                <div id="track-money" style="margin-top:6px;"></div>
+            </div>
         </div>
 
         <!-- 升级分配：玩家在状态栏内给主角/同伴分配属性点·职业等级·技能点学习技能，确认后注入提示词；也可让 AI 自动分配 -->
@@ -6192,27 +6843,6 @@ var TRT_TECH = {
                 </div>
                 <div class="jrpg-modal-body" id="comp-modal-body">
                     <!-- 动态填充 -->
-                </div>
-            </div>
-        </div>
-
-        <!-- AI变量更新模态框 -->
-        <div id="ai-update-modal" class="jrpg-modal-overlay">
-            <div class="jrpg-modal-content" style="max-width: 500px;">
-                <div class="jrpg-modal-header">
-                    <span>🪄 AI 变量更新申请</span>
-                    <span id="btn-close-ai-update" class="jrpg-modal-close">✖</span>
-                </div>
-                <div class="jrpg-modal-body">
-                    <div style="font-size:12px; color:#6b4e31; margin-bottom:8px;">
-                        请输入您的变量更新要求（例如：“补充武器，装备的信息”、“主角获得了100金币”等），AI将根据世界规则自动计算并更新变量。
-                    </div>
-                    <textarea id="ai-update-prompt" class="vt-input" style="width:100%; height:100px; resize:vertical; padding:8px; box-sizing:border-box; border:1px solid #d2b48c; border-radius:4px; font-family:inherit; font-size:12px;" placeholder="在此输入要求..."></textarea>
-                    <div id="ai-update-status" style="margin-top:8px; font-size:11px; color:#8e44ad; display:none;">正在生成...</div>
-                </div>
-                <div class="jrpg-modal-footer">
-                    <button id="btn-cancel-ai-update" class="jrpg-btn">取消</button>
-                    <button id="btn-submit-ai-update" class="jrpg-btn primary">提交申请</button>
                 </div>
             </div>
         </div>

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 职业升级脚本（D&D 职业制变量体系）
  *
  * 数据模型：stat_data.主角 / stat_data.同伴[名字]
@@ -17,7 +17,7 @@
  * 技能点规则：只减不增（等级未变却增加技能点 → 回滚到变更前的值）
  *
  * 经验系统全自动：
- *   - 升级所需经验 = floor(200 * 1.35^(总等级-1))，由脚本强制计算，不依赖外部设置
+ *   - 升级所需经验 = 三次加速多项式 200 + 60(n-1) + 18(n-1)^2 + 6(n-1)^3（前期平缓后期陡升），由脚本强制计算，不依赖外部设置
  *   - 每次变量更新后自动检查，若当前经验 ≥ 所需，则扣除所需并升级（总等级+1、待分配职业等级+1、属性点+1/2）
  *   - 溢出经验保留，可连续升级
  *
@@ -67,13 +67,15 @@
     return total;
   }
 
-  // 计算升级所需经验：200 * 1.35^(总等级-1)
+  // 计算升级所需经验：三次加速多项式（前期平缓、后期陡升）
+  // 公式：200 + 60(n-1) + 18(n-1)^2 + 6(n-1)^3 （n = 总等级；Lv1→2 = 200）
   function calcRequiredExp(level) {
     level = Math.max(1, safeParseInt(level, 1));
-    return Math.floor(200 * Math.pow(1.35, level - 1));
+    const n = level - 1;
+    return Math.floor(200 + 60 * n + 18 * n * n + 6 * n * n * n);
   }
 
-  // 关键等级：获得额外属性点(+2)的总等级，HP 骰额外 ×2（与 autoLevelUpFromExp 的属性点规则一致）
+  // 关键等级：获得额外属性点(+2)的总等级（4/8/12/16/20；HP 不再额外×2）
   function isKeyLevel(totalLevel) {
     const lv = safeParseInt(totalLevel, 0);
     return lv === 4 || lv === 8 || lv === 12 || lv === 16 || lv === 20;
@@ -96,6 +98,17 @@
     }
     return '普通';
   }
+
+  // ========== 等阶 HP 成长倍率 ==========
+  // HP 成长 = (职业HP骰 + 体质修正) × 等阶倍率（等阶按该级角色总等级判定）
+  // 普通×1 / 超凡×1.2 / 精英×1.4 / 史诗×1.6 / 传说×1.8 / 神话×2.0
+  const RANK_HP_MULT = {
+    '普通': 1, '超凡': 1.2, '精英': 1.4, '史诗': 1.6, '传说': 1.8, '神话': 2.0
+  };
+  function getRankHpMult(level) {
+    return RANK_HP_MULT[getRankByLevel(level)] || 1;
+  }
+  // =====================================
 
   // preserveExisting=true（契约兽）：保留 AI/古卷写入的叙事等阶（如「精英」），仅在等阶为空时按等级补。
   // 与状态栏 displayTier 的「展示时按等级推导、不改存储字段」一致；主角/同伴仍强制按等级校准。
@@ -216,11 +229,18 @@
     return actor;
   }
 
-  // ---- 职业名归一化：剥离元素流派后缀（如「元素法师（水、火、冰）」→「元素法师」） ----
-  // 使带流派后缀的职业名也能命中 职业每级成长 表（元素法师流派由职业名括号标注，成长数值相同）
+  // ---- 职业名归一化：剥离元素流派后缀（「元素法师（水、火、冰）」或「元素法师·水·火」→「元素法师」） ----
+  // 使带流派后缀的职业名也能命中 职业每级成长 表（元素法师流派由职业名 括号/点号 标注，成长数值相同）
   function normalizeJobName(jobName) {
-    const m = String(jobName || '').match(/^(.*?)（([^）]*)）$/);
-    return m ? m[1].trim() : String(jobName || '').trim();
+    let s = String(jobName || '').trim();
+    // 括号格式（兼容旧档）
+    let m = s.match(/^(.*?)（([^）]*)）$/);
+    if (m) return m[1].trim();
+    // 点号格式（现行规范：元素法师·水）：仅元素法师家族剥离，避免误拆其他带·职业名
+    const families = ['元素法师', '符文师', '塑能师', '死灵法师', '召唤师', '魔导技师', '精灵术士', '药剂师', '圣光法师', '邪术师'];
+    const parts = s.split('·');
+    if (parts.length >= 2 && families.indexOf(parts[0].trim()) !== -1) return parts[0].trim();
+    return s;
   }
   // ---- 成长表查表：兼容全角/半角/方括号变体（如 首页写入「战士(乌尔坎)」vs 表键「战士[乌尔坎]」） ----
   function lookupJobGrowth(jobName) {
@@ -270,7 +290,7 @@
 
   // ---- 应用单级职业成长（HP/MP/SP/技能点），原地修改 actor ----
   // useMax=true 时使用满骰（新角色初始化），false 则随机掷骰（正常升级）
-  // totalLevel：角色当前总等级，用于判断是否关键等级（4/8/12/16/20，HP 骰额外 ×2）
+  // totalLevel：角色当前总等级，用于判断是否关键等级（4/8/12/16/20，仅属性点+2）
   // beast：契约兽标记（无技能点；未定义具体职业时用通用契约兽成长）
   function applyJobLevel(actor, jobName, useMax = false, totalLevel = 0, beast = false) {
     let g = lookupJobGrowth(jobName);
@@ -308,12 +328,12 @@
     const base = actor.基础状态;
 
     if (base.HP && g.HP) {
-      // 关键等级（获得额外属性点的总等级 4/8/12/16/20）HP 骰额外乘 2
-      const hpMult = isKeyLevel(totalLevel) ? 2 : 1;
-      const add = Math.max(1, rollDice(g.HP, useMax) * hpMult + getAbilityModifier(attr.体质));
+      // HP 成长：职业HP骰 + 体质修正，再按该级总等级对应的等阶倍率加成（普通×1 → 神话×2.0）
+      const hpMult = getRankHpMult(totalLevel || 0);
+      const add = Math.max(1, Math.round((rollDice(g.HP, useMax) + getAbilityModifier(attr.体质)) * hpMult));
       base.HP.最大 += add;
       base.HP.当前 = base.HP.最大;
-      console.log(`[职业升级][${jobName}] HP +${add}${hpMult > 1 ? `（关键等级 Lv.${totalLevel}，HP骰×2）` : ''}`);
+      console.log('[职业升级][' + jobName + '] HP +' + add + '（等阶倍率 ×' + hpMult + '）');
     }
     if (base.SP && g.SP) {
       const add = Math.max(0, rollDice(g.SP, useMax) + getAbilityModifier(attr.体质));
@@ -390,7 +410,7 @@
     const currJobs = curr.基础状态.职业信息;
     const prevJobs = prev?.基础状态?.职业信息 || {};
 
-    // 关键等级 HP×2 判定基准：本次更新前/后的总等级
+    // 关键等级判定基准：本次更新前/后的总等级（仅用于属性点+2 奖励）
     let baseTotal = safeParseInt(prev?.基础状态?.总等级, 0);
     if (baseTotal <= 0) {
       baseTotal = 0;
@@ -551,7 +571,8 @@
         const attr = curr.基础属性 || {};
         const dif = lv - grantedLv;
         if (base.HP && fg.HP) {
-          const add = Math.max(1, rollDice(fg.HP, true) + getAbilityModifier(attr.体质)) * dif;
+          const hpMult = getRankHpMult(lv);
+          const add = Math.max(1, Math.round((rollDice(fg.HP, true) + getAbilityModifier(attr.体质)) * hpMult)) * dif;
           base.HP.最大 += add; base.HP.当前 = base.HP.最大;
         }
         if (base.SP && fg.SP) {
@@ -729,7 +750,8 @@
           else fg = lookupJobGrowth(job) || {};
           const attrA = actor.基础属性 || {};
           if (base.HP && fg.HP) {
-            const add = Math.max(1, rollDice(fg.HP, true) + getAbilityModifier(attrA.体质)) * dif;
+            const hpMult = getRankHpMult(lv);
+            const add = Math.max(1, Math.round((rollDice(fg.HP, true) + getAbilityModifier(attrA.体质)) * hpMult)) * dif;
             base.HP.最大 += add; base.HP.当前 = base.HP.最大;
           }
           if (base.SP && fg.SP) {
@@ -806,7 +828,7 @@
       const fg = resolveFusedGrowth(fusedName);
       const attrA = actor.基础属性 || {};
       const base = actor.基础状态;
-      if (base.HP && fg.HP) { base.HP.最大 += Math.max(1, rollDice(fg.HP, true) + getAbilityModifier(attrA.体质)) * lv; base.HP.当前 = base.HP.最大; }
+      if (base.HP && fg.HP) { const hpMult = getRankHpMult(lv); base.HP.最大 += Math.max(1, Math.round((rollDice(fg.HP, true) + getAbilityModifier(attrA.体质)) * hpMult)) * lv; base.HP.当前 = base.HP.最大; }
       if (base.SP && fg.SP) { base.SP.最大 += Math.max(0, rollDice(fg.SP, true) + getAbilityModifier(attrA.体质)) * lv; base.SP.当前 = base.SP.最大; }
       if (base.MP && fg.MP) { base.MP.最大 += Math.max(0, rollDice(fg.MP, true) + getAbilityModifier(attrA.智力)) * lv; base.MP.当前 = base.MP.最大; }
       const perLv = safeParseInt(fg.sp, 0);
@@ -875,7 +897,7 @@
       handleJobUpgrade(rawVariables, rawVariablesBefore);
     });
     registerManualButton();
-    console.log('[职业升级脚本] 已加载（自动等阶计算 · 经验全自动 1.35 倍递增 · 防双重升级复位 · 转职/兼职支持）');
+    console.log('[职业升级脚本] 已加载（自动等阶计算 · 经验全自动 三次加速递增 · 防双重升级复位 · 转职/兼职支持）');
     if (typeof toastr !== 'undefined') toastr.success('[职业升级脚本] 已加载');
   };
 

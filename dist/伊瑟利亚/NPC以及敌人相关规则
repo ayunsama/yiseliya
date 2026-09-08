@@ -1,0 +1,1462 @@
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Noto+Serif+SC:wght@400;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: "Noto Serif SC", "SimSun", serif;
+            background: transparent;
+            padding: 8px;
+        }
+
+        .scroll-panel {
+            max-width: 430px;
+            margin: 0 auto;
+            position: relative;
+            border-radius: 4px;
+        }
+
+        .scroll-border {
+            padding: 4px;
+            background: linear-gradient(135deg, #a07830, #d4a850, #8b6520, #c49840, #a07830);
+            border-radius: 6px;
+            box-shadow: 0 3px 10px rgba(60,40,10,0.5), inset 0 1px 0 rgba(255,220,150,0.3);
+        }
+
+        .scroll-inner {
+            background: linear-gradient(170deg, #f5e6c8 0%, #eddcb0 30%, #e8d4a2 60%, #f0deb4 100%);
+            border-radius: 3px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scroll-inner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(180,150,100,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(160,130,80,0.06) 0%, transparent 40%),
+                radial-gradient(ellipse at 50% 80%, rgba(140,110,60,0.05) 0%, transparent 45%);
+            pointer-events: none;
+        }
+
+        .scroll-inner::after {
+            content: '';
+            position: absolute;
+            top: 8px; left: 8px; right: 8px; bottom: 8px;
+            border: 1px solid rgba(139,101,32,0.25);
+            border-radius: 2px;
+            pointer-events: none;
+        }
+
+        .corner-deco { position: absolute; width: 28px; height: 28px; z-index: 2; }
+        .corner-deco::before, .corner-deco::after { content: ''; position: absolute; background: #a07830; }
+        .c-tl { top: 12px; left: 12px; }
+        .c-tl::before { width: 16px; height: 2px; top: 0; left: 0; }
+        .c-tl::after { width: 2px; height: 16px; top: 0; left: 0; }
+        .c-tr { top: 12px; right: 12px; }
+        .c-tr::before { width: 16px; height: 2px; top: 0; right: 0; }
+        .c-tr::after { width: 2px; height: 16px; top: 0; right: 0; }
+        .c-bl { bottom: 12px; left: 12px; }
+        .c-bl::before { width: 16px; height: 2px; bottom: 0; left: 0; }
+        .c-bl::after { width: 2px; height: 16px; bottom: 0; left: 0; }
+        .c-br { bottom: 12px; right: 12px; }
+        .c-br::before { width: 16px; height: 2px; bottom: 0; right: 0; }
+        .c-br::after { width: 2px; height: 16px; bottom: 0; right: 0; }
+
+        .panel-head { padding: 16px 20px 12px; text-align: center; position: relative; }
+        .head-icon { font-size: 28px; margin-bottom: 4px; }
+        .head-name { font-family: 'Cinzel', 'Noto Serif SC', serif; font-size: 22px; font-weight: 700; color: #2a1a08; letter-spacing: 2px; text-shadow: 0 1px 0 rgba(200,170,100,0.5); }
+        .head-sub { font-size: 12px; color: #6b5030; margin-top: 4px; letter-spacing: 1px; }
+        .head-badge { display: inline-block; margin-top: 8px; padding: 3px 14px; border-radius: 3px; font-size: 12px; font-weight: 700; letter-spacing: 2px; border: 1px solid; }
+
+        .badge-普通 { background: #e8dcc0; border-color: #a09070; color: #5a4a30; }
+        .badge-超凡 { background: #d0e4f4; border-color: #5090c0; color: #1a4a7a; }
+        .badge-精英 { background: #e4d4f0; border-color: #7050a0; color: #4a2080; }
+        .badge-史诗 { background: #f8e8c8; border-color: #c08020; color: #7a4a00; }
+        .badge-传说 { background: #f4d4d0; border-color: #c03030; color: #8a1a1a; }
+        .badge-友好 { background: #d4ecd8; border-color: #408050; color: #1a5030; }
+        .badge-中立 { background: #e4e0d8; border-color: #908070; color: #5a5040; }
+        .badge-警惕 { background: #f4e4c8; border-color: #c08020; color: #7a4a00; }
+        .badge-敌对 { background: #f4d4d0; border-color: #c03030; color: #8a1a1a; }
+
+        .divider { text-align: center; padding: 4px 0; color: #a08040; font-size: 14px; letter-spacing: 4px; opacity: 0.7; }
+
+        .hp-area { padding: 8px 24px 12px; }
+        .hp-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+        .hp-label { font-size: 12px; font-weight: 700; color: #8b2020; letter-spacing: 2px; }
+        .hp-value { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; color: #2a1a08; }
+        .hp-bar-bg { height: 14px; background: #c8b890; border-radius: 7px; border: 2px solid #8b7040; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+        .hp-bar-fill { height: 100%; background: linear-gradient(90deg, #8b2020, #c03030, #d04040); border-radius: 5px; box-shadow: 0 0 6px rgba(180,40,40,0.4); transition: width 0.3s; }
+
+        .aff-area { padding: 6px 24px 10px; }
+        .aff-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .aff-label { font-size: 11px; color: #4a6a50; font-weight: 700; letter-spacing: 1px; }
+        .aff-value { font-size: 13px; font-weight: 700; color: #2a1a08; }
+        .aff-bar-bg { height: 10px; background: #c8b890; border-radius: 5px; border: 2px solid #6b8b60; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.15); }
+        .aff-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+        .aff-lo { background: linear-gradient(90deg, #808080, #a0a0a0); }
+        .aff-md { background: linear-gradient(90deg, #3070a0, #4090cc); }
+        .aff-hi { background: linear-gradient(90deg, #b03060, #d04080); box-shadow: 0 0 4px rgba(200,60,100,0.3); }
+
+        .panel-body { padding: 4px 24px 16px; }
+        .sec-head { font-size: 13px; font-weight: 700; color: #5a3a10; letter-spacing: 2px; padding: 10px 0 6px; border-bottom: 1px dashed #c0a870; margin-bottom: 8px; }
+
+        .tri-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 8px 0 12px; }
+        .tri-cell { text-align: center; padding: 8px 4px; background: rgba(180,150,100,0.15); border: 1px solid #c0a870; border-radius: 4px; }
+        .tri-label { font-size: 10px; color: #7a6040; letter-spacing: 1px; }
+        .tri-val { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; color: #2a1a08; margin-top: 2px; }
+
+        .attr-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin: 8px 0; }
+        .attr-cell { text-align: center; padding: 6px 2px; border: 1px solid #c0a870; border-radius: 3px; background: rgba(180,150,100,0.1); }
+        .attr-label { font-size: 10px; color: #7a6040; }
+        .attr-val { font-size: 15px; font-weight: 700; margin-top: 2px; }
+        .v-pos { color: #1a5a8a; }
+        .v-neg { color: #8b2020; }
+        .v-zero { color: #9a8a70; }
+
+        .atk-block { border: 1px solid #c0a870; border-radius: 4px; padding: 10px 12px; margin: 6px 0; background: rgba(180,150,100,0.08); }
+        .atk-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .atk-name { font-size: 14px; font-weight: 700; color: #2a1a08; }
+        .atk-type-tag { font-size: 10px; padding: 2px 8px; border: 1px solid #a08860; border-radius: 3px; color: #6b5030; background: rgba(180,150,100,0.2); }
+        .atk-nums { display: flex; gap: 20px; font-size: 13px; color: #4a3a20; }
+        .atk-nums strong { color: #1a1a08; font-weight: 700; }
+        .atk-eff { margin-top: 6px; padding-left: 10px; border-left: 2px solid #c08030; font-size: 12px; color: #7a5020; font-style: italic; }
+
+        .abl-block { border: 1px solid #9070a0; border-left: 3px solid #7050a0; border-radius: 0 4px 4px 0; padding: 10px 12px; margin: 6px 0; background: rgba(130,90,160,0.06); }
+        .npc-style .abl-block { border-color: #5090a0; border-left-color: #307080; background: rgba(60,130,150,0.06); }
+        .abl-name { font-size: 13px; font-weight: 700; color: #4a2080; margin-bottom: 4px; }
+        .npc-style .abl-name { color: #1a5060; }
+        .abl-desc { font-size: 12px; color: #4a3a28; line-height: 1.6; }
+
+        /* ===== 奥义（史诗级大招）/ 权能（传说级法则之力）专属样式 ===== */
+        .ougi-block { border: 1px solid #b08040; border-left: 4px solid #c09030; border-radius: 0 5px 5px 0; padding: 10px 12px; margin: 6px 0; background: linear-gradient(90deg, rgba(200,150,60,0.10), rgba(200,150,60,0.03)); box-shadow: inset 0 0 8px rgba(200,150,60,0.06); }
+        .npc-style .ougi-block { border-color: #b08040; border-left-color: #c09030; background: linear-gradient(90deg, rgba(200,150,60,0.10), rgba(200,150,60,0.03)); }
+        .summon-style .ougi-block, .contract-style .ougi-block { border-color: #b08040; border-left-color: #c09030; background: linear-gradient(90deg, rgba(200,150,60,0.10), rgba(200,150,60,0.03)); }
+        .ougi-name { font-size: 13px; font-weight: 800; color: #7a4a00; letter-spacing: 1px; margin-bottom: 4px; }
+        .ougi-name::before { content: '✧ '; color: #c09030; }
+        .ougi-desc { font-size: 12px; color: #5a3a10; line-height: 1.7; font-weight: 600; }
+
+        .power-block { border: 1px solid #8a5ad0; border-left: 4px solid #7a4ad0; border-radius: 0 5px 5px 0; padding: 10px 12px; margin: 6px 0; background: linear-gradient(90deg, rgba(140,90,220,0.12), rgba(140,90,220,0.04)); box-shadow: inset 0 0 10px rgba(140,90,220,0.08); }
+        .npc-style .power-block { border-color: #8a5ad0; border-left-color: #7a4ad0; background: linear-gradient(90deg, rgba(140,90,220,0.12), rgba(140,90,220,0.04)); }
+        .summon-style .power-block, .contract-style .power-block { border-color: #8a5ad0; border-left-color: #7a4ad0; background: linear-gradient(90deg, rgba(140,90,220,0.12), rgba(140,90,220,0.04)); }
+        .power-name { font-size: 13px; font-weight: 800; color: #4a2080; letter-spacing: 1px; margin-bottom: 4px; }
+        .power-name::before { content: '❖ '; color: #7a4ad0; }
+        .power-desc { font-size: 12px; color: #3a2060; line-height: 1.7; font-weight: 600; }
+        .ougi-sec { font-size: 12px; font-weight: 800; letter-spacing: 2px; padding: 10px 0 4px; color: #8a5a10; }
+        .power-sec { font-size: 12px; font-weight: 800; letter-spacing: 2px; padding: 10px 0 4px; color: #5a2aa0; }
+
+        .tag-area { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+        .r-tag { font-size: 11px; padding: 4px 10px; border-radius: 3px; font-weight: 700; border: 1px solid; }
+        .r-weak { background: #f8e8e4; border-color: #c05040; color: #8a2020; }
+        .r-resist { background: #e4eef8; border-color: #4080b0; color: #1a4a7a; }
+        .r-immune { background: #ece4f4; border-color: #7050a0; color: #4a2080; }
+
+        .loot-line { display: flex; justify-content: space-between; padding: 5px 0; font-size: 12px; border-bottom: 1px dotted #c8b890; color: #3a2a18; }
+        .loot-line:last-child { border-bottom: none; }
+        .equip-line { padding: 6px 0; font-size: 12px; border-bottom: 1px dotted #c8b890; color: #3a2a18; }
+        .equip-line:last-child { border-bottom: none; }
+        .equip-slot { display: inline-block; min-width: 42px; text-align: center; padding: 2px 6px; border-radius: 3px; background: rgba(139,112,64,0.18); color: #5a3a10; font-weight: 700; font-size: 11px; margin-right: 8px; }
+        .equip-name { font-weight: 600; color: #4a2a0a; }
+        .equip-desc { font-size: 11px; color: #6a5a3a; margin-top: 2px; }
+        .item-line { padding: 5px 0; font-size: 12px; border-bottom: 1px dotted #c8b890; color: #3a2a18; }
+        .item-line:last-child { border-bottom: none; }
+        .item-name { font-weight: 600; }
+        .item-qty { color: #8a5a20; font-weight: 700; margin-left: 6px; }
+        .item-desc { font-size: 11px; color: #6a5a3a; }
+        .loot-rate { color: #7a6a50; }
+
+        .trait-area { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+        .trait-chip { font-size: 12px; padding: 4px 12px; border-radius: 14px; border: 1px solid #8b7040; color: #4a3a20; background: rgba(180,150,100,0.15); }
+
+        .bg-story-block { border: 1px solid #c0a870; border-left: 3px solid #a07830; border-radius: 0 4px 4px 0; padding: 10px 14px; margin: 8px 0; background: rgba(180,150,100,0.08); }
+        .bg-story-text { font-size: 12px; color: #3a2a10; line-height: 1.7; }
+
+        .blessing-block { border: 1px solid #c8a040; border-left: 3px solid #d4a030; border-radius: 0 4px 4px 0; padding: 10px 14px; margin: 8px 0; background: rgba(200,160,60,0.08); }
+        .blessing-icon { font-size: 14px; margin-right: 4px; }
+        .blessing-text { font-size: 12px; color: #5a3a08; line-height: 1.7; }
+
+        .appear-block { border: 1px solid #b8a080; border-left: 3px solid #a08860; border-radius: 0 4px 4px 0; padding: 10px 14px; margin: 8px 0; background: rgba(180,150,120,0.08); }
+        .appear-text { font-size: 12px; color: #4a3a28; line-height: 1.6; font-style: italic; }
+
+        .func-line { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 12px; color: #3a2a18; border-bottom: 1px dotted #c8b890; }
+        .func-line:last-child { border-bottom: none; }
+        .func-dot { width: 8px; height: 8px; border-radius: 50%; border: 2px solid #8b7040; flex-shrink: 0; }
+
+        .load-var-area { margin-top: 14px; padding: 12px; border: 1px dashed #a08860; border-radius: 4px; background: rgba(180,150,100,0.06); }
+        .load-var-title { font-size: 11px; font-weight: 700; color: #6b5030; letter-spacing: 1px; margin-bottom: 8px; text-align: center; }
+        .load-var-btns { display: flex; gap: 8px; justify-content: center; }
+        .load-var-btn { padding: 6px 16px; border-radius: 4px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; border: 1px solid; font-family: "Noto Serif SC", serif; }
+        .load-var-btn:active { transform: scale(0.95); }
+        .btn-npc { background: #e8e0d0; border-color: #a09070; color: #5a4a30; }
+        .btn-npc:hover { background: #ddd4c0; box-shadow: 0 1px 4px rgba(100,80,50,0.3); }
+        .btn-comp { background: #d0e4f4; border-color: #5090c0; color: #1a4a7a; }
+        .btn-comp:hover { background: #c0d8ec; box-shadow: 0 1px 4px rgba(50,100,160,0.3); }
+        .btn-wb { background: #e8d8b0; border-color: #a08040; color: #5a4020; }
+        .btn-wb:hover { background: #dcc8a0; box-shadow: 0 1px 4px rgba(120,90,30,0.4); }
+        /* ===== 召唤物面板样式（D·与羊皮卷几乎一致·最保守，仅紫色点缀） ===== */
+        .scroll-border.summon-style { background: linear-gradient(135deg, #b08838, #d8b458, #a07828, #caa048, #b08838); border-radius: 6px; box-shadow: 0 3px 10px rgba(60,40,10,.5), inset 0 1px 0 rgba(255,220,150,.3); }
+        .summon-style .scroll-inner { background: linear-gradient(170deg, #f5e6c8 0%, #eddcb0 30%, #e8d4a2 60%, #f0deb4 100%); color: #4a3623; }
+        .summon-style .scroll-inner::after { border-color: rgba(139,101,32,.25); }
+        .summon-head { border-bottom: 1px dashed #c0a870; }
+        .summon-head .head-name { color: #6b2e6b; letter-spacing: 3px; font-size: 23px; }
+        .summon-head .head-sub { color: #7a5a9a; }
+        .summon-style .head-icon { width: 72px; height: 72px; margin: 0 auto 10px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; background: radial-gradient(circle, rgba(160,130,200,.25) 0%, transparent 70%); border: 2px solid #a080c0; box-shadow: 0 0 6px rgba(150,110,190,.2); }
+        .summon-style .head-badge { background: #ece4f4; border-color: #9070b0; color: #4a2080; }
+        .summon-style .divider { color: #a08040; }
+        .summon-style .panel-body { background: rgba(180,150,100,.05); }
+        .summon-style .sec-head { color: #5a3a10; border-bottom-color: #c0a870; }
+        .summon-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 8px 12px; font-size: 12px; }
+        .summon-caster { color: #6a3a8a; font-weight: 700; }
+        .summon-duration { color: #8a6a30; font-weight: 700; }
+        .res-area { padding: 10px 20px 4px; }
+        .res-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 12px; }
+        .res-label { width: 44px; font-weight: 700; color: #5a3a10; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
+        .res-ico { display: inline-flex; align-items: center; justify-content: center; width: 1.25em; height: 1.25em; font-size: 1em; line-height: 1; vertical-align: middle; text-align: center; }
+        .res-bar-bg { flex: 1; height: 12px; background: #c8b890; border-radius: 6px; border: 1px solid #8b7040; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,.15); }
+        .res-bar-fill { height: 100%; border-radius: 6px; transition: width .4s; }
+        .res-bar-fill.hp-fill { background: linear-gradient(90deg,#8b2020,#c03030); }
+        .res-bar-fill.mp-fill { background: linear-gradient(90deg,#8e44ad,#a068c0); }
+        .res-bar-fill.sp-fill { background: linear-gradient(90deg,#d35400,#e07a20); }
+        .res-num { width: 70px; text-align: right; font-weight: 700; color: #3a2a10; }
+        .summon-style .tri-cell, .summon-style .attr-cell { background: rgba(180,150,100,.12); border-color: #c0a870; }
+        .summon-style .tri-label, .summon-style .attr-label { color: #7a6040; }
+        .summon-style .tri-val { color: #2a1a08; }
+        .summon-style .attr-val { color: #3a2a18; }
+        .summon-style .v-pos { color: #1a5a8a; }
+        .summon-style .v-neg { color: #8b2020; }
+        .summon-style .v-zero { color: #9a8a70; }
+        .summon-style .atk-block { background: rgba(180,150,100,.08); border-color: #c0a870; }
+        .summon-style .atk-name { color: #2a1a08; }
+        .summon-style .atk-type-tag { background: rgba(180,150,100,.18); border-color: #a08860; color: #6b5030; }
+        .summon-style .atk-nums { color: #4a3a20; }
+        .summon-style .atk-nums strong { color: #1a1a08; }
+        .summon-style .atk-eff { border-left-color: #c08030; color: #7a5020; }
+        .summon-style .abl-block { background: rgba(130,90,160,.08); border-color: #9070a0; border-left-color: #7050a0; }
+        .summon-style .abl-name { color: #4a2080; }
+        .summon-style .abl-desc { color: #4a3a28; }
+        .summon-style .r-weak { background: #f8e8e4; border-color: #c05040; color: #8a2020; }
+        .summon-style .r-resist { background: #e4eef8; border-color: #4080b0; color: #1a4a7a; }
+        .summon-style .r-immune { background: #ece4f4; border-color: #7050a0; color: #4a2080; }
+        .summon-style .appear-area { color: #7a6a50; font-style: italic; max-width: 100%; text-align: center; }
+        .summon-style .status-block { background: rgba(200,80,60,.06); border-color: #c05040; }
+        .summon-style .status-label { color: #8b2020; }
+        .summon-style .status-text { color: #5a2020; }
+        .summon-style .panel-foot { border-top-color: #c0a870; }
+        .summon-style .faction-area { color: #6b5030; }
+        .btn-summon { background: #e6d0f0; border-color: #8a5aa0; color: #5a2a7a; }
+        .btn-summon:hover { background: #d8c0e6; box-shadow: 0 1px 4px rgba(120,60,150,.3); }
+        .summon-write { border-color: #b8a2d0; background: rgba(160,130,200,.1); }
+
+        /* ===== 契约兽面板样式（兽类绿色主题，复用召唤物布局） ===== */
+        .scroll-border.contract-style { background: linear-gradient(135deg,#3a7a4a,#5a9a5a,#2f6a3a,#4a8a50,#3a7a4a); border-radius:6px; box-shadow:0 3px 10px rgba(30,70,30,.5), inset 0 1px 0 rgba(200,240,200,.3); }
+        .contract-style .scroll-inner { background: linear-gradient(170deg,#eef5e4 0%,#e2eed0 30%,#d8e6c2 60%,#e6f0d8 100%); color:#3a4a2a; }
+        .contract-style .scroll-inner::after { border-color: rgba(58,90,40,.25); }
+        .contract-style .summon-head .head-name { color:#2f6a3a; }
+        .contract-style .summon-head .head-sub { color:#5a7a4a; }
+        .contract-style .head-icon { background: radial-gradient(circle, rgba(90,170,110,.25) 0%, transparent 70%); border-color:#4a8a5a; }
+        .contract-style .head-badge { background:#e4f0dc; border-color:#4a8a5a; color:#2f6a3a; }
+        .contract-style .res-bar-fill.hp-fill { background: linear-gradient(90deg,#3a7a4a,#5aa060); }
+        .contract-style .res-bar-fill.mp-fill { background: linear-gradient(90deg,#2f6a8a,#4a90b0); }
+        .contract-style .res-bar-fill.sp-fill { background: linear-gradient(90deg,#8a6a2a,#b09040); }
+        .contract-style .abl-block { background: rgba(80,140,90,.08); border-color:#4a8a5a; border-left-color:#2f6a3a; }
+        .contract-style .abl-name { color:#2f6a3a; }
+        .contract-style .summon-caster { color:#2f6a3a; }
+        .btn-contract { background:#e0eed6; border-color:#4a8a5a; color:#2f6a3a; }
+        .btn-contract:hover { background:#d0e2c2; box-shadow:0 1px 4px rgba(60,120,70,.3); }
+        .contract-write { border-color:#9cbfa0; background:rgba(80,160,100,.1); }
+        .breath-block { border:1px solid #4a8a5a; border-left:3px solid #2f6a3a; border-radius:0 4px 4px 0; padding:10px 12px; margin:6px 0; background:rgba(80,140,90,.08); }
+
+        /* ===== 契约兽主题美化：龙 / 元素精灵 / 古树 / 魔兽(默认绿) ===== */
+        /* 龙：暖金鳞甲 */
+        .scroll-border.contract-style.contract-dragon { background: linear-gradient(135deg,#8a3a1a,#b06a20,#7a2a12,#a05a18,#8a3a1a); box-shadow:0 3px 10px rgba(90,30,10,.5), inset 0 1px 0 rgba(255,220,160,.3); }
+        .contract-dragon .scroll-inner { background: linear-gradient(170deg,#f8ecdc 0%,#f2ddbc 30%,#e8cfa0 60%,#f4e4c8 100%); color:#5a3010; }
+        .contract-dragon .scroll-inner::after { border-color: rgba(140,70,20,.3); }
+        .contract-dragon .summon-head .head-name, .contract-dragon .abl-name, .contract-dragon .summon-caster { color:#8a3a1a; }
+        .contract-dragon .summon-head .head-sub { color:#a07030; }
+        .contract-dragon .head-icon { background: radial-gradient(circle, rgba(220,160,60,.3) 0%, transparent 70%); border-color:#b06a20; }
+        .contract-dragon .head-badge { background:#f6e3c0; border-color:#b06a20; color:#8a3a1a; }
+        .contract-dragon .res-bar-fill.hp-fill { background: linear-gradient(90deg,#a03a1a,#d06030); }
+        .contract-dragon .res-bar-fill.mp-fill { background: linear-gradient(90deg,#7a5a10,#a07820); }
+        .contract-dragon .res-bar-fill.sp-fill { background: linear-gradient(90deg,#6a3010,#905018); }
+        .contract-dragon .abl-block { background: rgba(160,90,30,.08); border-color:#b06a20; border-left-color:#8a3a1a; }
+        .contract-dragon .breath-block { border-color:#b06a20; border-left-color:#8a3a1a; background:rgba(200,120,40,.1); }
+        /* 古树：深林苔绿 */
+        .scroll-border.contract-style.contract-forest { background: linear-gradient(135deg,#1f4a2a,#2f6a3a,#173d20,#2a5c30,#1f4a2a); box-shadow:0 3px 10px rgba(15,45,20,.5), inset 0 1px 0 rgba(180,230,170,.25); }
+        .contract-forest .scroll-inner { background: linear-gradient(170deg,#e2eed0 0%,#d4e2bc 30%,#c4d4a4 60%,#dceac4 100%); color:#2f4a20; }
+        .contract-forest .scroll-inner::after { border-color: rgba(30,80,35,.3); }
+        .contract-forest .summon-head .head-name, .contract-forest .abl-name, .contract-forest .summon-caster { color:#2f5a28; }
+        .contract-forest .summon-head .head-sub { color:#5a7a40; }
+        .contract-forest .head-icon { background: radial-gradient(circle, rgba(110,170,90,.3) 0%, transparent 70%); border-color:#3a7a3a; }
+        .contract-forest .head-badge { background:#e0eed0; border-color:#3a7a3a; color:#2f5a28; }
+        .contract-forest .res-bar-fill.hp-fill { background: linear-gradient(90deg,#1f5a2a,#3a9040); }
+        .contract-forest .res-bar-fill.mp-fill { background: linear-gradient(90deg,#2f5a6a,#4a90a0); }
+        .contract-forest .res-bar-fill.sp-fill { background: linear-gradient(90deg,#6a5a2a,#908a40); }
+        .contract-forest .abl-block { background: rgba(60,120,70,.1); border-color:#3a7a3a; border-left-color:#2f5a28; }
+        .contract-forest .breath-block { border-color:#3a7a3a; border-left-color:#2f5a28; background:rgba(60,130,70,.1); }
+        /* 元素精灵：神秘虹光 + 按元素着色 */
+        .scroll-border.contract-style.contract-elemental { background: linear-gradient(135deg,#4a3a8a,#7a5aa0,#3a2a6a,#6a4a90,#4a3a8a); box-shadow:0 3px 10px rgba(40,20,80,.5), inset 0 1px 0 rgba(220,200,255,.3); }
+        .contract-elemental .scroll-inner { background: linear-gradient(170deg,#efe8fa 0%,#e2d8f2 30%,#d4c8ea 60%,#ece4f8 100%); color:#3a2a5a; }
+        .contract-elemental .scroll-inner::after { border-color: rgba(80,50,140,.25); }
+        .contract-elemental .summon-head .head-name, .contract-elemental .abl-name, .contract-elemental .summon-caster { color:#5a3a9a; }
+        .contract-elemental .summon-head .head-sub { color:#7a5a9a; }
+        .contract-elemental .head-icon { background: radial-gradient(circle, rgba(150,120,220,.3) 0%, transparent 70%); border-color:#7a5aa0; }
+        .contract-elemental .head-badge { background:#ece4f8; border-color:#7a5aa0; color:#5a3a9a; }
+        .contract-elemental .abl-block { background: rgba(120,90,180,.08); border-color:#7a5aa0; border-left-color:#5a3a9a; }
+        .contract-elemental .breath-block { border-color:#7a5aa0; border-left-color:#5a3a9a; background:rgba(120,90,180,.1); }
+        .contract-elemental .res-bar-fill.mp-fill { background: linear-gradient(90deg,#5a3a9a,#8060c0); }
+        .contract-elemental .res-bar-fill.sp-fill { background: linear-gradient(90deg,#a04080,#c060a0); }
+        /* ===== 元素主题（任意契约兽按元素渲染：冰龙→冰蓝、火狼→火红…） ===== */
+        /* 边框：元素覆盖主题边框 */
+        .scroll-border.contract-style.elem-fire { background: linear-gradient(135deg,#8a2a12,#c05020,#6a1a0a,#a03a18,#8a2a12); box-shadow:0 3px 10px rgba(120,30,10,.5), inset 0 1px 0 rgba(255,200,150,.3); }
+        .scroll-border.contract-style.elem-water { background: linear-gradient(135deg,#1a4a7a,#2f6a9a,#123a60,#2a5a8a,#1a4a7a); box-shadow:0 3px 10px rgba(10,40,80,.5), inset 0 1px 0 rgba(180,220,255,.3); }
+        .scroll-border.contract-style.elem-wind { background: linear-gradient(135deg,#1a6a5a,#2f9a80,#0f4a3a,#2a8a70,#1a6a5a); box-shadow:0 3px 10px rgba(10,60,50,.5), inset 0 1px 0 rgba(180,240,220,.3); }
+        .scroll-border.contract-style.elem-earth { background: linear-gradient(135deg,#6a4a1a,#8a6a28,#4a3010,#7a5a20,#6a4a1a); box-shadow:0 3px 10px rgba(60,40,10,.5), inset 0 1px 0 rgba(240,220,170,.3); }
+        .scroll-border.contract-style.elem-thunder { background: linear-gradient(135deg,#6a5a08,#9a8510,#4a3e05,#8a7510,#6a5a08); box-shadow:0 3px 10px rgba(70,60,5,.5), inset 0 1px 0 rgba(255,240,150,.3); }
+        .scroll-border.contract-style.elem-ice { background: linear-gradient(135deg,#1a5a7a,#2f7a9a,#0f3f5a,#2a6a8a,#1a5a7a); box-shadow:0 3px 10px rgba(10,50,80,.5), inset 0 1px 0 rgba(190,230,255,.4); }
+        .scroll-border.contract-style.elem-light { background: linear-gradient(135deg,#8a7420,#c0a430,#6a5610,#a88c20,#8a7420); box-shadow:0 3px 10px rgba(90,70,10,.5), inset 0 1px 0 rgba(255,245,170,.4); }
+        .scroll-border.contract-style.elem-dark { background: linear-gradient(135deg,#2a1a3a,#4a305a,#1a0f28,#3a2448,#2a1a3a); box-shadow:0 3px 10px rgba(20,10,40,.5), inset 0 1px 0 rgba(150,110,190,.3); }
+        /* 元素主色：HP条 / 吐息 / 头像圈 / 标题文本 / 元素标签 */
+        .elem-fire .res-bar-fill.hp-fill { background: linear-gradient(90deg,#c03a1a,#f07840); } .elem-fire .head-name,.elem-fire .abl-name,.elem-fire .summon-caster{color:#b03818 !important;} .elem-fire .breath-block{border-color:#e07840;border-left-color:#b03010;background:rgba(220,90,40,.12);} .elem-fire .head-icon{border-color:#c06030;} .elem-fire .elem-tag{border-color:#c06030;background:rgba(220,90,40,.15);color:#b03010;}
+        .elem-water .res-bar-fill.hp-fill { background: linear-gradient(90deg,#1a6ab0,#40a0e0); } .elem-water .head-name,.elem-water .abl-name,.elem-water .summon-caster{color:#1a5a9a !important;} .elem-water .breath-block{border-color:#40a0e0;border-left-color:#1a6ab0;background:rgba(50,140,220,.12);} .elem-water .head-icon{border-color:#2f80c0;} .elem-water .elem-tag{border-color:#2f80c0;background:rgba(50,140,220,.15);color:#1a5a9a;}
+        .elem-wind .res-bar-fill.hp-fill { background: linear-gradient(90deg,#1a9a7a,#40d0a8); } .elem-wind .head-name,.elem-wind .abl-name,.elem-wind .summon-caster{color:#1a8a6a !important;} .elem-wind .breath-block{border-color:#40c8a0;border-left-color:#1a9a7a;background:rgba(40,180,140,.12);} .elem-wind .head-icon{border-color:#2fa888;} .elem-wind .elem-tag{border-color:#2fa888;background:rgba(40,180,140,.15);color:#1a8a6a;}
+        .elem-earth .res-bar-fill.hp-fill { background: linear-gradient(90deg,#8a6a30,#b09040); } .elem-earth .head-name,.elem-earth .abl-name,.elem-earth .summon-caster{color:#7a5a28 !important;} .elem-earth .breath-block{border-color:#a88840;border-left-color:#8a6a30;background:rgba(160,120,60,.12);} .elem-earth .head-icon{border-color:#907030;} .elem-earth .elem-tag{border-color:#907030;background:rgba(160,120,60,.15);color:#7a5a28;}
+        .elem-thunder .res-bar-fill.hp-fill { background: linear-gradient(90deg,#a08010,#e0c030); } .elem-thunder .head-name,.elem-thunder .abl-name,.elem-thunder .summon-caster{color:#9a7a10 !important;} .elem-thunder .breath-block{border-color:#d0b030;border-left-color:#a08010;background:rgba(210,180,50,.12);} .elem-thunder .head-icon{border-color:#b09020;} .elem-thunder .elem-tag{border-color:#b09020;background:rgba(210,180,50,.15);color:#9a7a10;}
+        .elem-ice .res-bar-fill.hp-fill { background: linear-gradient(90deg,#2a8ab0,#70c8e0); } .elem-ice .head-name,.elem-ice .abl-name,.elem-ice .summon-caster{color:#2a7a9a !important;} .elem-ice .breath-block{border-color:#70c8e0;border-left-color:#2a8ab0;background:rgba(70,160,210,.14);} .elem-ice .head-icon{border-color:#4aa8c8;} .elem-ice .elem-tag{border-color:#4aa8c8;background:rgba(70,160,210,.16);color:#2a7a9a;}
+        .elem-light .res-bar-fill.hp-fill { background: linear-gradient(90deg,#b09a30,#e8d060); } .elem-light .head-name,.elem-light .abl-name,.elem-light .summon-caster{color:#a08a20 !important;} .elem-light .breath-block{border-color:#e0c850;border-left-color:#b09a30;background:rgba(230,200,80,.14);} .elem-light .head-icon{border-color:#c0a838;} .elem-light .elem-tag{border-color:#c0a838;background:rgba(230,200,80,.16);color:#a08a20;}
+        .elem-dark .res-bar-fill.hp-fill { background: linear-gradient(90deg,#4a3a5a,#6a4a7a); } .elem-dark .head-name,.elem-dark .abl-name,.elem-dark .summon-caster{color:#4a305a !important;} .elem-dark .breath-block{border-color:#6a4a7a;border-left-color:#4a3a5a;background:rgba(90,60,120,.14);} .elem-dark .head-icon{border-color:#5a4070;} .elem-dark .elem-tag{border-color:#5a4070;background:rgba(90,60,120,.16);color:#4a305a;}
+        /* 元素切换条 */
+        .elem-switch { display:flex; flex-wrap:wrap; justify-content:center; gap:5px; padding:4px 12px 2px; }
+        .elem-btn { width:27px; height:27px; border-radius:50%; border:1px solid #a09070; background:#f0e4cc; color:#5a4a30; font-size:12px; font-weight:700; cursor:pointer; transition:all .2s; font-family:"Noto Serif SC",serif; }
+        .elem-btn:hover { transform:scale(1.12); box-shadow:0 0 5px rgba(0,0,0,.2); }
+        .elem-btn.active { color:#fff; box-shadow:0 0 6px rgba(0,0,0,.35); transform:scale(1.05); }
+        .elem-btn[data-elem="火"].active { background:linear-gradient(135deg,#c03a1a,#f07840); border-color:#b03010; }
+        .elem-btn[data-elem="水"].active { background:linear-gradient(135deg,#1a6ab0,#40a0e0); border-color:#1a5a9a; }
+        .elem-btn[data-elem="风"].active { background:linear-gradient(135deg,#1a9a7a,#40d0a8); border-color:#1a8a6a; }
+        .elem-btn[data-elem="土"].active { background:linear-gradient(135deg,#8a6a30,#b09040); border-color:#7a5a28; }
+        .elem-btn[data-elem="雷"].active { background:linear-gradient(135deg,#a08010,#e0c030); border-color:#9a7a10; }
+        .elem-btn[data-elem="冰"].active { background:linear-gradient(135deg,#2a8ab0,#70c8e0); border-color:#2a7a9a; }
+        .elem-btn[data-elem="光"].active { background:linear-gradient(135deg,#b09a30,#e8d060); border-color:#a08a20; }
+        .elem-btn[data-elem="暗"].active { background:linear-gradient(135deg,#4a3a5a,#6a4a7a); border-color:#4a305a; }
+        .elem-tag { display:inline-block; padding:1px 8px; border-radius:10px; border:1px solid; font-size:11px; }
+
+        .load-result { text-align: center; font-size: 11px; font-weight: 700; padding: 6px; margin-top: 6px; border-radius: 3px; display: none; }
+        .load-success { color: #408050; background: rgba(64,128,80,0.1); }
+        .load-fail { color: #a03030; background: rgba(160,48,48,0.1); }
+
+        .status-block { border: 1px solid #c05040; border-radius: 4px; padding: 8px 12px; margin-top: 10px; background: rgba(200,80,60,0.06); }
+        .status-label { font-size: 11px; font-weight: 700; color: #8b2020; letter-spacing: 1px; margin-bottom: 4px; }
+        .status-text { font-size: 12px; color: #5a2020; }
+
+        .panel-foot { padding: 10px 24px; border-top: 1px dashed #c0a870; display: flex; justify-content: space-between; align-items: center; }
+        .exp-area { display: flex; align-items: center; gap: 6px; }
+        .exp-icon { font-size: 16px; color: #a07830; }
+        .exp-num { font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700; color: #5a3a10; }
+        .faction-area { font-size: 12px; color: #6b5030; }
+        .appear-area { font-size: 11px; color: #7a6a50; font-style: italic; max-width: 180px; text-align: right; line-height: 1.4; }
+
+        .loading { text-align: center; padding: 40px; color: #8a7a60; font-style: italic; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div id="content"><div class="loading">— 古卷展开中 —</div></div>
+
+    <script>
+        var rawData = `$1`;
+
+        function detectType(d) {
+            if (d.indexOf('<enemy_data>') !== -1) return 'enemy';
+            if (d.indexOf('<npc_data>') !== -1) return 'npc';
+            if (d.indexOf('<summon_data>') !== -1) return 'summon';
+            if (d.indexOf('<contract_data>') !== -1) return 'contract';
+            if (d.indexOf('<cluster_data>') !== -1) return 'cluster';
+            return null;
+        }
+
+        function parseEnemy(raw) {
+            var r = {name:'',type:'',race:'',tier:'',level:0,hpCur:0,hpMax:0,def:0,spd:0,init:0,
+                     attr:{str:0,dex:0,con:0,int:0,wis:0,cha:0},attacks:[],abilities:[],
+                     ougis:[],powers:[],
+                     weak:'',resist:'',immune:'',loot:[],exp:0,appear:'',status:''};
+            var m = raw.match(/<enemy_data>([\s\S]*?)<\/enemy_data>/);
+            if(!m) return r;
+            var t = m[1];
+            var g = function(re){var x=t.match(re);return x?x[1]:'';};
+            r.name=g(/\[名称\|([^\]]+)\]/);
+            r.type=g(/\[种类\|([^\]]+)\]/);
+            r.race=g(/\[种族\|([^\]]+)\]/);
+            r.tier=g(/\[等阶\|([^\]]+)\]/);
+            r.level=parseInt(g(/\[等级\|([^\]]+)\]/))||0;
+            var hp=t.match(/\[HP\|([^\|]+)\|([^\]]+)\]/);
+            if(hp){r.hpCur=parseInt(hp[1])||0;r.hpMax=parseInt(hp[2])||0;}
+            r.def=parseInt(g(/\[防御值\|([^\]]+)\]/))||0;
+            r.spd=parseInt(g(/\[移动速度\|([^\]]+)\]/))||0;
+            r.init=parseInt(g(/\[先攻修正\|([^\]]+)\]/))||0;
+            var at=t.match(/\[属性\|力量([^\|]+)\|敏捷([^\|]+)\|体质([^\|]+)\|智力([^\|]+)\|感知([^\|]+)\|魅力([^\]]+)\]/);
+            if(at){r.attr={str:parseInt(at[1])||0,dex:parseInt(at[2])||0,con:parseInt(at[3])||0,int:parseInt(at[4])||0,wis:parseInt(at[5])||0,cha:parseInt(at[6])||0};}
+            var ax=/\[攻击\|([^\|]+)\|([^\|]+)\|([^\|]+)\|([^\|]+)\|([^\]]*)\]/g,am;
+            while((am=ax.exec(t))!==null){r.attacks.push({name:am[1],type:am[2],hit:am[3],dmg:am[4],eff:am[5]});}
+            var bx=/\[能力\|([^\|]+)\|([^\]]+)\]/g,bm;
+            while((bm=bx.exec(t))!==null){r.abilities.push({name:bm[1],desc:bm[2]});}
+            // 奥义（史诗级大招）/ 权能（传说级法则之力）：支持多条 [奥义|...] [权能|...]
+            var ox=/\[奥义\|([^\]]+)\]/g,om;
+            while((om=ox.exec(t))!==null){r.ougis.push(om[1]);}
+            var px=/\[权能\|([^\]]+)\]/g,pm;
+            while((pm=px.exec(t))!==null){r.powers.push(pm[1]);}
+            r.weak=g(/\[弱点\|([^\]]*)\]/);
+            r.resist=g(/\[抗性\|([^\]]*)\]/);
+            r.immune=g(/\[免疫\|([^\]]*)\]/);
+            var lx=/\[战利品\|([^\|]+)\|([^\]]+)\]/g,lm;
+            while((lm=lx.exec(t))!==null){r.loot.push({item:lm[1],rate:lm[2]});}
+            r.exp=parseInt(g(/\[经验值\|([^\]]+)\]/))||0;
+            r.appear=g(/\[外貌\|([^\]]+)\]/);
+            r.status=g(/\[状态\|([^\]]*)\]/);
+            return r;
+        }
+
+        function parseNPC(raw) {
+            var r = {name:'',race:'',gender:'',age:'',identity:'',faction:'',
+                     tier:'',level:0,hpCur:0,hpMax:0,def:0,spd:0,init:0,
+                     attr:{str:0,dex:0,con:0,int:0,wis:0,cha:0},attacks:[],abilities:[],
+                     ougis:[],powers:[],
+                     appear:'',personality:'',bgStory:'',blessing:'',attitude:'',affinity:50,functions:[],status:'',loadVar:'',
+                     equips:[],items:[]};
+            var m = raw.match(/<npc_data>([\s\S]*?)<\/npc_data>/);
+            if(!m) return r;
+            var t = m[1];
+            var g = function(re){var x=t.match(re);return x?x[1]:'';};
+            r.name=g(/\[姓名\|([^\]]+)\]/);
+            r.race=g(/\[种族\|([^\]]+)\]/);
+            r.gender=g(/\[性别\|([^\]]+)\]/);
+            r.age=g(/\[年龄\|([^\]]+)\]/);
+            r.identity=g(/\[身份\|([^\]]+)\]/);
+            r.faction=g(/\[所属势力\|([^\]]+)\]/);
+            r.tier=g(/\[等阶\|([^\]]+)\]/);
+            r.level=parseInt(g(/\[等级\|([^\]]+)\]/))||0;
+            var hp=t.match(/\[HP\|([^\|]+)\|([^\]]+)\]/);
+            if(hp){r.hpCur=parseInt(hp[1])||0;r.hpMax=parseInt(hp[2])||0;}
+            r.def=parseInt(g(/\[防御值\|([^\]]+)\]/))||0;
+            r.spd=parseInt(g(/\[移动速度\|([^\]]+)\]/))||0;
+            r.init=parseInt(g(/\[先攻修正\|([^\]]+)\]/))||0;
+            var at=t.match(/\[属性\|力量([^\|]+)\|敏捷([^\|]+)\|体质([^\|]+)\|智力([^\|]+)\|感知([^\|]+)\|魅力([^\]]+)\]/);
+            if(at){r.attr={str:parseInt(at[1])||0,dex:parseInt(at[2])||0,con:parseInt(at[3])||0,int:parseInt(at[4])||0,wis:parseInt(at[5])||0,cha:parseInt(at[6])||0};}
+            var ax=/\[攻击\|([^\|]+)\|([^\|]+)\|([^\|]+)\|([^\|]+)\|([^\]]*)\]/g,am;
+            while((am=ax.exec(t))!==null){r.attacks.push({name:am[1],type:am[2],hit:am[3],dmg:am[4],eff:am[5]});}
+            var bx=/\[能力\|([^\|]+)\|([^\]]+)\]/g,bm;
+            while((bm=bx.exec(t))!==null){r.abilities.push({name:bm[1],desc:bm[2]});}
+            var ox=/\[奥义\|([^\]]+)\]/g,om;
+            while((om=ox.exec(t))!==null){r.ougis.push(om[1]);}
+            var px=/\[权能\|([^\]]+)\]/g,pm;
+            while((pm=px.exec(t))!==null){r.powers.push(pm[1]);}
+            r.appear=g(/\[外貌\|([^\]]+)\]/);
+            r.personality=g(/\[性格\|([^\]]+)\]/);
+            r.bgStory=g(/\[背景故事\|([^\]]+)\]/);
+            r.blessing=g(/\[加护\|([^\]]*)\]/);
+            r.attitude=g(/\[态度\|([^\]]+)\]/);
+            r.affinity=parseInt(g(/\[好感度\|([^\]]+)\]/))||50;
+            var fx=/\[功能\|([^\]]+)\]/g,fm;
+            while((fm=fx.exec(t))!==null){r.functions.push(fm[1]);}
+            r.status=g(/\[状态\|([^\]]*)\]/);
+            r.loadVar=g(/\[载入变量\|([^\]]*)\]/);
+            var eqx = /\[装备\|([^\|]+)\|([^\|]+)\|([^\]]*)\]/g, eqm;
+            while ((eqm = eqx.exec(t)) !== null) { r.equips.push({slot: eqm[1], name: eqm[2], desc: eqm[3]}); }
+            var itx = /\[随身物品\|([^\|]+)\|([^\|]+)\|([^\]]*)\]/g, itm;
+            while ((itm = itx.exec(t)) !== null) { r.items.push({name: itm[1], qty: parseInt(itm[2]) || 1, desc: itm[3]}); }
+            return r;
+        }
+
+        /* ========== 解析召唤物 ========== */
+        function parseSummon(raw) {
+            var r = {name:'',race:'',tier:'',level:0,hpCur:0,hpMax:0,mpCur:0,mpMax:0,spCur:0,spMax:0,
+                     def:0,spd:0,init:0,
+                     attr:{str:0,dex:0,con:0,int:0,wis:0,cha:0},attacks:[],abilities:[],
+                     ougis:[],powers:[],
+                     weak:'',resist:'',immune:'',appear:'',status:'',caster:'',duration:''};
+            var m = raw.match(/<summon_data>([\s\S]*?)<\/summon_data>/);
+            if(!m) return r;
+            var t = m[1];
+            var g = function(re){var x=t.match(re);return x?x[1]:'';};
+            r.name=g(/\[名称\|([^\]]+)\]/);
+            r.race=g(/\[种族\|([^\]]+)\]/);
+            r.tier=g(/\[等阶\|([^\]]+)\]/);
+            r.level=parseInt(g(/\[等级\|([^\]]+)\]/))||0;
+            var hp=t.match(/\[HP\|([^\|]+)\|([^\]]+)\]/);
+            if(hp){r.hpCur=parseInt(hp[1])||0;r.hpMax=parseInt(hp[2])||0;}
+            var mp=t.match(/\[MP\|([^\|]+)\|([^\]]+)\]/);
+            if(mp){r.mpCur=parseInt(mp[1])||0;r.mpMax=parseInt(mp[2])||0;}
+            var sp=t.match(/\[SP\|([^\|]+)\|([^\]]+)\]/);
+            if(sp){r.spCur=parseInt(sp[1])||0;r.spMax=parseInt(sp[2])||0;}
+            r.def=parseInt(g(/\[防御值\|([^\]]+)\]/))||0;
+            r.spd=parseInt(g(/\[移动速度\|([^\]]+)\]/))||0;
+            r.init=parseInt(g(/\[先攻修正\|([^\]]+)\]/))||0;
+            var at=t.match(/\[属性\|力量([^\|]+)\|敏捷([^\|]+)\|体质([^\|]+)\|智力([^\|]+)\|感知([^\|]+)\|魅力([^\]]+)\]/);
+            if(at){r.attr={str:parseInt(at[1])||0,dex:parseInt(at[2])||0,con:parseInt(at[3])||0,int:parseInt(at[4])||0,wis:parseInt(at[5])||0,cha:parseInt(at[6])||0};}
+            var ax=/\[攻击\|([^\|]+)\|([^\|]+)\|([^\|]+)\|([^\|]+)\|([^\]]*)\]/g,am;
+            while((am=ax.exec(t))!==null){r.attacks.push({name:am[1],type:am[2],hit:am[3],dmg:am[4],eff:am[5]});}
+            var bx=/\[能力\|([^\|]+)\|([^\]]+)\]/g,bm;
+            while((bm=bx.exec(t))!==null){r.abilities.push({name:bm[1],desc:bm[2]});}
+            var ox=/\[奥义\|([^\]]+)\]/g,om;
+            while((om=ox.exec(t))!==null){r.ougis.push(om[1]);}
+            var px=/\[权能\|([^\]]+)\]/g,pm;
+            while((pm=px.exec(t))!==null){r.powers.push(pm[1]);}
+            r.weak=g(/\[弱点\|([^\]]*)\]/);
+            r.resist=g(/\[抗性\|([^\]]*)\]/);
+            r.immune=g(/\[免疫\|([^\]]*)\]/);
+            r.appear=g(/\[外貌\|([^\]]+)\]/);
+            r.status=g(/\[状态\|([^\]]*)\]/);
+            r.caster=g(/\[召唤者\|([^\]]*)\]/);
+            r.duration=g(/\[持续时间\|([^\]]*)\]/);
+            return r;
+        }
+
+        /* ========== 解析契约兽 ========== */
+        function parseContract(raw) {
+            var r = {name:'',race:'',job:'',caster:'',tier:'',level:0,size:'',element:'',bond:0,
+                     hpCur:0,hpMax:0,mpCur:0,mpMax:0,spCur:0,spMax:0,
+                     def:0,spd:0,init:0,
+                     attr:{str:0,dex:0,con:0,int:0,wis:0,cha:0},attacks:[],abilities:[],
+                     ougis:[],powers:[],
+                     breath:null,weak:'',resist:'',immune:'',
+                     appear:'',personality:'',faction:'',bgStory:'',status:''};
+            var m = raw.match(/<contract_data>([\s\S]*?)<\/contract_data>/);
+            if(!m) return r;
+            var t = m[1];
+            var g = function(re){var x=t.match(re);return x?x[1]:'';};
+            r.name=g(/\[名称\|([^\]]+)\]/);
+            r.race=g(/\[种族\|([^\]]+)\]/);
+            r.job=g(/\[职业\|([^\]]+)\]/);
+            r.caster=g(/\[契约主\|([^\]]+)\]/);
+            r.tier=g(/\[等阶\|([^\]]+)\]/);
+            r.level=parseInt(g(/\[等级\|([^\]]+)\]/))||0;
+            r.size=g(/\[体型\|([^\]]+)\]/);
+            r.element=g(/\[元素属性\|([^\]]+)\]/);
+            r.bond=parseInt(g(/\[羁绊\|([^\]]+)\]/))||0;
+            var hp=t.match(/\[HP\|([^\|]+)\|([^\]]+)\]/);
+            if(hp){r.hpCur=parseInt(hp[1])||0;r.hpMax=parseInt(hp[2])||0;}
+            var mp=t.match(/\[MP\|([^\|]+)\|([^\]]+)\]/);
+            if(mp){r.mpCur=parseInt(mp[1])||0;r.mpMax=parseInt(mp[2])||0;}
+            var sp=t.match(/\[SP\|([^\|]+)\|([^\]]+)\]/);
+            if(sp){r.spCur=parseInt(sp[1])||0;r.spMax=parseInt(sp[2])||0;}
+            r.def=parseInt(g(/\[防御值\|([^\]]+)\]/))||0;
+            r.spd=parseInt(g(/\[移动速度\|([^\]]+)\]/))||0;
+            r.init=parseInt(g(/\[先攻修正\|([^\]]+)\]/))||0;
+            var at=t.match(/\[属性\|力量([^\|]+)\|敏捷([^\|]+)\|体质([^\|]+)\|智力([^\|]+)\|感知([^\|]+)\|魅力([^\]]+)\]/);
+            if(at){r.attr={str:parseInt(at[1])||0,dex:parseInt(at[2])||0,con:parseInt(at[3])||0,int:parseInt(at[4])||0,wis:parseInt(at[5])||0,cha:parseInt(at[6])||0};}
+            var ax=/\[攻击\|([^\|]+)\|([^\|]+)\|([^\|]+)\|([^\|]+)\|([^\]]*)\]/g,am;
+            while((am=ax.exec(t))!==null){r.attacks.push({name:am[1],type:am[2],hit:am[3],dmg:am[4],eff:am[5]});}
+            var bx=/\[能力\|([^\|]+)\|([^\]]+)\]/g,bm;
+            while((bm=bx.exec(t))!==null){r.abilities.push({name:bm[1],desc:bm[2]});}
+            var ox=/\[奥义\|([^\]]+)\]/g,om;
+            while((om=ox.exec(t))!==null){r.ougis.push(om[1]);}
+            var px=/\[权能\|([^\]]+)\]/g,pm;
+            while((pm=px.exec(t))!==null){r.powers.push(pm[1]);}
+            var br=t.match(/\[吐息\|([^\|]+)\|([^\|]+)\|([^\|]+)\|([^\|]+)\|([^\]]*)\]/);
+            if(br){r.breath={name:br[1],element:br[2],dmg:br[3],range:br[4],cd:br[5]};}
+            r.weak=g(/\[弱点\|([^\]]*)\]/);
+            r.resist=g(/\[抗性\|([^\]]*)\]/);
+            r.immune=g(/\[免疫\|([^\]]*)\]/);
+            r.appear=g(/\[外貌\|([^\]]+)\]/);
+            r.personality=g(/\[性格\|([^\]]+)\]/);
+            r.faction=g(/\[所属势力\|([^\]]+)\]/);
+            r.bgStory=g(/\[背景故事\|([^\]]+)\]/);
+            r.status=g(/\[状态\|([^\]]*)\]/);
+            return r;
+        }
+
+        /* ========== 解析集群 ========== */
+        function parseCluster(raw) {
+            var r = {name:'',type:'',race:'',count:0,remain:0,itier:'',ilevel:0,avgHp:0,hpCur:0,hpMax:0,def:0,spd:0,init:0,smart:'',
+                     attr:{str:0,dex:0,con:0,int:0,wis:0,cha:0},attacks:[],tactics:[],abilities:[],
+                     ougis:[],powers:[],
+                     weak:'',resist:'',immune:'',loot:[],exp:0,appear:'',status:''};
+            var m = raw.match(/<cluster_data>([\s\S]*?)<\/cluster_data>/);
+            if(!m) return r;
+            var t = m[1];
+            var g = function(re){var x=t.match(re);return x?x[1]:'';};
+            r.name=g(/\[名称\|([^\]]+)\]/);
+            r.type=g(/\[种类\|([^\]]+)\]/);
+            r.race=g(/\[种族\|([^\]]+)\]/);
+            r.count=parseInt(g(/\[数量\|([^\]]+)\]/))||0;
+            r.remain=parseInt(g(/\[剩余数量\|([^\]]+)\]/))||0;
+            r.itier=g(/\[个体等阶\|([^\]]+)\]/);
+            r.ilevel=parseInt(g(/\[个体等级\|([^\]]+)\]/))||0;
+            r.avgHp=parseInt(g(/\[平均生命值\|([^\]]+)\]/))||0;
+            var hp=t.match(/\[HP\|([^\|]+)\|([^\]]+)\]/);
+            if(hp){r.hpCur=parseInt(hp[1])||0;r.hpMax=parseInt(hp[2])||0;}
+            r.def=parseInt(g(/\[防御值\|([^\]]+)\]/))||0;
+            r.spd=parseInt(g(/\[移动速度\|([^\]]+)\]/))||0;
+            r.init=parseInt(g(/\[先攻修正\|([^\]]+)\]/))||0;
+            r.smart=g(/\[智慧\|([^\]]+)\]/);
+            var at=t.match(/\[属性\|力量([^\|]+)\|敏捷([^\|]+)\|体质([^\|]+)\|智力([^\|]+)\|感知([^\|]+)\|魅力([^\]]+)\]/);
+            if(at){r.attr={str:parseInt(at[1])||0,dex:parseInt(at[2])||0,con:parseInt(at[3])||0,int:parseInt(at[4])||0,wis:parseInt(at[5])||0,cha:parseInt(at[6])||0};}
+            var ax=/\[集群攻击\|([^\|]+)\|([^\|]+)\|([^\|]+)\|([^\|]+)\|([^\]]*)\]/g,am;
+            while((am=ax.exec(t))!==null){r.attacks.push({name:am[1],type:am[2],hit:am[3],dmg:am[4],eff:am[5]});}
+            var tx=/\[战术\|([^\|]+)\|([^\]]+)\]/g,tm;
+            while((tm=tx.exec(t))!==null){r.tactics.push({name:tm[1],desc:tm[2]});}
+            var bx=/\[能力\|([^\|]+)\|([^\]]+)\]/g,bm;
+            while((bm=bx.exec(t))!==null){r.abilities.push({name:bm[1],desc:bm[2]});}
+            var ox=/\[奥义\|([^\]]+)\]/g,om;
+            while((om=ox.exec(t))!==null){r.ougis.push(om[1]);}
+            var px=/\[权能\|([^\]]+)\]/g,pm;
+            while((pm=px.exec(t))!==null){r.powers.push(pm[1]);}
+            r.weak=g(/\[弱点\|([^\]]*)\]/);
+            r.resist=g(/\[抗性\|([^\]]*)\]/);
+            r.immune=g(/\[免疫\|([^\]]*)\]/);
+            var lx=/\[战利品\|([^\|]+)\|([^\]]+)\]/g,lm;
+            while((lm=lx.exec(t))!==null){r.loot.push({item:lm[1],rate:lm[2]});}
+            r.exp=parseInt(g(/\[经验值\|([^\]]+)\]/))||0;
+            r.appear=g(/\[外貌\|([^\]]+)\]/);
+            r.status=g(/\[状态\|([^\]]*)\]/);
+            return r;
+        }
+
+        function fmod(v){return v>0?'+'+v:v.toString();}
+        function vc(v){return v>0?'v-pos':v<0?'v-neg':'v-zero';}
+        function affc(v){return v>=70?'aff-hi':v>=40?'aff-md':'aff-lo';}
+
+        /* ===== 奥义 / 权能 渲染块（史诗级大招 / 传说级法则之力） ===== */
+        // ougis: 单行字符串数组，形如 "奥义名: 效果" 或 "奥义名（限定）: 效果"
+        function ougiBlockList(list, secCls, secLabel, nameCls, descCls) {
+            var h = '';
+            if (!list || !list.length) return h;
+            h += '<div class="' + secCls + '">' + secLabel + '</div>';
+            for (var i = 0; i < list.length; i++) {
+                var raw = String(list[i] || '').trim();
+                if (!raw) continue;
+                var idx = raw.indexOf(':');
+                var nm = (idx > -1 ? raw.slice(0, idx) : raw).trim();
+                var ds = (idx > -1 ? raw.slice(idx + 1) : '').trim();
+                h += '<div class="' + (secCls === 'power-sec' ? 'power-block' : 'ougi-block') + '">';
+                h += '<div class="' + nameCls + '">' + nm + '</div>';
+                if (ds) h += '<div class="' + descCls + '">' + ds + '</div>';
+                h += '</div>';
+            }
+            return h;
+        }
+
+        function typeIco(t){
+            var m={'魔兽':'🐺','人类':'⚔','亚人':'👹','构装体':'⚙','不死生物':'💀','魔族':'👿'};
+            return m[t]||'❓';
+        }
+        function raceIco(r){
+            var m={'人类':'👤','精灵':'🧝','矮人':'⛏','兽人':'🐺','翼民':'🪶','海妖':'🧜','龙裔':'🐲','半身人':'🍀','地精':'👺','血族':'🧛','混血':'✨'};
+            return m[r]||'👤';
+        }
+
+        /* ========== 获取酒馆助手 ========== */
+        function getHelper() {
+            return window.TavernHelper || window.parent?.TavernHelper || window;
+        }
+
+        /* ========== 载入变量功能 ========== */
+        function loadAsNPC(npcData) {
+            var helper = getHelper();
+            if (typeof helper.insertOrAssignVariables !== 'function') {
+                showResult('load-result', false, '✗ 未检测到 TavernHelper API');
+                return;
+            }
+            var payload = { stat_data: { 主要NPC: {} } };
+            payload.stat_data.主要NPC[npcData.name] = {
+                好感度: npcData.affinity || 50,
+                心里话: ''
+            };
+            helper.insertOrAssignVariables(payload, { type: 'message', message_id: 'latest' });
+            showResult('load-result', true, '✓ 已作为普通NPC载入变量');
+        }
+
+        function loadAsCompanion(npcData) {
+            var helper = getHelper();
+            if (typeof helper.insertOrAssignVariables !== 'function') {
+                showResult('load-result', false, '✗ 未检测到 TavernHelper API');
+                return;
+            }
+            // 将 NPC 的 [能力|...] 映射为状态栏「技能」字段
+            var compSkills = {};
+            (npcData.abilities || []).forEach(function(ab) {
+                if (ab && ab.name) compSkills[ab.name] = { 描述: ab.desc || '', 等级: 1 };
+            });
+            // 将 NPC 的 [装备|...] 映射为状态栏「装备栏」五槽（头部/颈部/躯干/腿部/双手）
+            var compEquips = { 头部: {}, 颈部: {}, 躯干: {}, 腿部: {}, 双手: {} };
+            (npcData.equips || []).forEach(function(eq) {
+                if (eq && eq.slot && compEquips[eq.slot] !== undefined && eq.name) {
+                    compEquips[eq.slot] = {
+                        物品大类: '防具', 品阶: '普通', 装备位: eq.slot, 数量: 1,
+                        其它说明: eq.desc || '', 面板效果: {}, 附加词条: {},
+                        交易与物理属性: { 数量: 1, 可否堆叠: '否', 价格: '', 重量: '' },
+                        描述: eq.desc || '', 物品名: eq.name
+                    };
+                }
+            });
+            // 将 NPC 的 [随身物品|...] 映射为状态栏「物品栏」
+            var compItems = {};
+            (npcData.items || []).forEach(function(it) {
+                if (it && it.name) {
+                    compItems[it.name] = {
+                        物品大类: '一般物品', 品阶: '普通', 装备位: '无', 数量: it.qty || 1,
+                        其它说明: it.desc || '', 面板效果: {}, 附加词条: {},
+                        交易与物理属性: { 数量: it.qty || 1, 可否堆叠: '是', 价格: '', 重量: '' },
+                        描述: it.desc || ''
+                    };
+                }
+            });
+            var payload = { stat_data: { 同伴: {} } };
+            payload.stat_data.同伴[npcData.name] = {
+                好感度: npcData.affinity || 50,
+                心里话: '',
+                种族: npcData.race || '',
+                身份: npcData.identity || '',
+                所属势力: npcData.faction || '',
+                等阶: npcData.tier || '普通',
+                外貌: npcData.appear || '',
+                性格: npcData.personality || '',
+                背景故事: npcData.bgStory || '',
+                基础属性: {
+                    力量: npcData.attr.str || 10,
+                    敏捷: npcData.attr.dex || 10,
+                    体质: npcData.attr.con || 10,
+                    智力: npcData.attr.int || 10,
+                    感知: npcData.attr.wis || 10,
+                    魅力: npcData.attr.cha || 10,
+                    未分配点数: 0
+                },
+                基础状态: {
+                    HP: { 当前: npcData.hpCur || 0, 最大: npcData.hpMax || 0 },
+                    MP: { 当前: 0, 最大: 0 },
+                    SP: { 当前: 0, 最大: 0 },
+                    自身状态: {},
+                    经验值: { 当前: 0, 升级所需: 100 },
+                    职业信息: {},
+                    冒险者等级: 'F',
+                    总等级: npcData.level || 1,
+                    待分配职业等级: 0
+                },
+                防御值: npcData.def || 10,
+                技能: compSkills,
+                物品栏: compItems,
+                装备栏: compEquips
+            };
+            helper.insertOrAssignVariables(payload, { type: 'message', message_id: 'latest' });
+            showResult('load-result', true, '✓ 已作为同伴载入变量（含完整数据，符合状态栏格式）');
+        }
+
+        /* ========== 一键写入状态栏（召唤物 → stat_data.召唤物.{名字}，独立召唤物栏） ========== */
+        function loadAsSummon(summonData) {
+            var helper = getHelper();
+            if (typeof helper.insertOrAssignVariables !== 'function') {
+                showResult('load-result', false, '✗ 未检测到 TavernHelper API');
+                return;
+            }
+            var name = summonData.name || '召唤物';
+            var payload = { stat_data: { 召唤物: {} } };
+            payload.stat_data.召唤物[name] = {
+                种族: summonData.race || '',
+                等阶: summonData.tier || '普通',
+                等级: summonData.level || 1,
+                HP: { 当前: summonData.hpCur || 0, 最大: summonData.hpMax || 0 },
+                MP: { 当前: summonData.mpCur || 0, 最大: summonData.mpMax || 0 },
+                SP: { 当前: summonData.spCur || 0, 最大: summonData.spMax || 0 },
+                防御值: summonData.def || 10,
+                移动速度: summonData.spd || 0,
+                先攻修正: summonData.init || 0,
+                基础属性: {
+                    力量: summonData.attr.str || 10,
+                    敏捷: summonData.attr.dex || 10,
+                    体质: summonData.attr.con || 10,
+                    智力: summonData.attr.int || 10,
+                    感知: summonData.attr.wis || 10,
+                    魅力: summonData.attr.cha || 10
+                },
+                攻击: (summonData.attacks || []).map(function(a){
+                    return { 名称: a.name, 类型: a.type, 命中: a.hit, 伤害: a.dmg, 特效: a.eff || '' };
+                }),
+                能力: (summonData.abilities || []).map(function(b){
+                    return { 名称: b.name, 描述: b.desc };
+                }),
+                弱点: summonData.weak || '',
+                抗性: summonData.resist || '',
+                免疫: summonData.immune || '',
+                外貌: summonData.appear || '',
+                状态: summonData.status || '',
+                召唤者: summonData.caster || '',
+                持续时间: summonData.duration || ''
+            };
+            helper.insertOrAssignVariables(payload, { type: 'message', message_id: 'latest' });
+            showResult('load-result', true, '✓ 已写入状态栏（可在状态栏「同伴」栏的「召唤物」分组查看）');
+        }
+
+        /* ========== 一键写入状态栏（契约兽 → stat_data.契约兽.{名字}） ========== */
+        function loadAsContract(c) {
+            var helper = getHelper();
+            if (typeof helper.insertOrAssignVariables !== 'function') {
+                showResult('load-result', false, '✗ 未检测到 TavernHelper API');
+                return;
+            }
+            var name = c.name || '契约兽';
+            var jobName = c.job || '契约兽';
+            var lv = Math.max(1, c.level || 1);
+            var payload = { stat_data: { 契约兽: {} } };
+            payload.stat_data.契约兽[name] = {
+                种族: c.race || '',
+                职业: jobName,
+                契约主: c.caster || '',
+                等阶: c.tier || '普通',
+                等级: lv,
+                体型: c.size || '中型',
+                元素属性: c.element || '无',
+                羁绊: Math.max(0, Math.min(100, c.bond || 0)),
+                防御值: c.def || 10,
+                移动速度: c.spd || 0,
+                先攻修正: c.init || 0,
+                外貌: c.appear || '',
+                性格: c.personality || '',
+                所属势力: c.faction || '',
+                背景故事: c.bgStory || '',
+                状态: c.status || '',
+                基础属性: {
+                    力量: c.attr.str || 10, 敏捷: c.attr.dex || 10, 体质: c.attr.con || 10,
+                    智力: c.attr.int || 10, 感知: c.attr.wis || 10, 魅力: c.attr.cha || 10,
+                    未分配点数: 0
+                },
+                基础状态: {
+                    HP: { 当前: c.hpCur || 0, 最大: c.hpMax || 0 },
+                    MP: { 当前: c.mpCur || 0, 最大: c.mpMax || 0 },
+                    SP: { 当前: c.spCur || 0, 最大: c.spMax || 0 },
+                    经验值: { 当前: 0, 升级所需: 200 },
+                    职业信息: {},
+                    总等级: lv,
+                    待分配职业等级: 0
+                },
+                攻击: (c.attacks || []).map(function(a){
+                    return { 名称: a.name, 类型: a.type, 命中: a.hit, 伤害: a.dmg, 特效: a.eff || '' };
+                }),
+                能力: (c.abilities || []).map(function(b){
+                    return { 名称: b.name, 描述: b.desc };
+                }),
+                吐息: c.breath ? { 名称: c.breath.name, 元素: c.breath.element, 伤害骰: c.breath.dmg, 范围: c.breath.range, 冷却: c.breath.cd || '' } : null,
+                弱点: c.weak || '', 抗性: c.resist || '', 免疫: c.immune || ''
+            };
+            payload.stat_data.契约兽[name].基础状态.职业信息[jobName] = { 等级: lv, 技能点: 0, grantedLv: lv, grantedSp: 0 };
+            helper.insertOrAssignVariables(payload, { type: 'message', message_id: 'latest' });
+            showResult('load-result', true, '✓ 已写入状态栏（可在状态栏「同伴」栏的「契约兽」分组查看）');
+        }
+
+        function showResult(resultId, success, msg) {
+            var el = document.getElementById(resultId);
+            if (!el) return;
+            el.textContent = msg;
+            el.className = 'load-result ' + (success ? 'load-success' : 'load-fail');
+            el.style.display = 'block';
+        }
+
+        /* ========== 将NPC数据写入固定世界书“伊瑟利亚NPC数据”（蓝灯常驻） ========== */
+        function addNpcToWorldbook(npcData) {
+            var helper = getHelper();
+            var WORLD_BOOK_NAME = '伊瑟利亚NPC数据';
+            var entryName = npcData.name || '未命名NPC';
+
+            // 写入世界书的内容：包含所有属性、攻击、能力等详细数值
+            var contentParts = [];
+            if (npcData.name) contentParts.push('【姓名】' + npcData.name);
+            if (npcData.race) contentParts.push('【种族】' + npcData.race);
+            if (npcData.identity) contentParts.push('【身份】' + npcData.identity);
+            if (npcData.gender) contentParts.push('【性别】' + npcData.gender);
+            if (npcData.age) contentParts.push('【年龄】' + npcData.age);
+            if (npcData.appear) contentParts.push('【外貌】' + npcData.appear);
+            if (npcData.personality) contentParts.push('【性格】' + npcData.personality);
+            if (npcData.bgStory) contentParts.push('【背景】' + npcData.bgStory);
+            if (npcData.blessing) contentParts.push('【加护】' + npcData.blessing);
+            if (npcData.faction) contentParts.push('【所属势力】' + npcData.faction);
+            if (npcData.tier) contentParts.push('【等阶】' + npcData.tier);
+            if (npcData.level) contentParts.push('【等级】' + npcData.level);
+            contentParts.push('【HP】' + npcData.hpCur + '/' + npcData.hpMax);
+            contentParts.push('【防御值】' + npcData.def);
+            contentParts.push('【移动速度】' + npcData.spd);
+            contentParts.push('【先攻修正】' + fmod(npcData.init));
+            contentParts.push('【属性】力量' + npcData.attr.str + ' 敏捷' + npcData.attr.dex + ' 体质' + npcData.attr.con + ' 智力' + npcData.attr.int + ' 感知' + npcData.attr.wis + ' 魅力' + npcData.attr.cha);
+            if (npcData.attacks.length > 0) {
+                for (var ai = 0; ai < npcData.attacks.length; ai++) {
+                    var atk = npcData.attacks[ai];
+                    contentParts.push('【攻击】' + atk.name + ' | ' + atk.type + ' | 命中' + atk.hit + ' | 伤害' + atk.dmg + (atk.eff ? ' | ' + atk.eff : ''));
+                }
+            }
+            if (npcData.abilities.length > 0) {
+                for (var bi = 0; bi < npcData.abilities.length; bi++) {
+                    var abl = npcData.abilities[bi];
+                    contentParts.push('【能力】' + abl.name + ' | ' + abl.desc);
+                }
+            }
+            if (npcData.equips && npcData.equips.length > 0) {
+                for (var ei = 0; ei < npcData.equips.length; ei++) {
+                    var eqp = npcData.equips[ei];
+                    contentParts.push('【装备】' + eqp.slot + ' | ' + eqp.name + (eqp.desc ? ' | ' + eqp.desc : ''));
+                }
+            }
+            if (npcData.items && npcData.items.length > 0) {
+                for (var ji = 0; ji < npcData.items.length; ji++) {
+                    var itm = npcData.items[ji];
+                    contentParts.push('【随身物品】' + itm.name + ' ×' + (itm.qty || 1) + (itm.desc ? ' | ' + itm.desc : ''));
+                }
+            }
+            if (npcData.attitude) contentParts.push('【态度】' + npcData.attitude);
+            if (npcData.affinity) contentParts.push('【好感度】' + npcData.affinity);
+            if (npcData.status) contentParts.push('【状态】' + npcData.status);
+
+            var entryContent = contentParts.join('\n');
+
+            // 获取 API 引用
+            var getWorldbook = helper.getWorldbook || window.getWorldbook;
+            var createWorldbook = helper.createWorldbook || window.createWorldbook;
+            var updateWorldbookWith = helper.updateWorldbookWith || window.updateWorldbookWith;
+            var getGlobalNames = helper.getGlobalWorldbookNames || window.getGlobalWorldbookNames;
+            var rebindGlobal = helper.rebindGlobalWorldbooks || window.rebindGlobalWorldbooks;
+
+            if (!getWorldbook || !createWorldbook || !updateWorldbookWith || !getGlobalNames || !rebindGlobal) {
+                showResult('wb-result', false, '✗ 世界书 API 不可用，请在酒馆扩展中使用');
+                console.error('[世界书] 缺少 API 函数', { getWorldbook, createWorldbook, updateWorldbookWith, getGlobalNames, rebindGlobal });
+                return;
+            }
+
+            console.log('[世界书] 开始处理 NPC:', entryName);
+            console.log('[世界书] 条目内容:\n', entryContent);
+
+            // 1. 确保世界书存在
+            var ensureBook = getWorldbook(WORLD_BOOK_NAME).catch(function(err) {
+                console.log('[世界书] 世界书不存在，将自动创建:', WORLD_BOOK_NAME, err);
+                return createWorldbook(WORLD_BOOK_NAME, []).then(function() {
+                    console.log('[世界书] 空世界书已创建');
+                    return [];
+                });
+            });
+
+            ensureBook.then(function(existingEntries) {
+                console.log('[世界书] 当前条目数:', existingEntries.length);
+                // 2. 更新或新增条目
+                return updateWorldbookWith(WORLD_BOOK_NAME, function(entries) {
+                    var existingIndex = -1;
+                    for (var i = 0; i < entries.length; i++) {
+                        if (entries[i].name === entryName) {
+                            existingIndex = i;
+                            break;
+                        }
+                    }
+
+                    var newEntry = {
+                        name: entryName,
+                        enabled: true,
+                        strategy: {
+                            type: 'constant',   // 蓝灯常驻
+                            keys: [],
+                            keys_secondary: { logic: 'and_any', keys: [] },
+                            scan_depth: 'same_as_global'
+                        },
+                        position: {
+                            type: 'before_character_definition',
+                            role: 'system',
+                            depth: 0,
+                            order: 100
+                        },
+                        content: entryContent
+                    };
+
+                    if (existingIndex >= 0) {
+                        console.log('[世界书] 更新现有条目:', entryName);
+                        entries[existingIndex] = Object.assign(entries[existingIndex], newEntry);
+                    } else {
+                        console.log('[世界书] 添加新条目:', entryName);
+                        entries.push(newEntry);
+                    }
+                    return entries;
+                }, { render: 'immediate' });
+            })
+            .then(function(updatedEntries) {
+                console.log('[世界书] 条目更新完成，当前总数:', updatedEntries.length);
+                // 3. 确保全局启用（getGlobalNames 同步返回数组）
+                var globalNames = getGlobalNames();
+                console.log('[世界书] 当前全局世界书:', globalNames);
+                if (globalNames.indexOf(WORLD_BOOK_NAME) === -1) {
+                    globalNames.push(WORLD_BOOK_NAME);
+                    console.log('[世界书] 将全局启用世界书:', WORLD_BOOK_NAME);
+                    return rebindGlobal(globalNames);
+                } else {
+                    console.log('[世界书] 世界书已在全局列表中');
+                }
+            })
+            .then(function() {
+                showResult('wb-result', true, '✓ 已将“' + entryName + '”写入世界书并全局启用');
+                console.log('[世界书] 操作成功完成');
+            })
+            .catch(function(err) {
+                showResult('wb-result', false, '✗ 操作失败: ' + (err.message || err));
+                console.error('[世界书] 操作失败:', err);
+            });
+        }
+
+        /* ========== 渲染敌人 ========== */
+        function renderEnemy(d) {
+            var pct = d.hpMax>0?(d.hpCur/d.hpMax*100):0;
+            var h = '<div class="scroll-panel"><div class="scroll-border"><div class="scroll-inner">';
+            h+='<div class="corner-deco c-tl"></div><div class="corner-deco c-tr"></div><div class="corner-deco c-bl"></div><div class="corner-deco c-br"></div>';
+            h+='<div class="panel-head">';
+            h+='<div class="head-icon">'+typeIco(d.type)+'</div>';
+            h+='<div class="head-name">'+(d.name||'未知敌人')+'</div>';
+            h+='<div class="head-sub">'+(d.type||'')+' · '+(d.race||'')+' · Lv.'+d.level+'</div>';
+            h+='<div class="head-badge badge-'+(d.tier||'普通')+'">'+(d.tier||'普通')+'</div>';
+            h+='</div>';
+            h+='<div class="divider">─ ✦ ─</div>';
+            h+='<div class="hp-area"><div class="hp-header">';
+            h+='<span class="hp-label">❤ HP</span>';
+            h+='<span class="hp-value">'+d.hpCur+' / '+d.hpMax+'</span>';
+            h+='</div>';
+            h+='<div class="hp-bar-bg"><div class="hp-bar-fill" style="width:'+pct+'%"></div></div></div>';
+            h+='<div class="panel-body">';
+            h+='<div class="tri-grid">';
+            h+='<div class="tri-cell"><div class="tri-label">防御值</div><div class="tri-val">'+d.def+'</div></div>';
+            h+='<div class="tri-cell"><div class="tri-label">速度</div><div class="tri-val">'+d.spd+'尺</div></div>';
+            h+='<div class="tri-cell"><div class="tri-label">先攻</div><div class="tri-val">'+fmod(d.init)+'</div></div>';
+            h+='</div>';
+            h+='<div class="sec-head">◆ 属性修正</div>';
+            h+='<div class="attr-grid">';
+            var an=['力','敏','体','智','感','魅'],ak=['str','dex','con','int','wis','cha'];
+            for(var i=0;i<6;i++){var v=d.attr[ak[i]];h+='<div class="attr-cell"><div class="attr-label">'+an[i]+'</div><div class="attr-val '+vc(v)+'">'+fmod(v)+'</div></div>';}
+            h+='</div>';
+            if(d.attacks.length>0){h+='<div class="sec-head">◆ 攻击方式</div>';for(var j=0;j<d.attacks.length;j++){var a=d.attacks[j];h+='<div class="atk-block"><div class="atk-top"><span class="atk-name">'+a.name+'</span><span class="atk-type-tag">'+a.type+'</span></div>';h+='<div class="atk-nums"><span>命中 <strong>'+a.hit+'</strong></span><span>伤害 <strong>'+a.dmg+'</strong></span></div>';if(a.eff)h+='<div class="atk-eff">'+a.eff+'</div>';h+='</div>';}}
+            if(d.abilities.length>0){h+='<div class="sec-head">◆ 特殊能力</div>';for(var k=0;k<d.abilities.length;k++){var b=d.abilities[k];h+='<div class="abl-block"><div class="abl-name">✦ '+b.name+'</div><div class="abl-desc">'+b.desc+'</div></div>';}}
+if(d.ougis.length>0){h+=ougiBlockList(d.ougis,'ougi-sec','✧ 奥义','ougi-name','ougi-desc');}
+if(d.powers.length>0){h+=ougiBlockList(d.powers,'power-sec','❖ 权能','power-name','power-desc');}
+            if(d.weak||d.resist||d.immune){h+='<div class="sec-head">◆ 弱点与抗性</div><div class="tag-area">';if(d.weak)h+='<span class="r-tag r-weak">弱点: '+d.weak+'</span>';if(d.resist)h+='<span class="r-tag r-resist">抗性: '+d.resist+'</span>';if(d.immune)h+='<span class="r-tag r-immune">免疫: '+d.immune+'</span>';h+='</div>';}
+            if(d.loot.length>0){h+='<div class="sec-head">◆ 战利品</div>';for(var l=0;l<d.loot.length;l++){h+='<div class="loot-line"><span>'+d.loot[l].item+'</span><span class="loot-rate">'+d.loot[l].rate+'</span></div>';}}
+            if(d.status){h+='<div class="status-block"><div class="status-label">⚠ 状态效果</div><div class="status-text">'+d.status+'</div></div>';}
+            h+='</div>';
+            h+='<div class="panel-foot">';
+            h+='<div class="exp-area"><span class="exp-icon">✧</span><span class="exp-num">'+d.exp+' EXP</span></div>';
+            if(d.appear)h+='<div class="appear-area">'+d.appear+'</div>';
+            h+='</div>';
+            h+='</div></div></div>';
+            return h;
+        }
+
+        /* ========== 渲染集群 ========== */
+        function renderCluster(d) {
+            var pct = d.hpMax>0?(d.hpCur/d.hpMax*100):0;
+            var smart = !(d.smart==='无'||d.smart==='');
+            var h = '<div class="scroll-panel"><div class="scroll-border"><div class="scroll-inner">';
+            h+='<div class="corner-deco c-tl"></div><div class="corner-deco c-tr"></div><div class="corner-deco c-bl"></div><div class="corner-deco c-br"></div>';
+            h+='<div class="panel-head">';
+            h+='<div class="head-icon">'+typeIco(d.type)+'</div>';
+            h+='<div class="head-name">'+(d.name||'未知集群')+'</div>';
+            h+='<div class="head-sub">'+(d.type||'')+' · '+(d.race||'')+' · ×'+(d.count||'?')+'体 · '+(smart?'有智慧':'无智慧·免疫士气')+'</div>';
+            h+='<div class="head-badge badge-'+(d.itier||'普通')+'">'+(d.itier||'普通')+' 集群</div>';
+            h+='</div>';
+            h+='<div class="divider">─ ✦ ─</div>';
+            h+='<div class="hp-area"><div class="hp-header">';
+            h+='<span class="hp-label">❤ 集群HP</span>';
+            h+='<span class="hp-value">'+d.hpCur+' / '+d.hpMax+'</span>';
+            h+='</div>';
+            h+='<div class="hp-bar-bg"><div class="hp-bar-fill" style="width:'+pct+'%"></div></div>';
+            h+='</div>';
+            h+='<div class="tag-area" style="padding:0 24px 6px;">';
+            h+='<span class="r-tag r-weak">范围脆弱</span>';
+            h+='<span class="r-tag r-resist">围攻压制</span>';
+            if(!smart)h+='<span class="r-tag r-immune">免疫士气</span>';
+            h+='</div>';
+            h+='<div class="panel-body">';
+            h+='<div class="tri-grid">';
+            h+='<div class="tri-cell"><div class="tri-label">个体</div><div class="tri-val">'+(d.remain||d.count)+' / '+(d.count||0)+'</div></div>';
+            h+='<div class="tri-cell"><div class="tri-label">个体生命</div><div class="tri-val">'+d.avgHp+'</div></div>';
+            h+='<div class="tri-cell"><div class="tri-label">防御值</div><div class="tri-val">'+d.def+'</div></div>';
+            h+='<div class="tri-cell"><div class="tri-label">速度</div><div class="tri-val">'+d.spd+'尺</div></div>';
+            h+='<div class="tri-cell"><div class="tri-label">先攻</div><div class="tri-val">'+fmod(d.init)+'</div></div>';
+            h+='<div class="tri-cell"><div class="tri-label">等阶</div><div class="tri-val">'+(d.itier||'普通')+'</div></div>';
+            h+='</div>';
+            h+='<div class="sec-head">◆ 属性修正</div>';
+            h+='<div class="attr-grid">';
+            var an=['力','敏','体','智','感','魅'],ak=['str','dex','con','int','wis','cha'];
+            for(var i=0;i<6;i++){var v=d.attr[ak[i]];h+='<div class="attr-cell"><div class="attr-label">'+an[i]+'</div><div class="attr-val '+vc(v)+'">'+fmod(v)+'</div></div>';}
+            h+='</div>';
+            if(d.attacks.length>0){h+='<div class="sec-head">◆ 集群攻击</div>';for(var j=0;j<d.attacks.length;j++){var a=d.attacks[j];h+='<div class="atk-block"><div class="atk-top"><span class="atk-name">'+a.name+'</span><span class="atk-type-tag">'+a.type+'</span></div>';h+='<div class="atk-nums"><span>命中 <strong>'+a.hit+'</strong></span><span>伤害 <strong>'+a.dmg+'</strong></span></div>';if(a.eff)h+='<div class="atk-eff">'+a.eff+'</div>';h+='</div>';}}
+            if(smart && d.tactics.length>0){h+='<div class="sec-head">◆ 战术</div>';for(var t=0;t<d.tactics.length;t++){var tc=d.tactics[t];h+='<div class="abl-block"><div class="abl-name">⛨ '+tc.name+'</div><div class="abl-desc">'+tc.desc+'</div></div>';}}
+            if(d.abilities.length>0){h+='<div class="sec-head">◆ 特殊能力</div>';for(var k=0;k<d.abilities.length;k++){var b=d.abilities[k];h+='<div class="abl-block"><div class="abl-name">✦ '+b.name+'</div><div class="abl-desc">'+b.desc+'</div></div>';}}
+if(d.ougis.length>0){h+=ougiBlockList(d.ougis,'ougi-sec','✧ 奥义','ougi-name','ougi-desc');}
+if(d.powers.length>0){h+=ougiBlockList(d.powers,'power-sec','❖ 权能','power-name','power-desc');}
+            if(d.weak||d.resist||d.immune){h+='<div class="sec-head">◆ 弱点与抗性</div><div class="tag-area">';if(d.weak)h+='<span class="r-tag r-weak">弱点: '+d.weak+'</span>';if(d.resist)h+='<span class="r-tag r-resist">抗性: '+d.resist+'</span>';if(d.immune)h+='<span class="r-tag r-immune">免疫: '+d.immune+'</span>';h+='</div>';}
+            if(d.loot.length>0){h+='<div class="sec-head">◆ 战利品</div>';for(var l=0;l<d.loot.length;l++){h+='<div class="loot-line"><span>'+d.loot[l].item+'</span><span class="loot-rate">'+d.loot[l].rate+'</span></div>';}}
+            if(d.status){h+='<div class="status-block"><div class="status-label">⚠ 状态效果</div><div class="status-text">'+d.status+'</div></div>';}
+            h+='</div>';
+            h+='<div class="panel-foot">';
+            h+='<div class="exp-area"><span class="exp-icon">✧</span><span class="exp-num">'+d.exp+' EXP</span></div>';
+            if(d.appear)h+='<div class="appear-area">'+d.appear+'</div>';
+            h+='</div>';
+            h+='</div></div></div>';
+            return h;
+        }
+
+        /* ========== 渲染NPC（包含世界书按钮） ========== */
+        function renderNPC(d) {
+            var h = '<div class="scroll-panel"><div class="scroll-border"><div class="scroll-inner npc-style">';
+            h+='<div class="corner-deco c-tl"></div><div class="corner-deco c-tr"></div><div class="corner-deco c-bl"></div><div class="corner-deco c-br"></div>';
+
+            h+='<div class="panel-head">';
+            h+='<div class="head-icon">'+raceIco(d.race)+'</div>';
+            h+='<div class="head-name">'+(d.name||'未知')+'</div>';
+            h+='<div class="head-sub">'+(d.race||'')+' · '+(d.identity||'')+' · Lv.'+d.level+'</div>';
+            h+='<div class="head-badge badge-'+(d.attitude||'中立')+'">'+(d.attitude||'中立')+'</div>';
+            h+='</div>';
+
+            h+='<div class="divider">─ ◈ ─</div>';
+
+            /* 好感度 */
+            h+='<div class="aff-area"><div class="aff-header">';
+            h+='<span class="aff-label">♡ 好感度</span>';
+            h+='<span class="aff-value">'+d.affinity+' / 100</span>';
+            h+='</div>';
+            h+='<div class="aff-bar-bg"><div class="aff-bar-fill '+affc(d.affinity)+'" style="width:'+d.affinity+'%"></div></div></div>';
+
+            h+='<div class="panel-body">';
+
+            /* 性格 */
+            if(d.personality){
+                h+='<div class="sec-head">◈ 性格</div><div class="trait-area">';
+                var ts=d.personality.split(/[,，、]/);
+                for(var i=0;i<ts.length;i++){var tr=ts[i].trim();if(tr)h+='<span class="trait-chip">'+tr+'</span>';}
+                h+='</div>';
+            }
+
+            /* 外貌 */
+            if(d.appear){
+                h+='<div class="sec-head">◈ 外貌</div>';
+                h+='<div class="appear-block"><span class="appear-text">'+d.appear+'</span></div>';
+            }
+
+            /* 背景故事 */
+            if(d.bgStory){
+                h+='<div class="sec-head">◈ 背景故事</div>';
+                h+='<div class="bg-story-block"><div class="bg-story-text">'+d.bgStory+'</div></div>';
+            }
+
+            /* 加护 */
+            if(d.blessing){
+                h+='<div class="sec-head">◈ 加护</div>';
+                h+='<div class="blessing-block"><span class="blessing-icon">✧</span><span class="blessing-text">'+d.blessing+'</span></div>';
+            }
+
+            /* 战斗数据 */
+            h+='<div class="sec-head">◈ 战斗数据</div>';
+            h+='<div class="tri-grid">';
+            h+='<div class="tri-cell"><div class="tri-label">HP</div><div class="tri-val">'+d.hpCur+'/'+d.hpMax+'</div></div>';
+            h+='<div class="tri-cell"><div class="tri-label">防御</div><div class="tri-val">'+d.def+'</div></div>';
+            h+='<div class="tri-cell"><div class="tri-label">等阶</div><div class="tri-val" style="font-size:14px">'+(d.tier||'普通')+'</div></div>';
+            h+='</div>';
+
+            /* 属性 */
+            h+='<div class="attr-grid">';
+            var an=['力','敏','体','智','感','魅'],ak=['str','dex','con','int','wis','cha'];
+            for(var j=0;j<6;j++){var v=d.attr[ak[j]];h+='<div class="attr-cell"><div class="attr-label">'+an[j]+'</div><div class="attr-val '+vc(v)+'">'+fmod(v)+'</div></div>';}
+            h+='</div>';
+
+            /* 攻击 */
+            if(d.attacks.length>0){
+                h+='<div class="sec-head">◈ 攻击方式</div>';
+                for(var m=0;m<d.attacks.length;m++){
+                    var a=d.attacks[m];
+                    h+='<div class="atk-block"><div class="atk-top"><span class="atk-name">'+a.name+'</span><span class="atk-type-tag">'+a.type+'</span></div>';
+                    h+='<div class="atk-nums"><span>命中 <strong>'+a.hit+'</strong></span><span>伤害 <strong>'+a.dmg+'</strong></span></div>';
+                    if(a.eff) h+='<div class="atk-eff">'+a.eff+'</div>';
+                    h+='</div>';
+                }
+            }
+
+            /* 能力 */
+            if(d.abilities.length>0){
+                h+='<div class="sec-head">◈ 特殊能力</div>';
+                for(var k=0;k<d.abilities.length;k++){var b=d.abilities[k];h+='<div class="abl-block"><div class="abl-name">✦ '+b.name+'</div><div class="abl-desc">'+b.desc+'</div></div>';}
+            }
+
+            /* 奥义 / 权能 */
+            if(d.ougis.length>0){h+=ougiBlockList(d.ougis,'ougi-sec','✧ 奥义','ougi-name','ougi-desc');}
+            if(d.powers.length>0){h+=ougiBlockList(d.powers,'power-sec','❖ 权能','power-name','power-desc');}
+
+            /* 装备栏 */
+            if(d.equips && d.equips.length>0){
+                h+='<div class="sec-head">◈ 装备栏</div>';
+                for(var e=0;e<d.equips.length;e++){var eq=d.equips[e];h+='<div class="equip-line"><span class="equip-slot">'+eq.slot+'</span><span class="equip-name">'+eq.name+'</span>'+(eq.desc?'<div class="equip-desc">'+eq.desc+'</div>':'')+'</div>';}
+            }
+
+            /* 随身物品 */
+            if(d.items && d.items.length>0){
+                h+='<div class="sec-head">◈ 随身物品</div>';
+                for(var ii=0;ii<d.items.length;ii++){var it=d.items[ii];h+='<div class="item-line"><span class="item-name">'+it.name+'</span><span class="item-qty">×'+it.qty+'</span>'+(it.desc?'<div class="item-desc">'+it.desc+'</div>':'')+'</div>';}
+            }
+
+            /* 功能 */
+            if(d.functions.length>0){
+                h+='<div class="sec-head">◈ 可提供</div>';
+                for(var n=0;n<d.functions.length;n++){h+='<div class="func-line"><span class="func-dot"></span><span>'+d.functions[n]+'</span></div>';}
+            }
+
+            /* 载入变量按钮（条件显示） */
+            if(d.loadVar==='是'){
+                h+='<div class="load-var-area">';
+                h+='<div class="load-var-title">⚙ 载入变量追踪</div>';
+                h+='<div class="load-var-btns" id="load-btns">';
+                h+='<button class="load-var-btn btn-npc" id="btn-load-npc">普通NPC</button>';
+                h+='<button class="load-var-btn btn-comp" id="btn-load-comp">同伴</button>';
+                h+='</div>';
+                h+='<div class="load-result" id="load-result"></div>';
+                h+='</div>';
+            }
+
+            /* 世界书按钮（总是显示） */
+            h+='<div class="load-var-area">';
+            h+='<div class="load-var-title">📖 世界书</div>';
+            h+='<div class="load-var-btns">';
+            h+='<button class="load-var-btn btn-wb" id="btn-create-wb">写入伊瑟利亚NPC数据</button>';
+            h+='</div>';
+            h+='<div class="load-result" id="wb-result"></div>';
+            h+='</div>';
+
+            /* 状态 */
+            if(d.status){h+='<div class="status-block"><div class="status-label">⚠ 状态效果</div><div class="status-text">'+d.status+'</div></div>';}
+
+            h+='</div>';
+
+            /* 底部 */
+            h+='<div class="panel-foot">';
+            h+='<div class="faction-area">⚜ '+(d.faction||'无所属')+'</div>';
+            h+='</div>';
+
+            h+='</div></div></div>';
+            return h;
+        }
+
+        /* ========== 渲染召唤物 ========== */
+        function renderSummon(d) {
+            var pctHp = d.hpMax>0?(d.hpCur/d.hpMax*100):0;
+            var pctMp = d.mpMax>0?(d.mpCur/d.mpMax*100):0;
+            var pctSp = d.spMax>0?(d.spCur/d.spMax*100):0;
+            var h = '<div class="scroll-panel"><div class="scroll-border summon-style"><div class="scroll-inner">';
+            h+='<div class="corner-deco c-tl"></div><div class="corner-deco c-tr"></div><div class="corner-deco c-bl"></div><div class="corner-deco c-br"></div>';
+            h+='<div class="panel-head summon-head">';
+            h+='<div class="head-icon">🔮</div>';
+            h+='<div class="head-name">'+(d.name||'召唤物')+'</div>';
+            h+='<div class="head-sub">🔮 召唤物 · '+(d.race||'')+' · Lv.'+d.level+'</div>';
+            h+='<div class="head-badge badge-'+(d.tier||'普通')+'">'+(d.tier||'普通')+'</div>';
+            h+='</div>';
+            h+='<div class="divider">─ ✦ ─</div>';
+
+            /* 召唤者与持续时间 */
+            if(d.caster||d.duration){
+                h+='<div class="summon-meta">';
+                if(d.caster) h+='<span class="summon-caster">🌀 召唤者：'+d.caster+'</span>';
+                if(d.duration) h+='<span class="summon-duration">⏳ '+d.duration+'</span>';
+                h+='</div>';
+            }
+
+            /* HP / MP / SP */
+            h+='<div class="res-area">';
+            h+='<div class="res-row"><span class="res-label"><span class="res-ico">❤</span>HP</span><div class="res-bar-bg"><div class="res-bar-fill hp-fill" style="width:'+pctHp+'%"></div></div><span class="res-num">'+d.hpCur+'/'+d.hpMax+'</span></div>';
+            h+='<div class="res-row"><span class="res-label"><span class="res-ico">◆</span>MP</span><div class="res-bar-bg"><div class="res-bar-fill mp-fill" style="width:'+pctMp+'%"></div></div><span class="res-num">'+d.mpCur+'/'+d.mpMax+'</span></div>';
+            h+='<div class="res-row"><span class="res-label"><span class="res-ico">▲</span>SP</span><div class="res-bar-bg"><div class="res-bar-fill sp-fill" style="width:'+pctSp+'%"></div></div><span class="res-num">'+d.spCur+'/'+d.spMax+'</span></div>';
+            h+='</div>';
+
+            h+='<div class="panel-body">';
+            h+='<div class="tri-grid">';
+            h+='<div class="tri-cell"><div class="tri-label">防御值</div><div class="tri-val">'+d.def+'</div></div>';
+            h+='<div class="tri-cell"><div class="tri-label">速度</div><div class="tri-val">'+d.spd+'尺</div></div>';
+            h+='<div class="tri-cell"><div class="tri-label">先攻</div><div class="tri-val">'+fmod(d.init)+'</div></div>';
+            h+='</div>';
+
+            h+='<div class="sec-head">◆ 属性修正</div>';
+            h+='<div class="attr-grid">';
+            var an=['力','敏','体','智','感','魅'],ak=['str','dex','con','int','wis','cha'];
+            for(var i=0;i<6;i++){var v=d.attr[ak[i]];h+='<div class="attr-cell"><div class="attr-label">'+an[i]+'</div><div class="attr-val '+vc(v)+'">'+fmod(v)+'</div></div>';}
+            h+='</div>';
+
+            if(d.attacks.length>0){h+='<div class="sec-head">◆ 攻击方式</div>';for(var j=0;j<d.attacks.length;j++){var a=d.attacks[j];h+='<div class="atk-block"><div class="atk-top"><span class="atk-name">'+a.name+'</span><span class="atk-type-tag">'+a.type+'</span></div>';h+='<div class="atk-nums"><span>命中 <strong>'+a.hit+'</strong></span><span>伤害 <strong>'+a.dmg+'</strong></span></div>';if(a.eff)h+='<div class="atk-eff">'+a.eff+'</div>';h+='</div>';}}
+            if(d.abilities.length>0){h+='<div class="sec-head">◆ 特殊能力</div>';for(var k=0;k<d.abilities.length;k++){var b=d.abilities[k];h+='<div class="abl-block"><div class="abl-name">✦ '+b.name+'</div><div class="abl-desc">'+b.desc+'</div></div>';}}
+if(d.ougis.length>0){h+=ougiBlockList(d.ougis,'ougi-sec','✧ 奥义','ougi-name','ougi-desc');}
+if(d.powers.length>0){h+=ougiBlockList(d.powers,'power-sec','❖ 权能','power-name','power-desc');}
+            if(d.weak||d.resist||d.immune){h+='<div class="sec-head">◆ 弱点与抗性</div><div class="tag-area">';if(d.weak)h+='<span class="r-tag r-weak">弱点: '+d.weak+'</span>';if(d.resist)h+='<span class="r-tag r-resist">抗性: '+d.resist+'</span>';if(d.immune)h+='<span class="r-tag r-immune">免疫: '+d.immune+'</span>';h+='</div>';}
+            if(d.appear){h+='<div class="sec-head">◆ 外貌</div><div class="appear-area">'+d.appear+'</div>';}
+            if(d.status){h+='<div class="status-block"><div class="status-label">⚠ 状态效果</div><div class="status-text">'+d.status+'</div></div>';}
+
+            /* 一键写入状态栏按钮 */
+            h+='<div class="load-var-area summon-write">';
+            h+='<div class="load-var-title">📥 写入状态栏</div>';
+            h+='<div class="load-var-btns">';
+            h+='<button class="load-var-btn btn-summon" id="btn-write-summon">一键写入状态栏（同伴栏）</button>';
+            h+='</div>';
+            h+='<div class="load-result" id="load-result"></div>';
+            h+='</div>';
+
+            h+='</div>';
+            h+='<div class="panel-foot"><div class="faction-area">🔮 '+(d.race||'召唤物')+'</div></div>';
+            h+='</div></div></div>';
+            return h;
+        }
+
+        /* ========== 渲染契约兽 ========== */
+        // 契约兽面板主题：按 职业/种族/名称 关键字分类（龙 / 元素精灵 / 古树 / 魔兽默认）
+        function contractTheme(d) {
+            var s = String((d.race||'') + (d.job||'') + (d.name||''));
+            if (/龙|蛇|蜥蜴/.test(s)) return 'dragon';
+            if (/元素|精灵|灵体/.test(s)) return 'elemental';
+            if (/树|木|森|藤/.test(s)) return 'forest';
+            return 'beast';
+        }
+        function contractIcon(theme) {
+            return { dragon:'🐉', elemental:'✨', forest:'🌳', beast:'🐾' }[theme] || '🐾';
+        }
+        function contractElementClass(el) {
+            var map = { '火':'elem-fire','水':'elem-water','风':'elem-wind','土':'elem-earth','雷':'elem-thunder','电':'elem-thunder','冰':'elem-ice','光':'elem-light','暗':'elem-dark' };
+            return map[el]||'elem-none';
+        }
+        // 元素图标：用于龙息标题（随面板当前元素切换）；用 fromCodePoint 避免源码 emoji 乱码
+        function elementIco(el) {
+            var VS = String.fromCodePoint(0xFE0F);
+            var m = { '火': String.fromCodePoint(0x1F525), '水': String.fromCodePoint(0x1F4A7), '风': String.fromCodePoint(0x1F343), '土': String.fromCodePoint(0x1FAA8), '雷': String.fromCodePoint(0x26A1), '电': String.fromCodePoint(0x26A1), '冰': String.fromCodePoint(0x2744)+VS, '光': String.fromCodePoint(0x2600)+VS, '暗': String.fromCodePoint(0x1F319) };
+            return m[el] || (String.fromCodePoint(0x2744)+VS);
+        }
+        function renderContract(d) {
+            var pctHp = d.hpMax>0?(d.hpCur/d.hpMax*100):0;
+            var pctMp = d.mpMax>0?(d.mpCur/d.mpMax*100):0;
+            var pctSp = d.spMax>0?(d.spCur/d.spMax*100):0;
+            var theme = contractTheme(d);
+            var themeCls = 'contract-' + theme;
+            // 任意契约兽都按元素渲染（冰龙→elem-ice 冰蓝主题；无元素则 elem-none 走主题默认色）
+            var elCls = ' ' + contractElementClass(d.element);
+            var icon = contractIcon(theme);
+            var h = '<div class="scroll-panel"><div class="scroll-border summon-style contract-style '+themeCls+elCls+'"><div class="scroll-inner">';
+            h+='<div class="corner-deco c-tl"></div><div class="corner-deco c-tr"></div><div class="corner-deco c-bl"></div><div class="corner-deco c-br"></div>';
+            h+='<div class="panel-head summon-head">';
+            h+='<div class="head-icon">'+icon+'</div>';
+            h+='<div class="head-name">'+(d.name||'契约兽')+'</div>';
+            h+='<div class="head-sub">'+icon+' 契约兽 · '+(d.race||'')+(d.job?' · 职业·'+d.job:'')+' · Lv.'+d.level+'</div>';
+            h+='<div class="head-badge badge-'+(d.tier||'普通')+'">'+(d.tier||'普通')+'</div>';
+            h+='</div>';
+            h+='<div class="divider">─ ✦ ─</div>';
+
+            /* 元素切换条：点击切换面板元素主题（边框/HP/吐息/标题随之变色） */
+            h+='<div class="elem-switch">';
+            var elems=['火','水','风','土','雷','冰','光','暗'];
+            for(var es=0;es<elems.length;es++){var en=elems[es];h+='<button class="elem-btn'+(en===d.element?' active':'')+'" data-elem="'+en+'">'+en+'</button>';}
+            h+='</div>';
+
+            /* 契约主 / 体型 / 元素 */
+            if(d.caster||d.size||d.element){
+                h+='<div class="summon-meta">';
+                if(d.caster) h+='<span class="summon-caster">🔗 契约主：'+d.caster+'</span>';
+                if(d.size) h+='<span class="summon-caster">📏 '+d.size+'</span>';
+                if(d.element) h+='<span class="summon-caster elem-tag">✦ 元素：'+d.element+'</span>';
+                h+='</div>';
+            }
+            /* 羁绊 */
+            h+='<div class="aff-area"><div class="aff-header"><span class="aff-label">🐾 羁绊</span><span class="aff-value">'+d.bond+' / 100</span></div>';
+            h+='<div class="aff-bar-bg"><div class="aff-bar-fill '+affc(d.bond)+'" style="width:'+d.bond+'%"></div></div></div>';
+
+            /* HP / MP / SP */
+            h+='<div class="res-area">';
+            h+='<div class="res-row"><span class="res-label"><span class="res-ico">❤</span>HP</span><div class="res-bar-bg"><div class="res-bar-fill hp-fill" style="width:'+pctHp+'%"></div></div><span class="res-num">'+d.hpCur+'/'+d.hpMax+'</span></div>';
+            h+='<div class="res-row"><span class="res-label"><span class="res-ico">◆</span>MP</span><div class="res-bar-bg"><div class="res-bar-fill mp-fill" style="width:'+pctMp+'%"></div></div><span class="res-num">'+d.mpCur+'/'+d.mpMax+'</span></div>';
+            h+='<div class="res-row"><span class="res-label"><span class="res-ico">▲</span>SP</span><div class="res-bar-bg"><div class="res-bar-fill sp-fill" style="width:'+pctSp+'%"></div></div><span class="res-num">'+d.spCur+'/'+d.spMax+'</span></div>';
+            h+='</div>';
+
+            h+='<div class="panel-body">';
+            h+='<div class="tri-grid">';
+            h+='<div class="tri-cell"><div class="tri-label">防御值</div><div class="tri-val">'+d.def+'</div></div>';
+            h+='<div class="tri-cell"><div class="tri-label">速度</div><div class="tri-val">'+d.spd+'尺</div></div>';
+            h+='<div class="tri-cell"><div class="tri-label">先攻</div><div class="tri-val">'+fmod(d.init)+'</div></div>';
+            h+='</div>';
+
+            h+='<div class="sec-head">◆ 属性修正</div>';
+            h+='<div class="attr-grid">';
+            var an=['力','敏','体','智','感','魅'],ak=['str','dex','con','int','wis','cha'];
+            for(var i=0;i<6;i++){var v=d.attr[ak[i]];h+='<div class="attr-cell"><div class="attr-label">'+an[i]+'</div><div class="attr-val '+vc(v)+'">'+fmod(v)+'</div></div>';}
+            h+='</div>';
+
+            if(d.attacks.length>0){h+='<div class="sec-head">◆ 攻击方式</div>';for(var j=0;j<d.attacks.length;j++){var a=d.attacks[j];h+='<div class="atk-block"><div class="atk-top"><span class="atk-name">'+a.name+'</span><span class="atk-type-tag">'+a.type+'</span></div>';h+='<div class="atk-nums"><span>命中 <strong>'+a.hit+'</strong></span><span>伤害 <strong>'+a.dmg+'</strong></span></div>';if(a.eff)h+='<div class="atk-eff">'+a.eff+'</div>';h+='</div>';}}
+            if(d.abilities.length>0){h+='<div class="sec-head">◆ 特殊能力</div>';for(var k=0;k<d.abilities.length;k++){var b=d.abilities[k];h+='<div class="abl-block"><div class="abl-name">✦ '+b.name+'</div><div class="abl-desc">'+b.desc+'</div></div>';}}
+if(d.ougis.length>0){h+=ougiBlockList(d.ougis,'ougi-sec','✧ 奥义','ougi-name','ougi-desc');}
+if(d.powers.length>0){h+=ougiBlockList(d.powers,'power-sec','❖ 权能','power-name','power-desc');}
+            if(d.breath){h+='<div class="sec-head">◆ 龙息</div>';h+='<div class="breath-block"><div class="abl-name">'+elementIco(d.element)+' '+d.breath.name+'（'+(d.element||'')+'）</div><div class="abl-desc">伤害 '+d.breath.dmg+(d.breath.range?' · 范围 '+d.breath.range:'')+(d.breath.cd?' · 冷却 '+d.breath.cd:'')+'</div></div>';}
+            if(d.weak||d.resist||d.immune){h+='<div class="sec-head">◆ 弱点与抗性</div><div class="tag-area">';if(d.weak)h+='<span class="r-tag r-weak">弱点: '+d.weak+'</span>';if(d.resist)h+='<span class="r-tag r-resist">抗性: '+d.resist+'</span>';if(d.immune)h+='<span class="r-tag r-immune">免疫: '+d.immune+'</span>';h+='</div>';}
+            if(d.personality){h+='<div class="sec-head">◆ 性格</div><div class="trait-area">';var ts=d.personality.split(/[,，、]/);for(var x=0;x<ts.length;x++){var tr=ts[x].trim();if(tr)h+='<span class="trait-chip">'+tr+'</span>';}h+='</div>';}
+            if(d.appear){h+='<div class="sec-head">◆ 外貌</div><div class="appear-block"><span class="appear-text">'+d.appear+'</span></div>';}
+            if(d.bgStory){h+='<div class="sec-head">◆ 背景故事</div><div class="bg-story-block"><div class="bg-story-text">'+d.bgStory+'</div></div>';}
+            if(d.status){h+='<div class="status-block"><div class="status-label">⚠ 状态效果</div><div class="status-text">'+d.status+'</div></div>';}
+
+            /* 一键写入状态栏按钮 */
+            h+='<div class="load-var-area contract-write">';
+            h+='<div class="load-var-title">📥 写入状态栏</div>';
+            h+='<div class="load-var-btns">';
+            h+='<button class="load-var-btn btn-contract" id="btn-write-contract">一键写入状态栏（同伴栏·契约兽）</button>';
+            h+='</div>';
+            h+='<div class="load-result" id="load-result"></div>';
+            h+='</div>';
+
+            h+='</div>';
+            h+='<div class="panel-foot"><div class="faction-area">⚜ '+(d.faction||'无')+'</div></div>';
+            h+='</div></div></div>';
+            return h;
+        }
+
+        /* ========== 契约兽按钮与元素切换 ========== */
+        function bindContractActions(d) {
+            var btnContract = document.getElementById('btn-write-contract');
+            if(btnContract) btnContract.addEventListener('click', function(){ loadAsContract(d); });
+            var sw = document.getElementById('elem-switch');
+            if(sw) sw.addEventListener('click', function(ev){
+                var t = ev.target;
+                var btn = t && t.closest ? t.closest('.elem-btn') : (t && t.classList && t.classList.contains('elem-btn') ? t : null);
+                if(!btn) return;
+                d.element = btn.getAttribute('data-elem');
+                document.getElementById('content').innerHTML = renderContract(d);
+                bindContractActions(d);
+            });
+        }
+
+        /* ========== 启动 ========== */
+        (function(){
+            try {
+                var dtype = detectType(rawData);
+                if(dtype==='enemy'){
+                    document.getElementById('content').innerHTML = renderEnemy(parseEnemy(rawData));
+                } else if(dtype==='npc'){
+                    var npcData = parseNPC(rawData);
+                    document.getElementById('content').innerHTML = renderNPC(npcData);
+
+                    var btnNpc = document.getElementById('btn-load-npc');
+                    var btnComp = document.getElementById('btn-load-comp');
+                    if(btnNpc) btnNpc.addEventListener('click', function(){ loadAsNPC(npcData); });
+                    if(btnComp) btnComp.addEventListener('click', function(){ loadAsCompanion(npcData); });
+
+                    var btnWb = document.getElementById('btn-create-wb');
+                    if(btnWb) btnWb.addEventListener('click', function(){ addNpcToWorldbook(npcData); });
+                } else if(dtype==='summon'){
+                    var summonData = parseSummon(rawData);
+                    document.getElementById('content').innerHTML = renderSummon(summonData);
+
+                    var btnSummon = document.getElementById('btn-write-summon');
+                    if(btnSummon) btnSummon.addEventListener('click', function(){ loadAsSummon(summonData); });
+                } else if(dtype==='contract'){
+                    var contractData = parseContract(rawData);
+                    document.getElementById('content').innerHTML = renderContract(contractData);
+                    bindContractActions(contractData);
+                } else if(dtype==='cluster'){
+                    document.getElementById('content').innerHTML = renderCluster(parseCluster(rawData));
+                } else {
+                    document.getElementById('content').innerHTML = '<div class="loading">— 无法识别古卷内容 —</div>';
+                }
+            } catch(e) {
+                document.getElementById('content').innerHTML = '<div class="loading">— 古卷破损：'+e.message+' —</div>';
+            }
+        })();
+    </script>
+</body>
+</html>
+```

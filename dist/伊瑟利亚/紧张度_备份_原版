@@ -1,0 +1,995 @@
+/**
+ * 紧张度托管脚本（世界局势自动结算）
+ *
+ * 数据模型：stat_data.{世界.世界见闻.动态新闻, $flags.紧张度}
+ *   紧张度 = { 当前值, 等级, 上次触发事件 }（脚本托管字段，$ 前缀 → AI 不可见不可写）
+ *   $flags.紧张度基线：脚本首次运行时的紧张度快照（初始变量通常为 35）
+ *   $flags.紧张度已结算新闻：{ [新闻标题]: 影响值 }，记录该新闻已用于结算（防重复叠加）
+ *
+ * 设计范式（对齐「自动升级脚本」的正确写法）：
+ *   1. 挂载 Mvu.events.VARIABLE_UPDATE_ENDED，框架直接给 (当前, 变更前) 全量快照
+ *   2. 只原地修改 stat_data，不自行 getVariables / replaceVariables / updateVariablesWith
+ *   3. 防重入锁，避免脚本改动再次触发本事件导致死循环
+ *   4. 不使用 registerVariableSchema —— 错误层级的 schema 会把 stat_data 塌成 true
+ *   5. 结构初始化交给「初始变量」，脚本只做增量守卫
+ *
+ * 【核心：为什么 AI 不能直接改紧张度】
+ *   紧张度位于 $flags.紧张度（$ 前缀字段）——AI 上下文完全不可见，因此 AI 无法输出针对它的任何更新命令。
+ *   脚本只把「世界见闻.动态新闻」作为唯一输入源，用「期望值=基线+Σ(已结算新闻影响值)」重算并覆盖当前值，
+ *   彻底杜绝「遇怪 +、遇危机 +」式的随意抬升。
+ *
+ * 【新闻 → 紧张度 结算规则】
+ *   - 影响基准 = 重要性 × 影响范围（新闻可带「影响范围: 世界/大陆/区域/局部」，未标注默认大陆）：
+ *       · 世界级（魔王降世/灭国之战/全大陆战争）：极高 ±18 / 高 ±10
+ *       · 大陆级（默认）：极高 ±12 / 高 ±8
+ *       · 区域性（王国内战/边境冲突）：极高 ±5 / 高 ±3 —— 区域性事件永远不该把"全球"紧张度顶到决战期
+ *       · 局部：0（局部遭遇、遇怪、小队危机、日常战斗一律不算）
+ *   - 内容关键词决定方向：大事件关键词（宣战/入侵/魔潮/政变/灾变/降世/传说死亡失踪/集结/冲突…）→ 增加
+ *     缓和关键词（停火/和平/谈判/结盟/平息/撤军/胜利/治愈/拯救…）→ 降低
+ *   - 关键词方向按命中数比较：缓解命中 > 大事件命中 → 取负；否则取正；都不命中 → 0
+ *   - 误判修正（否定/化解词）：
+ *       · 失败词（破裂/失败/告吹/中断/终止/未遂…）——缓和被否定 → 该条不按缓和计；大事件未遂 → 不结算
+ *       · 加剧词（加剧/升级/恶化/蔓延…）——坏事升级 → 强制按上升计
+ *       · 化解词（平息/镇压/击退/阻止/化解/解围…）——大事件被化解 → 按缓和计（如"叛乱被镇压"）
+ *   - 区域影响封顶：所有「区域」级已结算影响合计 clamp 在 ±15（区域性冲突再多，全球紧张度也只小幅波动）
+ *   - 紧张度回落：新闻被标记「是否过期: 是」或从 动态新闻 删除后，其影响自动从期望值移除（事件结束 → 回落）
+ *   - 已结算表上限保护：超过 500 条时优先删除影响为 0 的记录
+ *
+ * 【DLC·终焉纪元（IF线）反转】
+ *   - 检测聊天变量「终焉纪元IF线」（与战斗结算前端一致），为真时紧张度实为"压迫指数"
+ *     （100=教廷完全统治 → 0=魔王陨落），结算方向自动反转（击败统领/解放/起义/各族觉醒 → 压迫降低）。
+ */
+(function () {
+  'use strict';
+
+  let isProcessing = false;
+
+  // 紧张度等级对照（与变量更新规则一致）
+  function tensionLevelOf(v) {
+    v = Math.max(0, Math.min(100, Math.round(Number(v) || 35)));
+    if (v <= 20) return '平静期';
+    if (v <= 40) return '暗流期';
+    if (v <= 60) return '动荡期';
+    if (v <= 80) return '危机期';
+    return '决战期';
+  }
+
+  // ── 大事件关键词（提升紧张度 / 压迫指数） ──
+  const RISE_WORDS = [
+    '宣战', '入侵', '进攻', '开战', '战争', '战火', '魔潮', '暴动', '政变', '王选', '崩坏',
+    '灾变', '降世', '前兆', '觉醒', '传说死亡', '传说失踪', '失踪', '集结', '冲突', '危机',
+    '崩溃', '封锁', '围困', '袭击', '爆发', '屠杀', '叛乱', '异动', '扩张', '异常', '逼近',
+    '压境', '挑衅', '摩擦', '警戒', '动员', '征兵', '沦陷', '内乱', '分裂', '决裂', '备战',
+    '暗杀', '血洗', '清洗', '处决', '暴乱', '起义', '示威', '罢工', '反叛', '叛逃', '决斗',
+    '围城', '攻城', '灭国', '瘟疫', '旱灾', '饥荒', '海啸', '地震', '魔力紊乱'
+  ];
+  // ── 缓和关键词（降低紧张度 / 压迫指数） ──
+  const FALL_WORDS = [
+    '停火', '和平', '谈判', '和解', '结盟', '停战', '撤军', '胜利', '治愈', '拯救', '平息',
+    '平定', '解放', '复国', '恢复', '签订', '协议', '退兵', '缓解', '罢战', '休战', '和谈',
+    '归顺', '驱逐', '剿灭', '消灭', '化解', '庆功', '投降', '招安', '通商', '建交', '援助',
+    '救济', '重建', '镇压成功', '击退', '挽回', '缓和', '和约', '停战协议', '和平协议',
+    '大赦', '休养生息', '罢兵', '偃旗息鼓'
+  ];
+
+  // ── 失败/未遂词（好事的否定：缓和失败 → 不按缓和计；大事件未遂 → 不结算） ──
+  const FAIL_WORDS = [
+    '破裂', '失败', '告吹', '中断', '终止', '取消', '无效', '流产', '违约', '撕毁',
+    '作废', '搁浅', '反悔', '泡汤', '夭折', '未遂', '溃散', '受挫', '破产'
+  ];
+  // ── 恶化/加剧词（坏事升级 → 强制按上升计） ──
+  const RAMP_WORDS = [
+    '加剧', '升级', '恶化', '扩大', '蔓延', '失控', '愈演愈烈', '白热化', '沸反盈天'
+  ];
+  // ── 化解/压制词（大事件被化解 → 按缓和计） ──
+  const RESOLVE_WORDS = [
+    '平息', '平定', '化解', '击退', '驱逐', '镇压', '剿灭', '歼灭', '解救', '解除',
+    '阻止', '制止', '避免', '挫败', '粉碎', '瓦解', '覆灭', '投降', '收复', '破获',
+    '肃清', '解围', '救出', '压制', '驱散', '破除', '终结', '收编'
+  ];
+
+  // ── IF线（压迫指数）专用关键词 ──
+  // 压迫指数：100=教廷完全统治 → 0=魔王陨落。
+  // 反抗/教廷受挫（击败统领/解放/复国/起义/各族觉醒…）→ 压迫降低（对玩家有利）；
+  // 教廷镇压/扩张（镇压成功/处决/血洗/围剿…）→ 压迫升高（教廷统治加强）。
+  const IF_FALL_WORDS = [
+    '击败', '斩杀', '推翻', '瓦解', '起义', '反抗', '解放', '复国', '觉醒', '罢工', '暴动',
+    '反叛', '叛逃', '暗杀', '击溃', '击退', '驱逐', '收复', '突入', '攻破', '倒戈', '兵变',
+    '叛变', '废除', '粉碎', '覆灭', '星辉复兴', '剪断锁链', '神谕', '自由', '解放区', '起义军'
+  ];
+  const IF_RISE_WORDS = [
+    '镇压', '处决', '血洗', '清洗', '逮捕', '屠戮', '扩张', '吞并', '奴役', '封锁', '围剿',
+    '戒严', '铁腕', '灭族', '屠杀', '掌控', '增援', '出兵', '入侵', '进攻', '强征', '搜捕',
+    '拷问', '灭口', '神权独裁', '铁幕', '统治核心', '教廷大军'
+  ];
+
+  function countHits(text, words) {
+    let n = 0;
+    for (const w of words) if (text.indexOf(w) !== -1) n++;
+    return n;
+  }
+
+  // 影响范围基准：世界/大陆/区域/局部（未标注默认大陆）
+  //  —— 王国内战这类区域性事件永远不该把"全球"紧张度顶到决战期
+  function scopeBase(importance, scope) {
+    if (scope === '局部') return 0;            // 局部：不影响全局
+    const hi = importance === '极高';
+    const md = importance === '高';
+    if (!hi && !md) return 0;                  // 普通/低：局部事件不影响
+    if (scope === '世界') return hi ? 18 : 10;  // 世界级（魔王降世/灭国之战）
+    if (scope === '区域') return hi ? 5 : 3;   // 区域性（王国内战/边境冲突）
+    return hi ? 12 : 8;                        // 大陆级（默认）
+  }
+  function normalizeScope(s) {
+    if (s === '世界' || s === '区域' || s === '局部') return s;
+    return '大陆';
+  }
+  // 已结算记录取值（兼容旧档：数字 → 视为 {v:数, s:'大陆'}）
+  function settledValue(rec) {
+    return (typeof rec === 'number') ? rec : (rec && typeof rec.v === 'number' ? rec.v : 0);
+  }
+
+  // 计算单条新闻的紧张度影响值（正=增加，负=降低，0=不改变）
+  function computeNewsImpact(title, content, importance, scope, ifLine) {
+    // 影响基准 = 重要性 × 影响范围（极高/高 才影响世界紧张度）
+    const base = scopeBase(importance, scope);
+    if (base === 0) return 0;
+
+    const text = String(title || '') + ' ' + String(content || '');
+    const fail = countHits(text, FAIL_WORDS);    // 好事失败/未遂
+    const ramp = countHits(text, RAMP_WORDS);    // 坏事加剧
+    const resolve = countHits(text, RESOLVE_WORDS); // 坏事被化解
+
+    // IF线（压迫指数）独立判定：反抗→压迫降，镇压→压迫升
+    if (ifLine) {
+      const fall = countHits(text, IF_FALL_WORDS);
+      const rise = countHits(text, IF_RISE_WORDS);
+      if (fall === 0 && rise === 0) return 0;
+      // IF线化解词：排除与 IF_RISE 重叠的词（如"镇压"），避免同词既算升又算化解
+      const resolveIf = countHits(text, RESOLVE_WORDS.filter(w => IF_RISE_WORDS.indexOf(w) === -1));
+      // 反抗失败/加剧（起义被镇压/反抗失败）→ 压迫升
+      if (fall > 0 && (fail > 0 || ramp > 0)) return base;
+      // 教廷手段被化解（围剿被粉碎/戒严被解除）→ 压迫降
+      if (rise > 0 && resolveIf > 0) return -base;
+      // 反抗与镇压同现 → 镇压优先（起义被镇压 → 压迫升）
+      if (fall > 0 && rise > 0) return rise >= fall ? base : -base;
+      return fall >= rise ? -base : base;
+    }
+
+    // 普通世界：大事件→紧张升，缓和→紧张降
+    const rise = countHits(text, RISE_WORDS);
+    let fall = countHits(text, FALL_WORDS);
+    // 没有任何关键词命中 → 不结算（避免普通事件被误判抬升）
+    if (rise === 0 && fall === 0) return 0;
+    // ① 缓和被否定/被升级打断（谈判破裂/停火失败/冲突升级）→ 缓和作废
+    if (fall > 0 && (fail > 0 || ramp > 0)) fall = 0;
+    // ② 坏事加剧 → 强制上升（战争升级/冲突加剧）
+    if (rise > 0 && ramp > 0) return base;
+    // ③ 大事件被化解（叛乱被镇压/魔潮被击退/宣战被阻止）→ 按缓和计
+    if (rise > 0 && fall === 0 && resolve > 0) return -base;
+    // ④ 大事件未遂（入侵失败/政变未遂）→ 方向不明，不结算
+    if (rise > 0 && fall === 0 && fail > 0) return 0;
+    // ⑤ 坏事件被化解且同为缓和（平息叛乱/魔潮被击退）→ 缓和优先
+    if (rise > 0 && fall > 0 && resolve > 0) return -base;
+    // ⑥ 事件并行且方向冲突 → 保守取升
+    if (rise > 0 && fall > 0) return base;
+    if (rise === 0 && fall === 0) return 0;
+    return rise >= fall ? base : -base;
+  }
+
+  // 清理已结算表：新闻从 动态新闻 删除 → 移除其影响（事件结束，紧张度回落）；
+  // 并做上限保护（优先删 0 影响记录）。不再"非零影响永久保留"——否则紧张度只升不降。
+  function cleanupSettled(newsMap, settled) {
+    // 1) 孤儿清理：新闻已从 动态新闻 删除 → 移除其影响（紧张度回落）
+    for (const title in settled) {
+      if (!Object.prototype.hasOwnProperty.call(newsMap, title)) delete settled[title];
+    }
+    // 2) 上限保护：超过 500 条时优先删除影响为 0 的旧记录
+    let count = Object.keys(settled).length;
+    if (count > 500) {
+      for (const title in settled) {
+        if (count <= 500) break;
+        if (settledValue(settled[title]) === 0) { delete settled[title]; count--; }
+      }
+    }
+  }
+
+  // 判断当前是否处于终焉纪元 IF 线（压迫指数模式）
+  function isIfLine() {
+    try {
+      const chatVars = getVariables({ type: 'chat' });
+      return !!(chatVars && chatVars['终焉纪元IF线']);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ---- 主处理：挂在 VARIABLE_UPDATE_ENDED 上，原地改 stat_data ----
+  function handleTension(rawVariables) {
+    if (isProcessing) { console.log('[紧张度] 防重入拦截'); return; }
+    isProcessing = true;
+    try {
+      const statData = rawVariables?.stat_data;
+      if (!statData) return;
+      if (!statData.世界) return;
+      const world = statData.世界;
+
+      // 紧张度位于 $flags.紧张度（$前缀：AI 不可见，脚本/前端可读写）
+      if (!statData.$flags) statData.$flags = {};
+      const flags = statData.$flags;
+
+      // ⚠️ 旧档兼容迁移（一次性）：旧聊天存档的紧张度在 世界.紧张度（AI 可见），
+      // 首次变量更新时自动迁入 $flags.紧张度（AI 不可见），并删除旧字段。
+      // 之后 AI 上下文不再有紧张度，无从修改。
+      const legacy = world.紧张度;
+      if (legacy && typeof legacy === 'object' && !flags.紧张度) {
+        flags.紧张度 = {
+          当前值: (typeof legacy.当前值 === 'number' && !Number.isNaN(legacy.当前值)) ? legacy.当前值 : 35,
+          等级: (typeof legacy.等级 === 'string' && legacy.等级) ? legacy.等级 : '暗流期',
+          上次触发事件: (typeof legacy.上次触发事件 === 'string') ? legacy.上次触发事件 : ''
+        };
+        delete world.紧张度;
+        console.log(`[紧张度] 已迁移旧档 世界.紧张度 → $flags.紧张度（当前值=${flags.紧张度.当前值}）`);
+      }
+
+      const tension = flags.紧张度 || (flags.紧张度 = {});
+      if (typeof tension.当前值 !== 'number' || Number.isNaN(tension.当前值)) tension.当前值 = 35;
+
+      // 追踪字段
+      if (typeof flags.紧张度基线 !== 'number') flags.紧张度基线 = tension.当前值;
+      if (!flags.紧张度已结算新闻 || typeof flags.紧张度已结算新闻 !== 'object') flags.紧张度已结算新闻 = {};
+
+      const newsMap = (world.世界见闻 && world.世界见闻.动态新闻) || {};
+      const settled = flags.紧张度已结算新闻;
+      const ifLine = isIfLine();
+
+      // 1) 结算尚未结算的新闻；已过期新闻从已结算表移除（事件结束 → 紧张度回落）
+      for (const title in newsMap) {
+        const news = newsMap[title] || {};
+        if (news.是否过期 === '是') {
+          if (Object.prototype.hasOwnProperty.call(settled, title)) {
+            delete settled[title];
+            console.log(`[紧张度] 新闻「${title}」已过期，其影响已移除（紧张度回落）`);
+          }
+          continue;
+        }
+        if (Object.prototype.hasOwnProperty.call(settled, title)) continue;
+        const scope = normalizeScope(news.影响范围);
+        const impact = computeNewsImpact(title, news.内容, news.重要性, scope, ifLine);
+        settled[title] = { v: impact, s: scope };
+        if (impact !== 0) {
+          console.log(`[紧张度] 新闻「${title}」结算影响 ${impact > 0 ? '+' : ''}${impact}（范围：${scope}）${ifLine ? '（IF线反转）' : ''}`);
+        }
+      }
+
+      // 1.5) 清理已结算表（已删除新闻移除影响 + 上限保护）
+      cleanupSettled(newsMap, settled);
+
+      // 2) 期望值 = 基线 + Σ(影响)，按范围分组 + 区域影响封顶，clamp 0~100 并覆盖（防 AI 直接改）
+      let worldDelta = 0, contDelta = 0, regDelta = 0;
+      for (const title in settled) {
+        const rec = settled[title];
+        const v = settledValue(rec);
+        const s = (rec && typeof rec === 'object' && rec.s) ? rec.s : '大陆';
+        if (s === '世界') worldDelta += v;
+        else if (s === '区域') regDelta += v;
+        else contDelta += v;
+      }
+      // 区域影响封顶：区域性事件再多，全球紧张度也只波动 ±15（王国内战 ≠ 全球决战）
+      regDelta = Math.max(-15, Math.min(15, regDelta));
+      let expect = flags.紧张度基线 + worldDelta + contDelta + regDelta;
+      expect = Math.max(0, Math.min(100, Math.round(expect)));
+
+      const oldVal = tension.当前值;
+      if (oldVal !== expect) {
+        tension.当前值 = expect;
+        console.log(`[紧张度] ${oldVal} → ${expect}（基线 ${flags.紧张度基线} + 新闻结算）`);
+      }
+      tension.等级 = tensionLevelOf(tension.当前值);
+
+      // 3) 上次触发事件 = 最近一条有非零影响、未过期的新闻
+      let lastEvent = '';
+      let lastDate = '';
+      for (const title in newsMap) {
+        const impact = settledValue(settled[title]);
+        if (impact === 0) continue;
+        const news = newsMap[title] || {};
+        if (news.是否过期 === '是') continue;
+        const date = String(news.日期 || '');
+        if (date >= lastDate) { lastDate = date; lastEvent = title; }
+      }
+      if (lastEvent) tension.上次触发事件 = lastEvent;
+      // 自动重推演检测（地点/时间/紧张度/新闻变化时触发一次）
+      try { maybeAutoForecast(); } catch (e) {}
+    } catch (e) {
+      console.error('[紧张度] 出错:', e);
+      if (typeof toastr !== 'undefined') toastr.error('紧张度托管脚本出错: ' + e.message);
+    } finally {
+      isProcessing = false;
+    }
+  }
+
+  // ---- 事件注册 ----
+  const init = async () => {
+    await waitGlobalInitialized('Mvu');
+    eventOn(Mvu.events.VARIABLE_UPDATE_ENDED, handleTension);
+    // 正文注入：世界动态 → AI 上下文（开关存 localStorage）
+    loadInjectSettings();
+    loadForecastSettings();
+    loadForecastCache();
+    registerWorldInjection();
+    // 预取动态剧情缓存（供正文注入使用）
+    try { getDynText(extractTensionData(readStatData()).level).then(t => { cachedDyn = t; }); } catch (e) {}
+    // 初始自动推演一次（关键信号变化时也会自动重推演）
+    try { maybeAutoForecast(); } catch (e) {}
+    // 脚本按钮：点击打开羊皮纸世界动态窗口
+    try {
+      const btns = getScriptButtons();
+      if (!btns.some(b => b.name === '🗞️ 世界动态')) {
+        btns.push({ name: '🗞️ 世界动态', visible: true });
+        replaceScriptButtons(btns);
+      }
+      eventOn(getButtonEvent('🗞️ 世界动态'), openTensionWindow);
+    } catch (e) {
+      console.warn('[紧张度] 注册世界动态按钮失败:', e);
+    }
+    console.log('[紧张度托管脚本] 已加载（动态新闻驱动 · 基线重算覆盖 · IF线反转 · 羊皮纸窗口）');
+    if (typeof toastr !== 'undefined') toastr.success('[紧张度托管脚本] 已加载');
+  };
+
+  // ============================================================
+  // 世界动态 → 正文叙事注入（让 AI 在正文中体现当前局势；可开关）
+  // ============================================================
+  const INJECT_KEY = 'isuria_tension_inject';
+  const INJECT_DEPTH_KEY = 'isuria_tension_inject_depth';
+  const IMPACT_PROMPT_KEY = 'isuria_tension_impact_prompt';
+  const FORECAST_INTERVAL_KEY = 'isuria_tension_forecast_interval';
+  const DEFAULT_IMPACT_PROMPT =
+    '客观推演：在当前世界紧张度（{level}）背景下，「{地点}」当地会出现哪些由紧张度驱动的局势变化或事件（1-3 件）。\n' +
+    '事件必须体现紧张度的直接影响（如军队调动/魔潮异动/势力对峙/局势恶化/难民流动/治安紊乱/环境异变/民众恐慌/戒备升级等）；\n' +
+    '禁止推演玩家或同伴的具体行动、战斗过程与任务剧情——你只推演\"世界因紧张度会怎样变化\"，不推演\"玩家会做什么\"；\n' +
+    '只写事件本身、时间、牵涉势力、直接后果；不要氛围描写、不要心理推测、不要评价、不要复述设定。';
+  const DEFAULT_FORECAST_INTERVAL_FLOOR = 0;
+  let lastLiveText = '';
+  let injectToContext = true;
+  let injectLiveToContext = true;
+  let impactPrompt = DEFAULT_IMPACT_PROMPT;
+  let forecastIntervalFloor = DEFAULT_FORECAST_INTERVAL_FLOOR;
+  let cachedDyn = '';
+  let lastForecastMessageId = -1;
+  let lastTensionSig = '';
+
+  function loadInjectSettings() {
+    try {
+      const s = JSON.parse(localStorage.getItem(INJECT_KEY) || 'null');
+      if (s && typeof s === 'object') {
+        injectToContext = s.injectToContext !== false;
+        injectLiveToContext = s.injectLive !== false;
+      }
+    } catch (e) {}
+    try {
+      const d = Number(localStorage.getItem(INJECT_DEPTH_KEY));
+      if (Number.isInteger(d) && d >= 0) injectDepth = d;
+    } catch (e) {}
+    try {
+      const p = localStorage.getItem(IMPACT_PROMPT_KEY);
+      if (p && typeof p === 'string' && p.trim()) {
+        // 旧版提示词（描述化/玩家行动导向）自动迁移为新版（紧张度驱动的当地影响）
+        if (p.includes('推演世界态势与玩家处境对「{地点}」的影响与走向') ||
+            p.includes('随玩家行动改变') ||
+            p.includes('接下来将会发生的具体事件')) {
+          impactPrompt = DEFAULT_IMPACT_PROMPT;
+        } else {
+          impactPrompt = p;
+        }
+      }
+    } catch (e) {}
+  }
+  function saveInjectSettings() {
+    try {
+      localStorage.setItem(INJECT_KEY, JSON.stringify({ injectToContext, injectLive: injectLiveToContext }));
+      localStorage.setItem(INJECT_DEPTH_KEY, String(injectDepth));
+    } catch (e) {}
+  }
+  function saveImpactPrompt() {
+    try { localStorage.setItem(IMPACT_PROMPT_KEY, impactPrompt); } catch (e) {}
+  }
+  function loadForecastSettings() {
+    try {
+      const raw = localStorage.getItem(FORECAST_INTERVAL_KEY);
+      const value = Number(raw);
+      forecastIntervalFloor = Number.isInteger(value) && value >= 0 ? value : DEFAULT_FORECAST_INTERVAL_FLOOR;
+    } catch (e) {}
+  }
+  function saveForecastSettings() {
+    try { localStorage.setItem(FORECAST_INTERVAL_KEY, String(forecastIntervalFloor)); } catch (e) {}
+  }
+
+  // ============================================================
+  // 事件推演：基于变量（地点/时间/紧张度/最近正文/人物/世界态势）
+  // 动态推演"玩家所在地接下来会发生什么"，结果缓存后注入上下文（不写变量）
+  // ============================================================
+  const FORECAST_SIG_KEY = 'isuria_tension_forecast_sig';
+  const FORECAST_CACHE_KEY = 'isuria_tension_forecast_cache';
+  let forecastCache = null;   // { 时间, 地点, 内容, 推演时间 }
+  let forecastRunning = false;
+  let forecastTimer = null;
+  // 注入深度：从消息末尾倒数第 N 条之前插入（默认 4，存 localStorage 可调）
+  let injectDepth = 4;
+
+  function loadForecastCache() {
+    try {
+      const raw = localStorage.getItem(FORECAST_CACHE_KEY);
+      if (raw) { const p = JSON.parse(raw); if (p && p.内容) forecastCache = p; }
+    } catch (e) {}
+  }
+  function saveForecastCache() {
+    try { localStorage.setItem(FORECAST_CACHE_KEY, JSON.stringify(forecastCache || null)); } catch (e) {}
+  }
+
+  // 收集变量上下文并请求推演（纯生成，不依赖窗口；generateRaw 屏蔽预设）
+  async function forecastRequest(d) {
+    const stat = readStatData() || {};
+    const world = stat.世界 || {};
+    const hero = stat.主角 || {};
+    const date = world.日期 || '';
+    const time = world.时间 || '';
+    const race = (hero.基础信息 && hero.基础信息.种族) || '';
+    const tier = hero.等阶 || '';
+    const npcNames = stat.主要NPC ? Object.keys(stat.主要NPC).slice(0, 6).join('、') : '';
+    const compNames = stat.同伴 ? Object.keys(stat.同伴).slice(0, 6).join('、') : '';
+    let recentText = '';
+    try {
+      const lastId = getLastMessageId();
+      if (lastId >= 0) {
+        const msgs = getChatMessages(`${Math.max(0, lastId - 8)}-${lastId}`, { role: 'all', hide_state: 'unhidden' });
+        recentText = (msgs || []).map(m => `[${m.role === 'user' ? '用户' : (m.name || 'AI')}] ${m.message}`).join('\n').slice(0, 1000);
+      }
+    } catch (e) {}
+    const newsText = d.news.length ? d.news.map(n => n.title + (n.content ? '：' + n.content : '') + (n.place ? '(' + n.place + ')' : '')).join('；') : '（无）';
+    const dyn = String(d.dyn || '').replace(/<[^>]+>/g, '').replace(/[ \t]+/g, ' ').trim(); // 动态剧情全量
+    const playerInfo = [race ? '种族：' + race : '', tier ? '等阶：' + tier : ''].filter(Boolean).join('，');
+    const peopleInfo = [npcNames ? 'NPC：' + npcNames : '', compNames ? '同伴：' + compNames : ''].filter(Boolean).join('，');
+    const promptText = [
+      '你是世界局势推演师。请基于以下变量信息，客观推演当前世界紧张度对玩家所在地会造成哪些局势影响（不是推演玩家行动）。',
+      '【当前时间】' + (date || '未知') + (time ? ' · ' + time : ''),
+      '【玩家所在地】' + d.curLoc,
+      playerInfo ? '【玩家信息】' + playerInfo : '',
+      '【世界紧张度】' + d.tension + '/100（' + d.level + '），上次大事件：' + d.lastEvent + '。紧张度等级含义：平静期=大局稳定、暗流期=各方蠢蠢欲动、动荡期=冲突四起、危机期=战争边缘/魔潮前兆、决战期=全面战争/魔王降世。',
+      peopleInfo ? '【在场相关人物】' + peopleInfo : '',
+      d.worldBrief ? '【世界概况】' + d.worldBrief : '',
+      d.tasks && d.tasks.length ? '【进行中的任务】（仅了解局势背景，勿据此推演任务剧情）' + d.tasks.join('；') : '',
+      '【近期重要动态】' + newsText,
+      dyn ? '【世界态势】' + dyn : '',
+      recentText ? '【最近正文】（仅作世界背景参考，严禁据此推演玩家/同伴接下来会做什么）' + recentText : '',
+      '【推演要求】' + (impactPrompt || DEFAULT_IMPACT_PROMPT).replace(/\{地点\}/g, d.curLoc).replace(/\{level\}/g, d.level),
+      '【输出约束】只输出因紧张度导致的当地局势变化/事件（250字内）：1-3 件客观、具体、直白的事件（含时间/牵涉势力/直接后果）；不得包含玩家或同伴的行动、战斗、任务推进；不要氛围描写、不要心理推测、不要评价、不要复述设定、不要任何前缀。'
+    ].filter(Boolean).join('\n');
+    const result = await generateRaw({
+      user_input: '请基于以上变量信息客观推演此地将要发生的事。',
+      should_silence: true,
+      should_stream: false,
+      max_chat_history: 0,
+      ordered_prompts: [
+        { role: 'system', content: '你是世界局势推演师。你根据给定变量（地点/时间/紧张度/正文/人物/世界态势）客观推演玩家所在地接下来将会发生什么。你只输出将会发生的具体事件，不要氛围描写、不要心理推测、不要复述设定、不要任何前缀、不要寒暄。' },
+        { role: 'user', content: promptText },
+      ],
+    });
+    return (typeof result === 'string' ? result : String(result || '')).trim();
+  }
+
+  // 执行推演：更新缓存 + lastLiveText（供注入），返回文本；不写变量
+  async function runForecast() {
+    if (forecastRunning) return null;
+    forecastRunning = true;
+    try {
+      const d = extractTensionData(readStatData());
+      d.dyn = await getDynText(d.level);
+      if (d.dyn) cachedDyn = d.dyn;
+      const text = await forecastRequest(d);
+      if (!text) return null;
+      const stat = readStatData() || {};
+      const world = stat.世界 || {};
+      const date = world.日期 || '';
+      const time = world.时间 || '';
+      forecastCache = { 时间: (date + ' ' + time).trim(), 地点: d.curLoc, 内容: text, 推演时间: Date.now() };
+      lastLiveText = text;
+      saveForecastCache();
+      return text;
+    } finally {
+      forecastRunning = false;
+    }
+  }
+
+  // 自动推演：仅在地点/时间/紧张度变化或达到配置楼层间隔时触发一次（防抖 4s）
+  function maybeAutoForecast() {
+    if (forecastRunning) return;
+    const stat = readStatData() || {};
+    const world = stat.世界 || {};
+    const flags = stat.$flags || {};
+    const tension = (flags.紧张度 && flags.紧张度.当前值) || 0;
+    const place = world.当前地点 || world.当前位置 || '';
+    const date = world.日期 || '';
+    const time = world.时间 || '';
+    let lastId = -1;
+    try { lastId = getLastMessageId(); } catch (e) {}
+
+    const currentTensionSig = [place, date, time, tension].join('|');
+    const floorInterval = Math.max(0, Math.floor(forecastIntervalFloor));
+    const tensionChanged = currentTensionSig !== lastTensionSig;
+    const floorReached = floorInterval > 0 && lastId >= 0 && lastForecastMessageId >= 0 && (lastId - lastForecastMessageId) >= floorInterval;
+
+    if (!tensionChanged && !floorReached) return;
+    if (tensionChanged) {
+      lastTensionSig = currentTensionSig;
+    }
+    if (lastId >= 0) {
+      lastForecastMessageId = lastId;
+    }
+
+    clearTimeout(forecastTimer);
+    forecastTimer = setTimeout(() => { runForecast().catch(() => {}); }, 4000);
+  }
+
+  // 构建注入到 AI 上下文的「世界动态」块
+  function buildWorldInjection() {
+    const d = extractTensionData(readStatData());
+    const newsText = d.news.map(n => n.title + (n.content ? '：' + n.content : '') + (n.place ? '(' + n.place + ')' : '')).join('；');
+    const dyn = (cachedDyn || String(d.dyn || '')).replace(/<[^>]+>/g, '').replace(/[ \t]+/g, ' ').trim(); // 动态剧情全量注入
+    const lines = [
+      '【世界动态】当前局势与玩家处境，请严格遵循以下内容进行正文叙事，不要复述本段，也不要与其冲突：',
+      '- 玩家当前所在地：' + d.curLoc,
+      '- 世界紧张度：' + d.tension + '/100（' + d.level + '），上次大事件：' + d.lastEvent,
+    ];
+    if (d.tasks.length) lines.push('- 进行中的任务：' + d.tasks.join('；'));
+    if (newsText) lines.push('- 近期重要动态：' + newsText);
+    if (dyn) lines.push('- 世界态势：' + dyn);
+    // 事件推演缓存（前端自动推演结果，作为"当地因紧张度会怎样变化"的预告注入）
+    if (forecastCache && forecastCache.内容) {
+      lines.push('【紧张度影响·当地推演】根据当前世界紧张度，' + (forecastCache.地点 || d.curLoc) + '当地正/将出现这些局势变化：\n' + String(forecastCache.内容).replace(/<[^>]+>/g, ' ').slice(0, 500));
+    }
+    // 推演要求（可配置提示词，含影响+事件预告）
+    lines.push('【推演要求】' + (impactPrompt || DEFAULT_IMPACT_PROMPT).replace(/\{地点\}/g, d.curLoc));
+    return lines.join('\n');
+  }
+
+  // 注册正文注入（每次 AI 生成前，把世界动态以"带深度"的方式塞进上下文，贴近最近楼层）
+  function registerWorldInjection() {
+    try {
+      eventOn(tavern_events.CHAT_COMPLETION_PROMPT_READY, ({ chat }) => {
+        try {
+          if (!injectToContext || !chat) return;
+          const marker = '【世界动态】';
+          if (chat.some(m => String(m?.content || '').includes(marker))) return;
+          const parts = [buildWorldInjection()];
+          if (injectLiveToContext && lastLiveText) {
+            parts.push('【世界实时动态】当前正在发生的具体变化（供正文参考，勿复述）：\n' + lastLiveText);
+          }
+          // depth：从消息末尾倒数第 N 条之前插入（0=紧贴当前楼层，越大越深入历史，默认 4）
+          // 相比 unshift 永远顶在最前，这样世界动态更贴近"当前场景"，且不会挤掉角色卡主提示词
+          const safeDepth = Math.max(0, Math.floor(injectDepth) || 0);
+          const idx = Math.max(1, chat.length - 1 - safeDepth);
+          chat.splice(idx, 0, { role: 'system', content: parts.join('\n\n') });
+        } catch (e) {}
+      });
+    } catch (e) {
+      console.warn('[紧张度] 注册正文注入失败:', e);
+    }
+  }
+
+  // ============================================================
+  // 羊皮纸世界动态窗口（脚本按钮 → 点击打开）
+  // ============================================================
+  // 注入目标：优先最顶层窗口 window.top（脚本运行在酒馆扩展 iframe 内，
+  // window.parent 可能是内部容器 → fixed 遮罩会被聊天窗盖住，故必须用 top）
+  const OUTER = (function () {
+    try { if (window.top && window.top.document) return window.top; } catch (e) {}
+    try { if (window.parent && window.parent.document) return window.parent; } catch (e) {}
+    return window;
+  })();
+  function outerDoc() { return (OUTER && OUTER.document) || document; }
+  function outerBody() { return outerDoc().body; }
+
+  const TENSION_VIEW_KEY = 'isuria_tension_view_last';
+  const TENSION_STYLE_ID = 'tension-scroll-style';
+
+  // ---- 读取 stat_data（多来源兜底） ----
+  function readStatData() {
+    try {
+      const mvu = window.Mvu;
+      if (mvu && mvu.getMvuData) {
+        const d = mvu.getMvuData({ type: 'chat' });
+        if (d && d.stat_data) return d.stat_data;
+        const d2 = mvu.getMvuData({ type: 'message', message_id: 'latest' });
+        if (d2 && d2.stat_data) return d2.stat_data;
+      }
+    } catch (e) {}
+    try {
+      const d = getVariables({ type: 'chat' });
+      if (d && d.stat_data) return d.stat_data;
+    } catch (e) {}
+    return null;
+  }
+
+  // ---- 提取窗口展示数据 ----
+  function extractTensionData(statData) {
+    const d = { tension: 35, level: '暗流期', lastEvent: '无近期大事件', curLoc: '未知之地', worldBrief: '', tasks: [], news: [], dyn: '' };
+    if (!statData || typeof statData !== 'object') return d;
+    const flags = statData.$flags || {};
+    const t = flags.紧张度 || {};
+    if (typeof t.当前值 === 'number') d.tension = t.当前值;
+    if (t.等级) d.level = t.等级;
+    if (t.上次触发事件) d.lastEvent = t.上次触发事件;
+    const world = statData.世界 || {};
+    d.curLoc = world.当前地点 || world.当前位置 || '未知之地';
+    d.worldBrief = (world.世界见闻 && world.世界见闻.世界概况) || '';
+    const hero = statData.主角 || {};
+    const quests = hero.任务 || {};
+    for (const qn in quests) {
+      const q = quests[qn];
+      if (q && q.状态 === '进行中') d.tasks.push(qn + (q.内容 ? '：' + q.内容 : ''));
+    }
+    const newsMap = (world.世界见闻 && world.世界见闻.动态新闻) || {};
+    for (const nt in newsMap) {
+      const n = newsMap[nt];
+      if (n && n.是否过期 !== '是' && (n.重要性 === '极高' || n.重要性 === '高')) {
+        d.news.push({ title: nt, content: n.内容 || '', place: n.相关地点 || '', date: n.日期 || '', imp: n.重要性 });
+      }
+    }
+    if (d.news.length > 3) d.news = d.news.slice(0, 3);
+    return d;
+  }
+
+  // ---- 读取动态剧情世界书内容（兼容两种存储：①动态剧情·X 是世界书名 ②是某世界书里的条目名） ----
+  async function getDynText(level) {
+    const want = '动态剧情·' + level;
+    // 方式1：直接按世界书名读
+    try {
+      if (typeof getWorldbook === 'function') {
+        const entries = await getWorldbook(want);
+        if (Array.isArray(entries) && entries.length) {
+          return entries.map(e => (e && e.content) || '').filter(Boolean).join('\n');
+        }
+      }
+    } catch (e) {}
+    // 方式2：遍历所有世界书，按条目名查找（getwi 的等效实现）
+    try {
+      if (typeof getWorldbookNames === 'function') {
+        const names = getWorldbookNames() || [];
+        for (const wb of names) {
+          if (!wb) continue;
+          try {
+            const entries = await getWorldbook(wb);
+            if (!Array.isArray(entries) || !entries.length) continue;
+            // 精确条目名
+            const exact = entries.filter(e => e && String(e.name || '').trim() === want);
+            if (exact.length) return exact.map(e => (e && e.content) || '').join('\n');
+            // 容错：条目名含「动态剧情」且含当前等级名
+            const fuzzy = entries.filter(e => e && String(e.name || '').includes('动态剧情') && String(e.name).includes(level));
+            if (fuzzy.length) return fuzzy.map(e => (e && e.content) || '').join('\n');
+          } catch (e) {}
+        }
+      }
+    } catch (e) {}
+    return '';
+  }
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  // 动态剧情排版：去 HTML 标签、保留换行，按「小节标题 / 列表项 / 正文」结构化显示
+  function dynToHtml(text) {
+    const lines = String(text || '').replace(/<[^>]+>/g, '').replace(/\r/g, '').split('\n');
+    const out = [];
+    for (const raw of lines) {
+      const line = raw.replace(/[ \t]+/g, ' ').replace(/^\s+/, '').replace(/\s+$/, '');
+      if (!line) continue;
+      if (/^- /.test(line)) {
+        out.push('<div class="tw-dyn-item">' + escapeHtml(line.replace(/^- /, '')) + '</div>');
+      } else if (/^[^，。；:：]+[:：]\s*$/.test(line) && line.length <= 40) {
+        out.push('<div class="tw-dyn-head">' + escapeHtml(line) + '</div>');
+      } else {
+        out.push('<div class="tw-dyn-line">' + escapeHtml(line) + '</div>');
+      }
+    }
+    return out.join('');
+  }
+
+  // ---- 注入羊皮纸样式（唯一 id；已存在则更新内容，防止脚本热重载后旧 CSS 残留导致新样式不生效） ----
+  function ensureTensionStyle() {
+    const doc = outerDoc();
+    let style = doc.getElementById(TENSION_STYLE_ID);
+    if (!style) {
+      style = doc.createElement('style');
+      style.id = TENSION_STYLE_ID;
+      (doc.head || doc.documentElement).appendChild(style);
+    }
+    style.textContent = `
+.tw-mask {
+  position: fixed; inset: 0; z-index: 2147483646;
+  background: rgba(10, 8, 4, 0.55);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 24px 12px; overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  box-sizing: border-box;
+}
+.tw-panel {
+  position: relative;
+  width: min(720px, 100%);
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px 18px 18px;
+  box-sizing: border-box;
+  border: 2px solid #b8956a; border-radius: 3px;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(226,196,130,0.04) 2px, rgba(226,196,130,0.04) 4px),
+    linear-gradient(165deg, #2a2016 0%, #3a2b1c 30%, #312417 60%, #241a10 100%);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.45), inset 0 0 40px rgba(0,0,0,0.45), 0 0 0 1px rgba(60,40,20,0.5);
+  font-family: 'ZhuqueFangsong', 'Noto Serif SC', 'Georgia', serif;
+  color: #e8d5a8;
+  overflow: hidden;
+}
+.tw-panel::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 15% at 50% 0%, rgba(0,0,0,0.35), transparent 70%),
+    radial-gradient(ellipse 60% 12% at 50% 100%, rgba(0,0,0,0.30), transparent 70%);
+}
+.tw-panel::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 1; opacity: 0.55;
+  background:
+    linear-gradient(#9a7a45,#9a7a45) top left / 44px 3px no-repeat,
+    linear-gradient(#9a7a45,#9a7a45) top left / 3px 44px no-repeat,
+    linear-gradient(#9a7a45,#9a7a45) top right / 44px 3px no-repeat,
+    linear-gradient(#9a7a45,#9a7a45) top right / 3px 44px no-repeat,
+    linear-gradient(#9a7a45,#9a7a45) bottom left / 44px 3px no-repeat,
+    linear-gradient(#9a7a45,#9a7a45) bottom left / 3px 44px no-repeat,
+    linear-gradient(#9a7a45,#9a7a45) bottom right / 44px 3px no-repeat,
+    linear-gradient(#9a7a45,#9a7a45) bottom right / 3px 44px no-repeat;
+}
+.tw-close {
+  position: absolute; top: 6px; right: 6px; z-index: 3;
+  color: #d4b478; font-size: 15px; cursor: pointer; opacity: 0.8;
+  display: flex; align-items: center; justify-content: center;
+  min-width: 32px; min-height: 32px; padding: 2px;
+  box-sizing: border-box;
+}
+.tw-close:hover { opacity: 1; }
+.tw-title {
+  position: relative; z-index: 2; text-align: center;
+  color: #f0d48a; font-size: 16px; letter-spacing: 4px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+  padding-bottom: 10px; margin-bottom: 12px;
+  border-bottom: 1px solid rgba(212,180,120,0.25);
+}
+.tw-body { position: relative; z-index: 2; }
+.tw-sec { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px dashed rgba(212,180,120,0.18); }
+.tw-sec:last-child { border-bottom: 0; margin-bottom: 0; }
+.tw-sec-title { font-size: 12px; color: #d4b478; letter-spacing: 2px; margin-bottom: 7px; }
+.tw-text { font-size: 13px; line-height: 1.9; color: #e8d5a8; white-space: pre-line; letter-spacing: 0.03em; }
+.tw-tension-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.tw-num { font-size: 30px; font-weight: 700; color: #f0d48a; text-shadow: 0 2px 6px rgba(0,0,0,0.5); }
+.tw-level { font-size: 14px; color: #c9a86a; }
+.tw-delta { font-size: 13px; font-weight: 600; }
+.delta-up { color: #e0745a; }
+.delta-down { color: #7fb98a; }
+.delta-flat { color: #9a9a8a; }
+.tw-meta { font-size: 12px; color: #b8a678; margin-top: 6px; }
+.tw-news { padding: 6px 0 8px; border-bottom: 1px dotted rgba(212,180,120,0.15); }
+.tw-news:last-child { border-bottom: 0; }
+.tw-news-head { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
+.tw-news-imp { font-size: 10px; padding: 1px 6px; border-radius: 3px; border: 1px solid; flex-shrink: 0; }
+.imp-极高 { color: #e0745a; border-color: #e0745a; background: rgba(224,116,90,0.12); }
+.imp-高 { color: #e0a45a; border-color: #e0a45a; background: rgba(224,164,90,0.10); }
+.tw-news-title { font-size: 13px; color: #f0d48a; font-weight: 600; }
+.tw-news-date { margin-left: auto; font-size: 11px; color: #9a8a6a; }
+.tw-news-content { font-size: 12px; color: #d8c49a; line-height: 1.7; }
+.tw-live {
+  font-size: 13px; line-height: 1.9; color: #e8d5a8; white-space: pre-wrap;
+  letter-spacing: 0.03em; background: rgba(212,180,120,0.06);
+  border-left: 2px solid #d4b478; padding: 8px 10px; margin-bottom: 10px; min-height: 20px;
+}
+.tw-btn {
+  font-family: inherit; font-size: 13px; color: #2a2016;
+  background: linear-gradient(180deg, #e8c878, #c9a86a);
+  border: 1px solid #9a7a45; border-radius: 4px; padding: 7px 16px;
+  cursor: pointer; letter-spacing: 1px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.tw-btn:hover { background: linear-gradient(180deg, #f0d48a, #d4b478); }
+.tw-btn:disabled { opacity: 0.55; cursor: wait; }
+.tw-btn-mini { padding: 4px 12px; font-size: 12px; }
+.tw-area {
+  width: 100%; min-height: 90px; resize: vertical;
+  padding: 8px; box-sizing: border-box;
+  background: rgba(10, 8, 4, 0.35);
+  border: 1px solid rgba(212,180,120,0.35); border-radius: 3px;
+  color: #e8d5a8; font-family: inherit; font-size: 12px; line-height: 1.6;
+  margin-bottom: 8px;
+}
+.tw-area:focus { outline: none; border-color: #d4b478; }
+.tw-check {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: #d8c49a; margin-bottom: 6px; cursor: pointer;
+}
+.tw-check input { accent-color: #c9a86a; }
+.tw-check-mt { margin-top: 8px; }
+.tw-dyn {
+  font-size: 12px; line-height: 1.8; color: #d8c49a;
+  max-height: 170px;   /* 可视区约 300 字，超出部分滚动查看，避免占据视线 */
+  overflow-y: auto;
+  padding-right: 8px;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #b8956a rgba(0,0,0,0.25);
+}
+.tw-dyn::-webkit-scrollbar { width: 8px; }
+.tw-dyn::-webkit-scrollbar-track { background: rgba(0,0,0,0.18); border-radius: 4px; }
+.tw-dyn::-webkit-scrollbar-thumb { background: #b8956a; border-radius: 4px; border: 1px solid rgba(0,0,0,0.3); }
+.tw-dyn-hint {
+  margin-top: 4px; font-size: 11px; color: #9a8a6a;
+  text-align: center; letter-spacing: 1px;
+}
+.tw-dyn-head {
+  font-weight: 700; color: #f0d48a;
+  margin-top: 6px; letter-spacing: 0.5px;
+}
+.tw-dyn-head:first-child { margin-top: 0; }
+.tw-dyn-item {
+  padding-left: 14px; color: #e8d5a8;
+  position: relative; margin-top: 2px;
+}
+.tw-dyn-item::before {
+  content: '·'; position: absolute; left: 0;
+  color: #c9a86a;
+}
+.tw-dyn-line { color: #d8c49a; margin-top: 2px; }
+@media (max-width: 520px) {
+  .tw-mask { padding: 12px 8px; }
+  .tw-panel { padding: 12px 12px 14px; }
+  .tw-title { font-size: 14px; letter-spacing: 2px; }
+  .tw-num { font-size: 26px; }
+  .tw-sec-title { font-size: 11px; }
+  .tw-text, .tw-live { font-size: 12px; }
+  .tw-news-title { font-size: 12px; }
+  .tw-news-date { font-size: 10px; }
+  .tw-meta { font-size: 11px; }
+}
+`;
+  }
+
+  // ---- 构建窗口 HTML ----
+  function buildWindowHtml(d) {
+    const newsHtml = d.news.map(n =>
+      '<div class="tw-news"><div class="tw-news-head"><span class="tw-news-imp imp-' + escapeHtml(n.imp) + '">' + escapeHtml(n.imp) + '</span><span class="tw-news-title">' + escapeHtml(n.title) + '</span>' + (n.date ? '<span class="tw-news-date">' + escapeHtml(n.date) + '</span>' : '') + '</div><div class="tw-news-content">' + escapeHtml(n.content) + (n.place ? '（' + escapeHtml(n.place) + '）' : '') + '</div></div>'
+    ).join('');
+    const tasksHtml = d.tasks.length ? '<div class="tw-sec"><div class="tw-sec-title">✦ 进行中的任务</div><div class="tw-text">' + escapeHtml(d.tasks.join('；')) + '</div></div>' : '';
+    const briefHtml = d.worldBrief ? '<div class="tw-sec"><div class="tw-sec-title">✦ 世界概况</div><div class="tw-text">' + escapeHtml(d.worldBrief) + '</div></div>' : '';
+    const newsSecHtml = d.news.length ? '<div class="tw-sec"><div class="tw-sec-title">✦ 近期重要动态</div>' + newsHtml + '</div>' : '';
+    const dynHtml = d.dyn ? '<div class="tw-sec"><div class="tw-sec-title">✦ 世界态势（' + escapeHtml(d.level) + '）</div><div class="tw-dyn">' + dynToHtml(d.dyn) + '</div></div>' : '';
+    const injectHtml = '<div class="tw-sec"><div class="tw-sec-title">✦ 注入正文</div>' +
+      '<label class="tw-check"><input type="checkbox" id="twInjectCtx"' + (injectToContext ? ' checked' : '') + '> 注入世界动态到正文</label>' +
+      '<label class="tw-check"><input type="checkbox" id="twInjectLive"' + (injectLiveToContext ? ' checked' : '') + '> 注入实时变化到正文</label>' +
+      '<label class="tw-check tw-check-mt">每 <input id="twForecastInterval" type="number" min="0" step="1" value="' + forecastIntervalFloor + '" style="width:4rem; margin:0 6px;"> 楼推演一次（0=仅紧张度变化触发）</label>' +
+      '<div class="tw-meta">开启后，世界动态与生成的实时变化会在每次 AI 生成时注入上下文，让正文叙事自然体现当前局势。推演触发条件可通过上方设置调整。</div>' +
+      '</div>';
+    const promptHtml = '<div class="tw-sec"><div class="tw-sec-title">✦ 影响推演提示词</div>' +
+      '<textarea class="tw-area" id="twImpactPrompt" rows="5" spellcheck="false">' + escapeHtml(impactPrompt || DEFAULT_IMPACT_PROMPT) + '</textarea>' +
+      '<button class="tw-btn tw-btn-mini" id="twResetPrompt" type="button">↺ 恢复默认</button>' +
+      '<div class="tw-meta">用于正文注入与窗口推演的【生成要求】；支持 {地点} 占位符（自动替换为当前所在地）。修改后点击别处即保存。</div>' +
+      '</div>';
+    return '' +
+      '<div class="tw-close" title="关闭">✕</div>' +
+      '<div class="tw-title">◈ 世 界 动 态 ◈</div>' +
+      '<div class="tw-body">' +
+        '<div class="tw-sec"><div class="tw-sec-title">✦ 紧张度变化</div>' +
+          '<div class="tw-tension-row"><span class="tw-num">' + d.tension + '</span><span class="tw-level">' + escapeHtml(d.level) + '</span><span class="tw-delta" id="twDelta">—</span></div>' +
+          '<div class="tw-meta">上次大事件：' + escapeHtml(d.lastEvent) + '</div>' +
+        '</div>' +
+        briefHtml + tasksHtml + newsSecHtml + dynHtml +
+        injectHtml +
+        promptHtml +
+        '<div class="tw-sec"><div class="tw-sec-title">✦ 事件推演 · 此地将要发生什么</div>' +
+          '<div class="tw-live" id="twLive">' + escapeHtml(forecastCache && forecastCache.内容 ? ((forecastCache.地点 ? '【' + forecastCache.地点 + '】' : '') + forecastCache.内容) : '（尚无推演；脚本会在 地点/时间/紧张度/新闻/正文 变化时自动推演并注入上下文）') + '</div>' +
+          '<button class="tw-btn tw-btn-mini" id="twGenBtn" type="button">🔮 立即推演</button> ' +
+          '<span class="tw-meta">' + (forecastCache && forecastCache.推演时间 ? '最近推演：' + new Date(forecastCache.推演时间).toLocaleString() + ' · ' : '') + '推演结果会作为【事件推演】注入每次 AI 生成的上下文。</span>' +
+        '</div>' +
+      '</div>';
+  }
+
+  // ---- 紧张度变化检测（localStorage 对比上次查看） ----
+  function detectTensionDelta(panel, cur) {
+    const el = panel.querySelector('#twDelta');
+    if (!el) return;
+    let last = null;
+    try { last = JSON.parse(localStorage.getItem(TENSION_VIEW_KEY) || 'null'); } catch (e) {}
+    if (!last || typeof last.value !== 'number') {
+      el.textContent = '—';
+    } else {
+      const diff = cur - last.value;
+      if (diff > 0) { el.textContent = '↑ +' + diff; el.className = 'tw-delta delta-up'; }
+      else if (diff < 0) { el.textContent = '↓ ' + diff; el.className = 'tw-delta delta-down'; }
+      else { el.textContent = '→ 0'; el.className = 'tw-delta delta-flat'; }
+    }
+    try { localStorage.setItem(TENSION_VIEW_KEY, JSON.stringify({ value: cur, at: Date.now() })); } catch (e) {}
+  }
+
+  // ---- 打开 / 关闭窗口 ----
+  async function openTensionWindow() {
+    closeTensionWindow();
+    const d = extractTensionData(readStatData());
+    d.dyn = await getDynText(d.level);
+    if (d.dyn) cachedDyn = d.dyn;
+    ensureTensionStyle();
+    const doc = outerDoc();
+    const $mask = $(doc.createElement('div')).attr('class', 'tw-mask');
+    $mask.html('<div class="tw-panel">' + buildWindowHtml(d) + '</div>');
+    $(outerBody()).append($mask);
+    const panel = $mask.find('.tw-panel')[0];
+    detectTensionDelta(panel, d.tension);
+    // 动态剧情超过可视区（约 300 字）时，提示可向下滚动查看完整世界态势
+    const dynEl = panel.querySelector('.tw-dyn');
+    if (dynEl && dynEl.scrollHeight > dynEl.clientHeight) {
+      const hint = doc.createElement('div');
+      hint.className = 'tw-dyn-hint';
+      hint.textContent = '▾ 已显示部分（约 300 字），向下滚动查看完整世界态势';
+      dynEl.parentNode.insertBefore(hint, dynEl.nextSibling);
+    }
+    $mask.on('click', function (e) { if (e.target === $mask[0]) closeTensionWindow(); });
+    $(panel).find('.tw-close').on('click', closeTensionWindow);
+    $(panel).find('#twInjectCtx').on('change', function () { injectToContext = this.checked; saveInjectSettings(); });
+    $(panel).find('#twInjectLive').on('change', function () { injectLiveToContext = this.checked; saveInjectSettings(); });
+    $(panel).find('#twImpactPrompt').on('change', function () {
+      impactPrompt = String(this.value || '').trim() || DEFAULT_IMPACT_PROMPT;
+      saveImpactPrompt();
+    });
+    $(panel).find('#twResetPrompt').on('click', function () {
+      impactPrompt = DEFAULT_IMPACT_PROMPT;
+      saveImpactPrompt();
+      const ta = doc.getElementById('twImpactPrompt');
+      if (ta) ta.value = DEFAULT_IMPACT_PROMPT;
+      if (typeof toastr !== 'undefined') toastr.info('已恢复默认影响推演提示词', '世界动态');
+    });
+    $(panel).find('#twForecastInterval').on('change', function () {
+      const value = Number(this.value);
+      forecastIntervalFloor = Number.isInteger(value) && value >= 0 ? value : DEFAULT_FORECAST_INTERVAL_FLOOR;
+      if (!Number.isInteger(value) || value < 0) {
+        this.value = String(DEFAULT_FORECAST_INTERVAL_FLOOR);
+      }
+      saveForecastSettings();
+    });
+    // 若有推演缓存则刷新展示
+    const liveEl = panel.querySelector('#twLive');
+    if (liveEl && forecastCache && forecastCache.内容) {
+      liveEl.textContent = (forecastCache.地点 ? '【' + forecastCache.地点 + '】' : '') + String(forecastCache.内容);
+    }
+    // 立即推演按钮：手动触发一次推演并刷新展示/注入
+    $(panel).find('#twGenBtn').on('click', async function () {
+      const btn = this;
+      btn.disabled = true;
+      btn.textContent = '推演中…';
+      try {
+        const text = await runForecast();
+        const el = panel.querySelector('#twLive');
+        if (el && text) el.textContent = (forecastCache && forecastCache.地点 ? '【' + forecastCache.地点 + '】' : '') + text;
+        if (typeof toastr !== 'undefined') toastr.success('已重新推演并注入上下文', '世界动态');
+      } catch (e) {
+        const el = panel.querySelector('#twLive');
+        if (el) el.textContent = '推演失败：' + (e && e.message ? e.message : e);
+      }
+      btn.disabled = false;
+      btn.textContent = '🔮 立即推演';
+    });
+  }
+
+  function closeTensionWindow() {
+    try {
+      const mask = outerDoc().querySelector('.tw-mask');
+      if (mask) mask.remove();
+    } catch (e) {}
+  }
+
+  $(init);
+})();

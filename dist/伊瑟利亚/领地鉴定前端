@@ -1,0 +1,432 @@
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>领地鉴定</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: transparent; display: flex; justify-content: center; align-items: flex-start; padding: 8px; font-family: "Noto Serif SC", "Source Han Serif SC", "华文中宋", "楷体", serif; font-weight: 600; overflow-x: hidden; }
+
+        /* ===== 布局骨架 ===== */
+        .stage { width: 100%; max-width: 760px; }
+        .scroll-frame { position: relative; padding: 16px 0 20px; }
+        .scroll { width: 100%; position: relative; overflow: hidden; border-radius: 3px; }
+        .content { position: relative; z-index: 2; line-height: 1.85; font-size: 0.95em; animation: scrollIn .65s ease-out; }
+        @keyframes scrollIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+        /* ===== 卷轴本体：羊皮纸 + 暗角 + 横线 + 噪点 ===== */
+        .scroll {
+            padding: 42px 30px 48px;
+            background:
+                radial-gradient(ellipse at center, transparent 52%, rgba(96,60,20,.20) 100%),
+                url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="4" stitchTiles="stitch"/></filter><rect width="120" height="120" filter="url(%23noise)" opacity="0.06"/></svg>'),
+                repeating-linear-gradient(0deg, transparent, transparent 26px, rgba(140,100,50,.04) 26px, rgba(140,100,50,.04) 27px),
+                #f5ead0;
+            color: #3a2718; border: 1px solid #a07840; border-top: 4px double #5a3a1a; border-bottom: 4px double #5a3a1a;
+            box-shadow: 0 12px 30px rgba(0,0,0,.38), inset 0 0 50px rgba(120,80,30,.07), inset 0 -18px 40px rgba(120,80,30,.10);
+        }
+        .stain { position: absolute; border-radius: 50%; pointer-events: none; z-index: 1; }
+        .stain-1 { width: 190px; height: 190px; right: -40px; top: -34px; background: radial-gradient(circle, rgba(150,110,60,.11), transparent 68%); }
+        .stain-2 { width: 150px; height: 150px; left: -36px; bottom: 6px; background: radial-gradient(circle, rgba(120,90,50,.09), transparent 66%); }
+        .scroll::before { content: "❦"; position: absolute; top: 6px; left: 12px; font-size: 14px; color: #a07828; opacity: .55; z-index: 3; }
+
+        /* ===== 木质滚轴 ===== */
+        .roller { position: absolute; left: 0; right: 0; height: 14px; background: linear-gradient(180deg,#8a5a2a,#6b3f1c 45%,#8a5a2a 92%); border-radius: 7px; box-shadow: 0 2px 5px rgba(0,0,0,.45), inset 0 1px 2px rgba(255,255,255,.28); z-index: 4; }
+        .roller-top { top: 2px; }
+        .roller-bottom { bottom: 6px; }
+        .roller .cap { position: absolute; top: 50%; transform: translateY(-50%); width: 18px; height: 24px; background: linear-gradient(90deg,#7a4a22,#54300f 60%,#7a4a22); border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,.4); }
+        .roller .cap.c-l { left: -10px; }
+        .roller .cap.c-r { right: -10px; }
+
+        /* ===== 卷首题头 ===== */
+        .scroll-header { text-align: center; margin-bottom: 14px; }
+        .head-orn { color: #a07828; letter-spacing: 6px; font-size: .9em; }
+        .head-title { font-size: 1.6em; font-weight: 800; letter-spacing: 10px; color: #5a3a08; text-shadow: 0 1px 0 rgba(255,255,255,.45); }
+        .head-sub { font-size: .78em; color: #8a6a3a; letter-spacing: 2px; margin-top: 5px; }
+        .head-rule { height: 2px; margin: 12px auto 0; width: 82%; background: linear-gradient(90deg, transparent, #c4a050 20%, #d4af37 50%, #c4a050 80%, transparent); }
+
+        /* ===== 鉴定区块 ===== */
+        .phase-block { position: relative; margin: 10px 0 16px; padding: 10px 14px 12px 12px; background: linear-gradient(135deg, var(--wash, rgba(232,214,178,.32)), rgba(232,214,178,.30)); border: 1px solid var(--edge, rgba(160,120,64,.28)); border-left: 3px solid var(--phase, #c4a050); border-radius: 4px; box-shadow: inset 0 1px 8px rgba(120,80,30,.09), inset 0 -2px 10px rgba(120,80,30,.06); }
+        .phase-block::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; background: linear-gradient(180deg, transparent, var(--phase, #c4a050), transparent); border-radius: 2px; }
+        .phase-marker { text-align: center; margin: 2px 0 10px; padding: 4px 0; }
+        .phase-title { display: inline-block; padding: 4px 20px; background: var(--wash, linear-gradient(135deg, rgba(180,150,60,.16), rgba(160,130,50,.08))); border: 1px solid var(--phase, #c4a050); border-radius: 3px; color: #5a3a08; font-weight: 700; font-size: 1.05em; letter-spacing: 4px; box-shadow: 0 1px 3px rgba(120,80,30,.18); }
+        .phase-icon { display: inline-block; margin: 0 6px; font-size: 1em; color: var(--phase, #a07828); }
+
+        /* ===== 数据行 ===== */
+        /* ===== 模块化字段：椭圆胶囊（底色包裹文本，大圆角，自动换行排布） ===== */
+        .data-row { display: flex; flex-wrap: wrap; align-items: center; padding: 7px 2px; margin: 5px 0; gap: 8px 10px; transition: opacity .2s; }
+        .data-row:hover { opacity: .92; }
+        .kv { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; flex-wrap: wrap; word-break: break-word; overflow-wrap: anywhere; }
+        .key { font-weight: 800; color: #7a4a12; font-size: .85em; letter-spacing: 1px; flex-shrink: 0; padding: 0 10px 0 4px; position: relative; }
+        .key::before { content: ''; position: absolute; left: -2px; top: 50%; transform: translateY(-50%); width: 5px; height: 5px; border-radius: 50%; background: #b8892a; box-shadow: 0 0 3px rgba(184,137,42,.6); }
+        .key::after { content: ""; position: absolute; right: 0; top: 12%; bottom: 12%; width: 1px; background: linear-gradient(180deg, transparent, rgba(160,120,64,.5), transparent); }
+        .val { color: #4a3520; font-weight: 600; }
+        /* 值胶囊：只有值（子字段）被底色包裹成椭圆模块 */
+        .vchip { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; flex-wrap: wrap; word-break: break-word; overflow-wrap: anywhere; background: linear-gradient(180deg, rgba(255,250,238,.95), rgba(240,226,196,.88)); border: 1px solid rgba(160,120,64,.42); border-radius: 999px; padding: 3px 13px; box-shadow: 0 1px 4px rgba(120,80,30,.12), inset 0 1px 0 rgba(255,255,255,.55); transition: all .2s; }
+        .vchip:hover { border-color: #d4af37; box-shadow: 0 2px 8px rgba(160,120,40,.25), inset 0 1px 0 rgba(255,255,255,.65); }
+        .vchip-float { background: linear-gradient(180deg, rgba(255,250,238,.95), rgba(240,226,196,.88)); border: 1px solid rgba(160,120,64,.42); border-radius: 999px; padding: 3px 13px; box-shadow: 0 1px 4px rgba(120,80,30,.12), inset 0 1px 0 rgba(255,255,255,.55); }
+        /* 点号路径层级段：每段独立小胶囊 + · 连接 */
+        .pathseg { display: inline-flex; align-items: center; background: rgba(120,90,40,.10); border: 1px solid rgba(160,120,64,.35); color: #7a4a12; font-weight: 700; font-size: .88em; border-radius: 8px; padding: 1px 8px; white-space: nowrap; }
+        .pathseg-sep { color: #a07840; font-weight: 800; margin: 0 1px; opacity: .85; }
+        /* 数值增量高亮（+5 / -10） */
+        .up { display: inline-block; font-weight: 800; color: #1f7a4a; padding: 0 6px; border-radius: 6px; background: rgba(31,122,74,.10); border: 1px solid rgba(31,122,74,.28); }
+        .down { display: inline-block; font-weight: 800; color: #9a3b2a; padding: 0 6px; border-radius: 6px; background: rgba(154,59,42,.10); border: 1px solid rgba(154,59,42,.28); }
+        /* 长文本值（效果/叙事类）用大圆角软框而非胶囊 */
+        .vtxt { display: block; width: 100%; padding: 6px 12px; background: linear-gradient(180deg, rgba(255,250,238,.55), rgba(240,226,196,.4)); border: 1px solid rgba(160,120,64,.30); border-radius: 10px; font-weight: 600; }
+        .key-k-territory { color: #8a5a1a; }
+        .key-k-check { color: #5a3a8a; }
+        .key-k-res { color: #1f7a4a; }
+        .key-k-warn { color: #9a3b2a; }
+
+        /* ===== 标签 ===== */
+        .tag { display: inline-block; padding: 3px 14px; border-radius: 999px; font-size: .85em; letter-spacing: 1px; border: 1px solid transparent; white-space: nowrap; box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 1px 4px rgba(120,80,30,.12); }
+        .tag-succ { background: linear-gradient(180deg, rgba(60,140,80,.26), rgba(60,140,80,.12)); border-color: rgba(40,110,60,.55); color: #145c30; }
+        .tag-fail { background: linear-gradient(180deg, rgba(160,50,40,.24), rgba(160,50,40,.10)); border-color: rgba(140,40,32,.5); color: #7a1f14; }
+        .tag-crit { background: linear-gradient(180deg, rgba(212,175,55,.38), rgba(212,175,55,.16)); border-color: #c9a227; color: #6a4a08; box-shadow: 0 0 8px rgba(212,175,55,.35), inset 0 1px 0 rgba(255,255,255,.4); }
+        .tag-tier { background: linear-gradient(180deg, rgba(160,120,48,.22), rgba(160,120,48,.08)); border-color: rgba(160,120,48,.5); color: #6a4a10; }
+        .grade { display: inline-block; padding: 4px 16px; border-radius: 999px; font-weight: 800; letter-spacing: 2px; font-size: .95em; border: 1.5px solid; box-shadow: inset 0 1px 0 rgba(255,255,255,.35), 0 1px 5px rgba(120,80,30,.14); }
+        .g-村庄 { color: #6a6a58; background: linear-gradient(180deg, rgba(120,120,100,.14), rgba(120,120,100,.04)); border-color: #8a8a72; }
+        .g-城镇 { color: #2a5a8a; background: linear-gradient(180deg, rgba(50,110,170,.16), rgba(50,110,170,.05)); border-color: #3a7ab0; }
+        .g-地区 { color: #6a2a9a; background: linear-gradient(180deg, rgba(130,60,180,.16), rgba(130,60,180,.05)); border-color: #8a3ac0; }
+        .g-国家 { color: #8a5a08; background: linear-gradient(180deg, rgba(212,175,55,.32), rgba(212,175,55,.08)); border-color: #d4af37; box-shadow: 0 0 10px rgba(212,175,55,.35); animation: goldShimmer 2.5s linear infinite; }
+        @keyframes goldShimmer { 0%,100% { box-shadow: 0 0 6px rgba(212,175,55,.30); } 50% { box-shadow: 0 0 16px rgba(212,175,55,.6); } }
+
+        /* ===== 检定线路 ===== */
+        .check-line { margin: 7px 0; padding: 7px 20px; background: linear-gradient(180deg, rgba(90,58,138,.13), rgba(90,58,138,.05)); border: 1px solid rgba(90,58,138,.30); border-radius: 999px; font-size: .95em; width: fit-content; max-width: 100%; box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 1px 4px rgba(120,80,30,.10); }
+        .check-dice { font-weight: 800; color: #5a3a8a; }
+        .check-total { font-weight: 900; color: #3a1f6a; }
+        .check-dc { font-weight: 800; color: #8a4a1a; }
+        .arrow-link { color: #9a4a20; font-weight: 700; }
+
+        /* ===== 叙事指导 ===== */
+        .narrative { margin: 8px 0 4px; padding: 8px 12px; font-style: italic; font-size: .86em; color: #5a4433; border-left: 2px solid rgba(140,120,90,.4); background: rgba(140,120,90,.06); }
+        .narrative::before { content: "✎ 叙事 · "; color: #a07828; font-style: normal; font-size: .82em; letter-spacing: 1px; }
+
+        /* ===== 卷尾 ===== */
+        .scroll-footer { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px; font-size: .8em; color: #8a6a3a; letter-spacing: 1px; }
+        .foot-orn { color: #a07828; }
+        .foot-seal { width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; color: #f2d8a0; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #a03a2a, #6a1a10 70%); box-shadow: inset 0 2px 6px rgba(255,255,255,.25), 0 2px 5px rgba(0,0,0,.35); }
+
+        /* ===== 主题切换 ===== */
+        .theme-bar { position: absolute; top: 6px; right: 10px; z-index: 9; display: flex; gap: 4px; }
+        .theme-btn { padding: 2px 9px; font-size: .72em; font-weight: 700; letter-spacing: 1px; border: 1px solid rgba(160,120,64,.5); border-radius: 999px; cursor: pointer; background: rgba(255,250,235,.75); color: #6a4a10; transition: all .2s; }
+        .theme-btn.active { background: linear-gradient(180deg,#c9a227,#a07820); color: #fff8e0; border-color: #a07820; box-shadow: 0 0 6px rgba(201,162,39,.5); }
+
+        /* ===== 主题·羊皮卷（默认）===== */
+        body.theme-parchment .scroll { background: radial-gradient(ellipse at center, transparent 52%, rgba(96,60,20,.20) 100%), url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.55" numOctaves="4" stitchTiles="stitch"/></filter><rect width="120" height="120" filter="url(%23noise)" opacity="0.06"/></svg>'), repeating-linear-gradient(0deg, transparent, transparent 26px, rgba(140,100,50,.04) 26px, rgba(140,100,50,.04) 27px), #f5ead0; }
+        body.theme-parchment .head-title { color: #5a3a08; text-shadow: 0 1px 0 rgba(255,255,255,.45); }
+        body.theme-parchment .phase-title { color: #5a3a08; }
+
+        /* ===== 主题·王廷暗金 ===== */
+        body.theme-royal .scroll { background: linear-gradient(160deg, #2a2214, #17110a 45%, #1c150c), radial-gradient(ellipse at 30% 0%, rgba(212,175,55,.10), transparent 60%); color: #e8d5a8; border-color: rgba(212,175,55,.35); border-top: 4px double #b8902a; border-bottom: 4px double #b8902a; box-shadow: 0 12px 30px rgba(0,0,0,.5), inset 0 0 60px rgba(212,175,55,.06); }
+        body.theme-royal .head-title { color: #f0d48a; text-shadow: 0 0 10px rgba(212,175,55,.5), 0 1px 2px rgba(0,0,0,.8); }
+        body.theme-royal .head-sub, body.theme-royal .head-orn { color: #c9a86a; }
+        body.theme-royal .phase-block { background: linear-gradient(135deg, rgba(58,44,20,.5), rgba(30,22,10,.45)); border: 1px solid rgba(212,175,55,.25); border-left: 3px solid var(--phase, #d4af37); box-shadow: inset 0 1px 8px rgba(0,0,0,.3); }
+        body.theme-royal .phase-title { color: #f0d48a; border-color: rgba(212,175,55,.4); background: linear-gradient(135deg, rgba(212,175,55,.16), rgba(120,90,20,.08)); text-shadow: 0 0 6px rgba(212,175,55,.4); }
+/* royal key/val handled above */
+        body.theme-royal .data-row:hover { opacity: .9; }
+        /* royal: 键保持淡金文字；值胶囊深色暗金底 */
+        body.theme-royal .key { color: #f0d48a; }
+        body.theme-royal .key::before { background: #d4af37; box-shadow: 0 0 4px rgba(212,175,55,.7); }
+        body.theme-royal .key::after { background: linear-gradient(180deg, transparent, rgba(212,175,55,.4), transparent); }
+        body.theme-royal .vchip { background: linear-gradient(180deg, rgba(58,44,20,.88), rgba(30,22,10,.92)); border: 1px solid rgba(212,175,55,.40); box-shadow: inset 0 1px 0 rgba(255,242,200,.12), 0 1px 4px rgba(0,0,0,.35); }
+        body.theme-royal .vchip:hover { border-color: #d4af37; box-shadow: 0 2px 10px rgba(212,175,55,.3), inset 0 1px 0 rgba(255,242,200,.15); }
+        body.theme-royal .val { color: #e0d2b4; }
+        body.theme-royal .vchip-float { background: linear-gradient(180deg, rgba(58,44,20,.88), rgba(30,22,10,.92)); border: 1px solid rgba(212,175,55,.40); }
+        body.theme-royal .pathseg { background: rgba(212,175,55,.13); border-color: rgba(212,175,55,.30); color: #e8d5a8; }
+        body.theme-royal .pathseg-sep { color: #c9a86a; }
+        body.theme-royal .up { color: #7ae0a8; background: rgba(60,160,100,.15); border-color: rgba(60,160,100,.35); }
+        body.theme-royal .down { color: #f0a090; background: rgba(200,80,60,.15); border-color: rgba(200,80,60,.35); }
+        body.theme-royal .vtxt { background: linear-gradient(180deg, rgba(58,44,20,.5), rgba(30,22,10,.45)); border-color: rgba(212,175,55,.28); color: #d8c8a8; }
+        body.theme-royal .narrative { color: #c8b890; border-left-color: rgba(212,175,55,.3); background: rgba(212,175,55,.05); }
+        body.theme-royal .scroll-footer { color: #c9a86a; }
+        body.theme-royal .theme-btn { background: rgba(30,20,8,.8); color: #e0c890; border-color: rgba(212,175,55,.4); }
+        body.theme-royal .theme-btn.active { background: linear-gradient(180deg,#b8902a,#8a6a1c); }
+
+        /* ===== 主题·苔痕古碑 ===== */
+        body.theme-stone .scroll { background: linear-gradient(160deg, #46543f, #2a342a 45%, #333f31), radial-gradient(ellipse at 70% 10%, rgba(150,180,140,.10), transparent 55%); color: #cdd8c8; border-color: rgba(150,170,140,.35); border-top: 4px double #5a6a4a; border-bottom: 4px double #5a6a4a; box-shadow: 0 12px 30px rgba(0,0,0,.45), inset 0 0 60px rgba(90,120,80,.07); }
+        body.theme-stone .head-title { color: #b8c8a8; text-shadow: 0 1px 0 rgba(0,0,0,.7), 0 -1px 0 rgba(255,255,255,.07); }
+        body.theme-stone .head-sub, body.theme-stone .head-orn { color: #8aa07a; }
+        body.theme-stone .phase-block { background: linear-gradient(135deg, rgba(70,84,66,.4), rgba(42,52,42,.4)); border: 1px solid rgba(150,170,140,.25); border-left: 3px solid var(--phase, #7a9a6a); box-shadow: inset 0 1px 8px rgba(0,0,0,.25); }
+        body.theme-stone .phase-title { color: #b8c8a8; border-color: rgba(150,170,140,.35); background: linear-gradient(135deg, rgba(120,150,110,.16), rgba(70,90,60,.08)); text-shadow: 0 1px 0 rgba(0,0,0,.6); }
+/* stone key/val handled above */
+        body.theme-stone .data-row:hover { opacity: .9; }
+        /* stone: 键苔绿文字；值胶囊深苔底 */
+        body.theme-stone .key { color: #cdd8c8; }
+        body.theme-stone .key::before { background: #7a9a6a; box-shadow: 0 0 4px rgba(122,154,106,.6); }
+        body.theme-stone .key::after { background: linear-gradient(180deg, transparent, rgba(150,170,140,.4), transparent); }
+        body.theme-stone .vchip { background: linear-gradient(180deg, rgba(70,84,66,.9), rgba(42,52,42,.94)); border: 1px solid rgba(150,170,140,.38); box-shadow: inset 0 1px 0 rgba(240,255,230,.1), 0 1px 4px rgba(0,0,0,.35); }
+        body.theme-stone .vchip:hover { border-color: #7a9a6a; box-shadow: 0 2px 10px rgba(150,180,140,.3), inset 0 1px 0 rgba(240,255,230,.12); }
+        body.theme-stone .val { color: #ccd8c4; }
+        body.theme-stone .vchip-float { background: linear-gradient(180deg, rgba(70,84,66,.9), rgba(42,52,42,.94)); border: 1px solid rgba(150,170,140,.38); }
+        body.theme-stone .pathseg { background: rgba(150,170,140,.14); border-color: rgba(150,170,140,.30); color: #cdd8c8; }
+        body.theme-stone .pathseg-sep { color: #8aa07a; }
+        body.theme-stone .up { color: #90d8a0; background: rgba(80,150,90,.15); border-color: rgba(80,150,90,.35); }
+        body.theme-stone .down { color: #e0a090; background: rgba(180,90,70,.15); border-color: rgba(180,90,70,.35); }
+        body.theme-stone .vtxt { background: linear-gradient(180deg, rgba(70,84,66,.5), rgba(42,52,42,.45)); border-color: rgba(150,170,140,.28); color: #c0ccb8; }
+        body.theme-stone .narrative { color: #a8b8a0; border-left-color: rgba(150,170,140,.3); background: rgba(150,170,140,.05); }
+        body.theme-stone .scroll-footer { color: #8aa07a; }
+        body.theme-stone .theme-btn { background: rgba(40,50,40,.8); color: #cdd8c8; border-color: rgba(150,170,140,.4); }
+        body.theme-stone .theme-btn.active { background: linear-gradient(180deg,#5a7a4a,#3f5535); }
+
+        /* ===== 通用器 ===== */
+        .err-msg { color: #8b2222; text-align: center; font-weight: 600; padding: 20px; }
+        .raw { display: none; }
+        @media (max-width: 560px) { .scroll { padding: 32px 16px 38px; } .head-title { font-size: 1.25em; letter-spacing: 6px; } }
+    </style>
+</head>
+
+<body class="theme-parchment">
+    <div class="stage">
+        <div class="scroll-frame">
+            <div class="theme-bar">
+                <button class="theme-btn" data-theme="parchment">📜 羊皮卷</button>
+                <button class="theme-btn" data-theme="royal">👑 王廷暗金</button>
+                <button class="theme-btn" data-theme="stone">🪨 苔痕古碑</button>
+            </div>
+            <div class="roller roller-top"><span class="cap c-l"></span><span class="cap c-r"></span></div>
+            <div class="scroll">
+                <div class="stain stain-1"></div>
+                <div class="stain stain-2"></div>
+                <div class="content" id="trtContent"></div>
+            </div>
+            <div class="roller roller-bottom"><span class="cap c-l"></span><span class="cap c-r"></span></div>
+        </div>
+    </div>
+    <div id="rawData" style="display:none;">$1</div>
+
+    <script>
+        // ===== 区块配色：内政/外交/军事/政治/经济/科技/建筑 鉴定分类 =====
+        var PHASE_META = {
+            '内政判定': { icon: '🏛️', c: '#8a5a2a' },
+            '外交判定': { icon: '🤝', c: '#2a5a8a' },
+            '军事判定': { icon: '🛡️', c: '#9a3b2a' },
+            '政治判定': { icon: '⚖️', c: '#6a2a9a' },
+            '经济判定': { icon: '💰', c: '#1f7a4a' },
+            '科技判定': { icon: '🔬', c: '#3a6a7a' },
+            '建筑判定': { icon: '🏗️', c: '#a06020' }
+        };
+        function hexA(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
+        function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+        // ===== 解析 <鉴定结算> 文本 → 结构 =====
+        // 返回 { blocks: [{ name, meta, rows: [[key,value]...], narrative }] }
+        function parseAdjudication(text) {
+            var out = [];
+            if (!text) return out;
+            // 以 <鉴定结算> 分割（内容到下一个 <鉴定结算> 或文本结束）；闭合标签可有可无
+            var parts = String(text).split(/<鉴定结算>\s*/);
+            if (parts.length === 1 && String(text).trim()) parts = ['', String(text)];
+            for (var pi = 1; pi < parts.length; pi++) {
+                var chunk = parts[pi].replace(/<\/鉴定结算>\s*/g, '');
+                // 叙事指导（可能在标签内或标签外）
+                var tailNarr = '';
+                var tm = chunk.match(/叙事指导\s*[:：]\s*([\s\S]*?)(?=\n\s*<鉴定结算>|$)/);
+                if (tm) tailNarr = tm[1].replace(/^\(|\)$/g, '').replace(/[ \t]+/g, ' ').trim();
+                var blockRe = /\{([^}]+)\}([\s\S]*?)(?=\{[^}]+\}|$)/g, bm;
+                while ((bm = blockRe.exec(chunk)) !== null) {
+                    var name = bm[1].trim();
+                    var body = bm[2] || '';
+                    var meta = PHASE_META[name] || { icon: '🏰', c: '#a07828' };
+                    var rows = [], narrative = '';
+                    body.split(/\r?\n/).forEach(function (line) {
+                        line = line.trim();
+                        if (!line) return;
+                        if (/^叙事指导\s*[:：]/.test(line)) {
+                            narrative = line.replace(/^叙事指导\s*[:：]\s*/, '').replace(/^\(|\)$/g, '').trim();
+                            return;
+                        }
+                        // | 键: 值 | 键: 值 | 拆分
+                        var segs = line.split('|');
+                        segs.forEach(function (seg) {
+                            seg = seg.trim();
+                            if (!seg) return;
+                            var ci = seg.search(/[:：]/);
+                            if (ci > 0) rows.push([seg.slice(0, ci).trim(), seg.slice(ci + 1).trim()]);
+                            else rows.push(['', seg]);
+                        });
+                    });
+                    if (!narrative && tailNarr) narrative = tailNarr;
+                    out.push({ name: name, meta: meta, rows: rows, narrative: narrative });
+                }
+            }
+            return out;
+        }
+
+        // ===== 键名分类（用于键着色） =====
+        function keyClass(k) {
+            if (/领地|规模|变种|人口|军队|国库|财政收入/.test(k)) return 'key-k-territory';
+            if (/检定|判定|骰|修正|DC|局势/.test(k)) return 'key-k-check';
+            if (/满意度|民心|士气|支持度|增长|资源/.test(k)) return 'key-k-res';
+            if (/危机|风险|失败|损失|灾害|战乱/.test(k)) return 'key-k-warn';
+            return '';
+        }
+        // ===== 值渲染：判定结果/规模等级/检定/效果等 =====
+        function renderVal(key, value) {
+            var v = esc(value), k = key || '';
+            if (/^规模等级$/.test(k) && /^(村庄|城镇|地区|国家)$/.test(value.trim())) {
+                return '<span class="grade g-' + value.trim() + '">❖ ' + esc(value.trim()) + '</span>';
+            }
+            if (/^判定结果$/.test(k)) {
+                if (/大成功/.test(value)) return '<span class="tag tag-crit">✦ 大成功</span>';
+                if (/大失败|大失敗/.test(value)) return '<span class="tag tag-fail">✖ 大失败</span>';
+                if (/成功/.test(value)) return '<span class="tag tag-succ">✔ 成功</span>';
+                if (/失败/.test(value)) return '<span class="tag tag-fail">✖ 失败</span>';
+                return '<span class="vchip">' + smartVal(value) + '</span>';
+            }
+            if (/^检定$/.test(k) || /^掷骰$/.test(k)) {
+                var m = value.match(/([\u4e00-\u9fa5·]+)\s*d20\s*\(\s*(\d+)\s*\)\s*\+\s*(\d+)\s*=\s*(\d+)\s*(?:vs|VS|vs\.)\s*DC\s*(\d+)/i);
+                if (m) {
+                    return '<div class="check-line">⚄ <span class="check-dice">' + esc(m[1]) + ' d20(' + m[2] + ')</span> + <span class="check-dice">' + m[3] + '</span> = <span class="check-total">' + m[4] + '</span> <span style="color:#8a6a3a;">vs</span> DC <span class="check-dc">' + m[5] + '</span></div>';
+                }
+                var m2 = value.match(/d20\s*\((\d+)\)\s*\+\s*(\d+)\s*=\s*(\d+)/i);
+                if (m2) {
+                    return '<div class="check-line">⚄ d20(<span class="check-dice">' + m2[1] + '</span>) + <span class="check-dice">' + m2[2] + '</span> = <span class="check-total">' + m2[3] + '</span></div>';
+                }
+                return '<span class="vchip">' + smartVal(value) + '</span>';
+            }
+            if (/^效果$/.test(k) || /^面板更新$/.test(k)) {
+                return '<span class="vtxt">' + smartVal(value) + '</span>';
+            }
+            return '<span class="vchip">' + smartVal(value) + '</span>';
+        }
+        // ===== 超智能值渲染：点号路径按 . 拆段（世界设定.落日哨所.详细说明 → 层级胶囊）=========
+        // 数值增量 +5/-10 高亮；→ 箭头保留
+        function smartVal(value) {
+            var raw = String(value == null ? '' : value);
+            var out = '';
+            // 按点号路径分段：整段 xxx.yyy.zzz（段内仅纯词元，排除空白/标点/括号/加减号）
+            var pathRe = /([\u4e00-\u9fa5A-Za-z0-9_·]+(?:\.[\u4e00-\u9fa5A-Za-z0-9_·]+)+)/g, last = 0, m;
+            while ((m = pathRe.exec(raw)) !== null) {
+                out += plainVal(raw.slice(last, m.index));
+                // 每段独立小胶囊；段间用 ·（路径层级的可视分隔）
+                var segs = m[1].split('.');
+                segs.forEach(function (seg, idx) {
+                    if (idx > 0) out += '<span class="pathseg-sep">·</span>';
+                    out += '<span class="pathseg">' + esc(seg) + '</span>';
+                });
+                last = m.index + m[1].length;
+            }
+            out += plainVal(raw.slice(last));
+            return out;
+        }
+        // ===== 渲染：结构 → 精美鉴定面板 HTML =====
+        function buildHeadSub() {
+            try {
+                var stat = null;
+                if (typeof Mvu !== 'undefined' && Mvu.getMvuData) stat = (Mvu.getMvuData({ type: 'message', message_id: 'latest' }) || {}).stat_data;
+                var w = (stat && stat.世界) || {};
+                var parts = [];
+                if (w.日期) parts.push(String(w.日期));
+                if (w.时间) parts.push(String(w.时间));
+                var loc = w.当前地点 || w.当前位置;
+                if (loc) parts.push(String(loc));
+                return parts.join(' · ') || '圣光历 · 领地裁定书';
+            } catch (e) { return '圣光历 · 领地裁定书'; }
+        }
+        // 非路径文本：→ 箭头 + 数值增量高亮 + 转义
+        function plainVal(s) {
+            s = String(s);
+            s = esc(s);
+            s = s.replace(/→|->/g, ' <span class="arrow-link">→</span> ');
+            // +N / -N 增量（前后有空白或标点边界）
+            s = s.replace(/(^|[\s（(；;，,、])([+-]\s*\d+)(?=$|[\s）)；;，,、])/g, function (m, pre, num) {
+                var isDown = /^-\s*/.test(num);
+                return pre + '<span class="' + (isDown ? 'down' : 'up') + '">' + esc(num) + '</span>';
+            });
+            return s;
+        }
+        function renderAdjudication(text) {
+            var blocks = parseAdjudication(text);
+            if (!blocks.length) return '<div class="err-msg">※ 未见领地鉴定记录 ※</div>';
+            var hasTerritory = false, firstTier = '', firstVariant = '';
+            blocks.forEach(function (b) {
+                b.rows.forEach(function (pair) {
+                    if (pair[0] === '领地' && !hasTerritory) hasTerritory = true;
+                    if (pair[0] === '规模等级' && !firstTier) firstTier = pair[1];
+                    if (pair[0] === '变种' && !firstVariant) firstVariant = pair[1];
+                });
+            });
+            if (!hasTerritory) hasTerritory = true; // 无领地行也不影响拼接
+            var html = '<div class="scroll-header"><div class="head-orn">─ ✦ ─</div><div class="head-title">领地鉴定</div><div class="head-sub">' + esc(buildHeadSub()) + '</div><div class="head-rule"></div></div>';
+            blocks.forEach(function (b) {
+                var c = b.meta.c;
+                html += '<div class="phase-block" style="--phase:' + c + ';--wash:linear-gradient(135deg,' + hexA(c, .16) + ',' + hexA(c, .05) + ');--edge:rgba(' + ((parseInt(c.slice(1), 16) >> 16) & 255) + ',' + ((parseInt(c.slice(1), 16) >> 8) & 255) + ',' + ((parseInt(c.slice(1), 16)) & 255) + ',.3);">';
+                html += '<div class="phase-marker"><span class="phase-icon">' + b.meta.icon + '</span><span class="phase-title">' + esc(b.name) + '</span></div>';
+                b.rows.forEach(function (pair) {
+                    var key = pair[0], value = pair[1];
+                    if (!key && !value) return;
+                    var rv = renderVal(key, value);
+                    if (rv.indexOf('<div') === 0) {
+                        // 整行模块（检定线路/判定结果徽章等）：键文字 + 自带胶囊的整行值
+                        html += '<div class="data-row">' + (key ? '<span class="key ' + keyClass(key) + '">' + esc(key) + '</span>' : '') + rv + '</div>';
+                    } else {
+                        html += '<div class="data-row">' + (key ? '<span class="key ' + keyClass(key) + '">' + esc(key) + '</span>' : '') + rv + '</div>';
+                    }
+                });
+                if (b.narrative) html += '<div class="narrative">' + esc(b.narrative) + '</div>';
+                html += '</div>';
+            });
+            html += '<div class="scroll-footer"><span class="foot-orn">─ ✦ ─</span><span>领地裁定书 · 领主之卷</span><span class="foot-orn">─ ✦ ─</span><span class="foot-seal">领</span></div>';
+            return html;
+        }
+        // ===== 演示数据（浏览器直接打开后加 #demo 预览；酒馆正则注入数据时用不到） =====
+        var DEMO_TEXT = '<鉴定结算>\n  {内政判定}\n  | 领地: 蔷薇镇 | 规模等级: 城镇 | 变种: 农耕村 | 事项: 兴修水利 | 难度DC: 14 |\n  | 掷骰: 领主治政 d20(16) + 4 = 20 vs DC 14 | 判定结果: 成功 |\n  | 效果: 水利设施推进，农业产出提升 |\n  | 面板更新: 经济.国库 -200 → 资金流动良性 |\n  叙事指导: (领主亲临工地勘察河道，村民围观，工程缓慢推进。)\n  {外交判定}\n  | 领地: 蔷薇镇 | 对象: 灰鸥港商会 | 事项: 贸易协定 | 难度DC: 12 |\n  | 掷骰: 领地使节 d20(08) + 3 = 11 vs DC 12 | 判定结果: 失败 |\n  | 效果: 商会持观望态度，协议搁置 |\n  | 面板更新: 外交.贸易协定 暂无新增 |\n  叙事指导: (使节呈上条款文书，商会代表面色迟疑，收回手。)\n</鉴定结算>\n';
+        function showWaiting() {
+            document.getElementById('trtContent').innerHTML = '<div style="text-align:center; color:#8a6914; font-weight:600; letter-spacing:2px; padding:32px 0;">─ 展开领地裁定书 ─</div>';
+        }
+        // 智能读取：#rawData 可能是「裸 <鉴定结算> 标签注入」（浏览器当元素，innerHTML 保留字面量）
+        // 也可能是「实体转义注入」（&lt;鉴定结算&gt;，innerText 解码）。两种都要兼容。
+        function readRawText() {
+            var el = document.getElementById('rawData');
+            if (!el) return '';
+            var h = (el.innerHTML || '').trim();
+            if (!h) return '';
+            if (h.indexOf('&lt;') !== -1) {
+                var t = (el.innerText || h).trim();
+                return t || h;
+            }
+            return h;
+        }
+        // ===== 主题切换 =====
+        function applyTheme(theme) {
+            document.body.className = 'theme-' + (theme || 'parchment');
+            document.querySelectorAll('.theme-btn').forEach(function (btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-theme') === (theme || 'parchment'));
+            });
+        }
+        function init() {
+            try {
+                // 主题（浏览器 memory；跳过演示时覆盖）
+                var savedTheme = 'parchment';
+                try { savedTheme = localStorage.getItem('isuria_adjudication_theme') || 'parchment'; } catch (e) {}
+                applyTheme(savedTheme);
+                var raw = readRawText();
+                // 注意：判断占位符必须用 \x241（运行时即 美元符+1），若写成字面量会被酒馆正则当捕获组替换成多行数据，导致脚本语法错误
+                if (!raw || raw === '\x241') {
+                    if (location.hash === '#demo') raw = DEMO_TEXT;
+                    else { showWaiting(); return; }
+                }
+                document.getElementById('trtContent').innerHTML = renderAdjudication(raw);
+            } catch (e) {
+                document.getElementById('trtContent').innerHTML = '<div class="err-msg">※ 裁定书破损，无法解读 ※</div>';
+            }
+        }
+        document.addEventListener('click', function (ev) {
+            var btn = ev.target && ev.target.closest ? ev.target.closest('.theme-btn') : null;
+            if (!btn) return;
+            var theme = btn.getAttribute('data-theme');
+            try { localStorage.setItem('isuria_adjudication_theme', theme); } catch (e) {}
+            applyTheme(theme);
+        });
+        function boot() { init(); }
+        if (typeof $ !== 'undefined' && $.fn) { $(function () { boot(); }); }
+        else if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', boot); }
+        else { boot(); }
+    </script>
+</body>
+</html>
+
+```

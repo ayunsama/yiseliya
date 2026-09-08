@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>深渊的魅魔·阿丝茉德 · 诱惑对话框</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: "Microsoft YaHei", "PingFang SC", sans-serif; background: transparent; padding: 10px; }
+
+        .asmod-wrapper {
+            position: relative;
+            display: flex;
+            align-items: stretch;
+            max-width: 720px;
+            margin: 5px auto;
+            background: linear-gradient(160deg, #2a1030 0%, #3a1638 45%, #4a1a3a 70%, #2a0f26 100%);
+            border: 1px solid #d87ab0;
+            border-radius: 18px;
+            box-shadow: 0 4px 22px rgba(60, 10, 50, 0.6), inset 0 0 24px rgba(216, 122, 176, 0.06);
+            overflow: hidden;
+            animation: fadeInAsmod 0.5s ease-in-out;
+            gap: 0;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .asmod-wrapper:hover {
+            box-shadow: 0 8px 34px rgba(216, 122, 176, 0.26), inset 0 0 28px rgba(216, 122, 176, 0.08);
+            border-color: #f09ac8;
+        }
+        @keyframes fadeInAsmod {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 心形光斑 · 魅惑柔雾 */
+        .asmod-wrapper::before {
+            content: '';
+            position: absolute; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 90% 40% at 50% 0%, rgba(255, 192, 221, 0.14), transparent 70%),
+                radial-gradient(ellipse 70% 30% at 50% 100%, rgba(216, 122, 176, 0.10), transparent 70%);
+        }
+        .asmod-wrapper::after {
+            content: '♡ 💋 ♡ 💋 ♡';
+            position: absolute; top: 6px; right: 16px; z-index: 0; pointer-events: none;
+            font-size: 10px; letter-spacing: 12px; color: rgba(240, 154, 200, 0.26);
+            animation: asmod-drift 3s ease-in-out infinite;
+        }
+        @keyframes asmod-drift {
+            0%, 100% { opacity: 0.26; transform: translateY(0); }
+            50% { opacity: 0.6; transform: translateY(3px); }
+        }
+        .asmod-corner {
+            position: absolute; width: 15px; height: 15px; z-index: 3; pointer-events: none;
+            border-color: #f09ac8; border-style: solid; opacity: 0.55;
+        }
+        .asmod-corner.tl { top: 5px; left: 5px; border-width: 2px 0 0 2px; }
+        .asmod-corner.tr { top: 5px; right: 5px; border-width: 2px 2px 0 0; }
+
+        .asmod-avatar {
+            flex-shrink: 0; width: 108px; min-height: 108px;
+            display: flex; align-items: center; justify-content: center;
+            padding: 14px 0 14px 16px; align-self: center; position: relative; z-index: 2;
+        }
+        .asmod-avatar .avatar-ring {
+            position: absolute; top: 50%; left: 50%; width: 96px; height: 96px;
+            transform: translate(-46%, -50%);
+            border-radius: 50%; border: 1.5px solid rgba(240, 154, 200, 0.5);
+            animation: asmod-pulse 2.8s ease-in-out infinite; pointer-events: none;
+        }
+        @keyframes asmod-pulse {
+            0%, 100% { box-shadow: 0 0 10px rgba(240, 154, 200, 0.22); opacity: 0.7; }
+            50% { box-shadow: 0 0 26px rgba(240, 154, 200, 0.55); opacity: 1; }
+        }
+        .asmod-avatar img {
+            position: relative; display: block; width: 84px; height: 84px;
+            object-fit: cover; object-position: center top; border-radius: 50%;
+            border: 2px solid rgba(240, 154, 200, 0.85);
+            box-shadow: 0 0 18px rgba(240, 154, 200, 0.32), 0 0 38px rgba(240, 154, 200, 0.14);
+            opacity: 0; transition: transform 0.4s ease, opacity 0.5s ease; z-index: 1;
+        }
+        .asmod-avatar img.img-loaded { opacity: 1; }
+        .asmod-wrapper:hover .asmod-avatar img { transform: scale(1.05) rotate(-2deg); }
+        .asmod-avatar .avatar-fallback {
+            position: absolute; top: 50%; left: 50%; width: 84px; height: 84px;
+            transform: translate(-46%, -50%);
+            border-radius: 50%; border: 2px solid rgba(216, 122, 176, 0.6);
+            background: radial-gradient(circle at 35% 30%, rgba(216, 122, 176, 0.2), rgba(90, 20, 70, 0.1));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 36px; color: #f09ac8; text-shadow: 0 0 18px rgba(240, 154, 200, 0.6);
+            pointer-events: none; z-index: 0;
+        }
+        .asmod-avatar.has-img .avatar-fallback { display: none; }
+
+        .asmod-dialogue {
+            flex-grow: 1; padding: 20px 22px 18px 14px; display: flex; flex-direction: column;
+            justify-content: center; min-width: 0; position: relative; z-index: 2;
+        }
+        .asmod-text-card {
+            position: relative; padding: 10px 14px; border-radius: 10px;
+            background: linear-gradient(180deg, rgba(255, 192, 221, 0.06), rgba(216, 122, 176, 0.03));
+            border: 1px solid rgba(240, 154, 200, 0.18);
+            box-shadow: inset 0 1px 6px rgba(255, 192, 221, 0.05);
+        }
+        .asmod-text-card::before, .asmod-text-card::after {
+            content: ''; position: absolute; top: 30%; bottom: 30%; width: 1px;
+            background: linear-gradient(180deg, transparent, rgba(240, 154, 200, 0.5), transparent);
+        }
+        .asmod-text-card::before { left: 5px; }
+        .asmod-text-card::after { right: 5px; }
+
+        .asmod-name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; margin-bottom: 10px; }
+        .asmod-name {
+            font-size: 15px; font-weight: 700; letter-spacing: 1px; white-space: nowrap;
+            background: linear-gradient(90deg, #ffd0e4, #f09ac8, #a8447a);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .asmod-title-tag {
+            font-size: 10px; padding: 2px 10px; border-radius: 10px; font-weight: 500; letter-spacing: 0.5px;
+            white-space: nowrap; background: rgba(216, 122, 176, 0.14); color: #e8a8c8;
+            border: 1px solid rgba(216, 122, 176, 0.32);
+        }
+        .asmod-moods { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; max-width: 100%; }
+        .asmod-mood {
+            display: inline-flex; align-items: center; font-size: 12px; font-weight: 500;
+            padding: 3px 14px; border-radius: 20px; letter-spacing: 0.3px; line-height: 1.5;
+            white-space: nowrap; transition: all 0.25s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .asmod-mood:hover { transform: translateY(-1px); box-shadow: 0 3px 12px rgba(240, 154, 200, 0.26); }
+        .asmod-mood.mood-positive { background: linear-gradient(135deg, rgba(240,154,200,0.2), rgba(240,154,200,0.1)); border: 1px solid rgba(240,154,200,0.5); color: #ffd0e4; }
+        .asmod-mood.mood-neutral { background: linear-gradient(135deg, rgba(170,140,190,0.14), rgba(170,140,190,0.06)); border: 1px solid rgba(170,140,190,0.35); color: #c8b4d8; }
+        .asmod-mood.mood-negative { background: linear-gradient(135deg, rgba(190,60,90,0.16), rgba(190,60,90,0.08)); border: 1px solid rgba(190,60,90,0.45); color: #e890a8; }
+        .asmod-mood.mood-dramatic { background: linear-gradient(135deg, rgba(255,192,221,0.24), rgba(255,192,221,0.12)); border: 1px solid rgba(255,192,221,0.55); color: #ffd0e4; }
+
+        .asmod-text { font-size: 15px; color: #f0e0ea; line-height: 1.8; word-wrap: break-word; overflow-wrap: break-word; }
+        .asmod-footer {
+            display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px;
+            font-size: 11px; color: #e8a8c8; opacity: 0.4; letter-spacing: 2px;
+        }
+        .asmod-footer .line { width: 40px; height: 1px; background: linear-gradient(90deg, transparent, #d87ab0); }
+        .asmod-footer .line.r { background: linear-gradient(-90deg, transparent, #d87ab0); }
+
+        @media (max-width: 540px) {
+            .asmod-wrapper { margin: 5px 0; border-radius: 14px; }
+            .asmod-avatar { width: 76px; min-height: 76px; padding: 10px 0 10px 10px; }
+            .asmod-avatar img, .asmod-avatar .avatar-fallback { width: 60px; height: 60px; font-size: 26px; }
+            .asmod-avatar .avatar-ring { width: 70px; height: 70px; }
+            .asmod-dialogue { padding: 14px 16px 14px 8px; }
+            .asmod-name { font-size: 13px; }
+            .asmod-mood { font-size: 11px; padding: 2px 12px; }
+            .asmod-text { font-size: 14px; line-height: 1.7; }
+        }
+        @media (max-width: 380px) {
+            .asmod-avatar { width: 58px; min-height: 58px; padding: 8px 0 8px 6px; }
+            .asmod-avatar img, .asmod-avatar .avatar-fallback { width: 46px; height: 46px; font-size: 20px; }
+            .asmod-avatar .avatar-ring { width: 54px; height: 54px; }
+            .asmod-dialogue { padding: 10px 12px 10px 6px; }
+            .asmod-name { font-size: 12px; }
+            .asmod-title-tag { font-size: 9px; padding: 0 8px; }
+            .asmod-mood { font-size: 10px; padding: 1px 10px; }
+            .asmod-text { font-size: 13px; line-height: 1.6; }
+        }
+    </style>
+</head>
+<body>
+    <div id="main-container"></div>
+
+    <script>
+        function getMoodTheme(emotion) {
+            const positive = ['开心', '快乐', '微笑', '温柔', '温暖', '感动', '欣慰', '得意', '俏皮', '调皮', '活泼', '兴奋', '期待', '害羞', '脸红', '甜蜜', '灿烂', '阳光', '自信', '惊喜', '激动', '爱慕', '心动', '傲娇', '天然', '元气'];
+            const negative = ['难过', '悲伤', '失落', '沮丧', '忧郁', '孤独', '愤怒', '生气', '恼火', '嫉妒', '焦虑', '恐惧', '害怕', '不安', '病娇', '黑化', '绝望', '悲悯', '饥渴'];
+            const dramatic = ['惊喜', '感动', '激动', '震撼', '疯狂', '痴迷', '崇拜', '爱慕', '心动', '傲娇', '病娇', '黑化', '威严', '庄严', '诱惑', '癫狂'];
+            if (dramatic.includes(emotion)) return 'dramatic';
+            if (positive.includes(emotion)) return 'positive';
+            if (negative.includes(emotion)) return 'negative';
+            return 'neutral';
+        }
+        function splitEmotions(raw) {
+            if (!raw || typeof raw !== 'string') return [];
+            return raw.split(/[,，、\/\s|]+/).map(s => s.trim()).filter(s => s.length > 0);
+        }
+        function init() {
+            try {
+                let emotionRaw = `$1`;
+                let textRaw = `$2`;
+                const emotionList = splitEmotions(emotionRaw);
+                const finalEmotions = emotionList.length > 0 ? emotionList : ['诱惑'];
+                const text = textRaw.trim();
+                if (!text || text === '$2') return;
+                const avatarUrl = 'https://zora404.dpdns.org/file/1787590212370_image.png';
+                let moodsHtml = '';
+                finalEmotions.forEach((emotion, index) => {
+                    const theme = getMoodTheme(emotion);
+                    moodsHtml += `<span class="asmod-mood mood-${theme}" style="animation: fadeInAsmod 0.4s ease ${index * 50}ms both;">${emotion}</span>`;
+                });
+                const html = `
+                    <div class="asmod-wrapper">
+                        <span class="asmod-corner tl"></span><span class="asmod-corner tr"></span>
+                        <div class="asmod-avatar" id="asmod-avatar-container">
+                            <div class="avatar-ring"></div>
+                            <div class="avatar-fallback">💋</div>
+                            <img src="${avatarUrl}" alt="深渊的魅魔·阿丝茉德" loading="lazy" onload="this.classList.add('img-loaded'); document.getElementById('asmod-avatar-container').classList.add('has-img');" onerror="this.remove();">
+                        </div>
+                        <div class="asmod-dialogue">
+                            <div class="asmod-name-row">
+                                <span class="asmod-name">✧ 深渊的魅魔·阿丝茉德</span>
+                                <span class="asmod-title-tag">异界恶魔 · 王国暗影</span>
+                                <div class="asmod-moods">${moodsHtml}</div>
+                            </div>
+                            <div class="asmod-text-card"><div class="asmod-text">${text}</div></div>
+                            <div class="asmod-footer"><span class="line"></span>♡ ✦ 欲望低语 ✦ ♡<span class="line r"></span></div>
+                        </div>
+                    </div>`;
+                document.getElementById('main-container').innerHTML = html;
+            } catch (error) {
+                console.error('[阿丝茉德渲染] 错误:', error);
+            }
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>英灵技 · 效果预览</title>
+  <style>
+    /* ===== 全局重置 ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Georgia", "Noto Serif SC", "Microsoft YaHei", serif;
+      background: #14121a;
+      color: #c8c8d0;
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    /* ===== 页面标题 ===== */
+    .page-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .page-header h1 {
+      color: #f0d48a;
+      font-size: 22px;
+      letter-spacing: 4px;
+      font-weight: bold;
+    }
+    .page-header p {
+      color: #9a8fb0;
+      font-size: 13px;
+      margin-top: 6px;
+      letter-spacing: 1px;
+    }
+
+    /* ===== 工具栏 ===== */
+    .toolbar {
+      max-width: 720px;
+      margin: 0 auto 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+    }
+    .toolbar button {
+      padding: 8px 18px;
+      border: 1px solid #d4af6a;
+      border-radius: 20px;
+      background: rgba(212, 175, 106, 0.12);
+      color: #f0d48a;
+      font-family: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .toolbar button:hover {
+      background: rgba(212, 175, 106, 0.25);
+    }
+    .toolbar .hint {
+      font-size: 12px;
+      color: #9a8fb0;
+    }
+
+    /* ===== 消息模拟区 ===== */
+    .message-sim {
+      max-width: 720px;
+      margin: 0 auto 24px;
+    }
+    .message-sim .sim-label {
+      font-size: 12px;
+      color: #9a8fb0;
+      margin-bottom: 6px;
+      letter-spacing: 1px;
+    }
+    .message-bubble {
+      background: #1e1a2a;
+      border: 1px solid #3a3150;
+      border-radius: 10px;
+      padding: 14px 16px;
+      color: #d8d0e6;
+      font-size: 14px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* ===== 英灵技招式名横幅（9 种英灵差异化主题 + 特效） ===== */
+    .spirit-skill-banner {
+      position: relative;
+      text-align: center;
+      margin: 24px 0;
+      padding: 8px 10px;
+      overflow: hidden;
+      animation: banner-pop 0.6s ease-out both;
+    }
+    .spirit-skill-banner canvas.skill-particles {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .spirit-skill-banner .banner-symbols,
+    .spirit-skill-banner .banner-row {
+      position: relative;
+      z-index: 1;
+    }
+    .spirit-skill-banner .skill-effect {
+      position: absolute;
+      top: 18px;
+      bottom: 18px;
+      left: 0;
+      right: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+      mix-blend-mode: screen;
+    }
+    .banner-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    .banner-side {
+      font-size: 26px;
+      line-height: 1;
+      animation: side-float 2.4s ease-in-out infinite;
+    }
+    .banner-side.left { animation-delay: 0s; }
+    .banner-side.right { animation-delay: 1.2s; }
+    @keyframes side-float {
+      0%, 100% { transform: translateY(0) rotate(-5deg); }
+      50%      { transform: translateY(-4px) rotate(5deg); }
+    }
+    /* 两侧符号染色（与各英灵主题契合） */
+    .theme-eria .banner-side { color: #d99; text-shadow: 0 0 8px rgba(255, 180, 150, 0.7), 0 0 18px rgba(156, 74, 74, 0.5); }
+    .theme-ilia .banner-side { color: #f0d48a; text-shadow: 0 0 8px rgba(255, 225, 150, 0.7), 0 0 18px rgba(201, 161, 59, 0.5); }
+    .theme-lilith .banner-side { color: #c99fe0; text-shadow: 0 0 8px rgba(200, 120, 255, 0.7), 0 0 18px rgba(142, 68, 173, 0.55); }
+    .theme-koriv .banner-side { color: #d6f4ff; text-shadow: 0 0 8px rgba(220, 250, 255, 0.7), 0 0 18px rgba(174, 232, 255, 0.5); }
+    .theme-ren .banner-side { color: #d8b070; text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5), 0 0 8px rgba(216, 176, 112, 0.55); }
+    .theme-satira .banner-side { color: #e08a7a; text-shadow: 0 0 8px rgba(255, 130, 110, 0.7), 0 3px 10px rgba(0, 0, 0, 0.5); }
+    .theme-liefe .banner-side { color: #9ff0c0; text-shadow: 0 0 8px rgba(120, 255, 170, 0.7), 0 0 18px rgba(46, 204, 113, 0.5); }
+    .theme-sophia .banner-side { color: #fff0d0; text-shadow: 0 0 10px rgba(255, 255, 255, 0.85), 0 0 22px rgba(255, 245, 210, 0.55); }
+    .theme-iris .banner-side { color: #d8b0f8; text-shadow: 0 0 8px rgba(220, 160, 255, 0.7), 0 0 18px rgba(168, 85, 247, 0.5); }
+    .theme-default .banner-side { color: #d4af6a; text-shadow: 0 0 8px rgba(240, 212, 138, 0.6); }
+    /* 出现动画：缩放弹入 + 淡入 */
+    @keyframes banner-pop {
+      0%   { opacity: 0; transform: scale(0.7) translateY(-6px); filter: blur(4px); }
+      60%  { opacity: 1; transform: scale(1.06); }
+      100% { opacity: 1; transform: scale(1); filter: blur(0); }
+    }
+    .spirit-skill-banner::before,
+    .spirit-skill-banner::after {
+      content: '';
+      display: block;
+      height: 2px;
+      margin: 0 auto;
+      width: 92%;
+      opacity: 0.6;
+    }
+    .spirit-skill-banner::before { margin-bottom: 8px; }
+    .spirit-skill-banner::after { margin-top: 8px; }
+    .banner-symbols {
+      font-size: 16px;
+      letter-spacing: 12px;
+      line-height: 1;
+      margin-bottom: 2px;
+      animation: symbol-float 2.4s ease-in-out infinite;
+    }
+    /* 装饰符号浮动（无外发光） */
+    @keyframes symbol-float {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-3px); }
+    }
+    .banner-name {
+      font-weight: 900;
+      font-size: 28px;
+      letter-spacing: 6px;
+      line-height: 1.25;
+      font-family: 'Georgia', 'Noto Serif SC', serif;
+      text-align: center;
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      position: relative;
+    }
+    /* 扫光特效：一道主题色亮光从左到右掠过文字 */
+    .banner-name::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 45%;
+      left: -60%;
+      background: linear-gradient(100deg, transparent, rgba(255,255,255,0.7), transparent);
+      transform: skewX(-18deg);
+      animation: shine-sweep 3s ease-in-out infinite;
+      mix-blend-mode: overlay;
+    }
+    @keyframes shine-sweep {
+      0%   { left: -60%; }
+      55%  { left: 115%; }
+      100% { left: 115%; }
+    }
+
+    /* ---------- ① 艾莉卡 · 断钢战损 ---------- */
+    .spirit-skill-banner.theme-eria::before,
+    .spirit-skill-banner.theme-eria::after {
+      background: linear-gradient(90deg, transparent, #9c4a4a, transparent);
+    }
+    .theme-eria .banner-symbols { color: #9c4a4a; text-shadow: 0 0 6px rgba(156,74,74,0.8); }
+    .theme-eria .banner-name {
+      background-image: linear-gradient(180deg, #f0d0c0 0%, #d99 45%, #9c4a4a 100%);
+      color: #d99;
+      -webkit-text-stroke: 1px rgba(156, 74, 74, 0.6);
+      text-shadow: 0 0 6px rgba(255, 220, 200, 0.35), 2px 0 0 rgba(156, 74, 74, 0.55);
+    }
+    .theme-eria .banner-name::after {
+      background: linear-gradient(100deg, transparent, rgba(156, 74, 74, 0.7), transparent);
+    }
+
+    /* ---------- ② 伊利亚 · 贤者秘术 ---------- */
+    .spirit-skill-banner.theme-ilia::before,
+    .spirit-skill-banner.theme-ilia::after {
+      background: linear-gradient(90deg, transparent, #c9a13b, transparent);
+    }
+    .theme-ilia .banner-symbols { color: #c9a13b; text-shadow: 0 0 8px rgba(201,161,59,0.9); }
+    .theme-ilia .banner-name {
+      background-image: linear-gradient(180deg, #fff6d8 0%, #f0d48a 45%, #c9a13b 100%);
+      color: #f0d48a;
+      -webkit-text-stroke: 1px rgba(201, 161, 59, 0.6);
+      text-shadow: 0 0 6px rgba(255, 225, 150, 0.5), 0 0 20px rgba(201, 161, 59, 0.4);
+    }
+    .theme-ilia .banner-name::after {
+      background: linear-gradient(100deg, transparent, rgba(255, 215, 130, 0.8), transparent);
+    }
+
+    /* ---------- ③ 莉莉丝 · 魔女暗影 ---------- */
+    .spirit-skill-banner.theme-lilith::before,
+    .spirit-skill-banner.theme-lilith::after {
+      background: linear-gradient(90deg, transparent, #8e44ad, transparent);
+    }
+    .theme-lilith .banner-symbols { color: #8e44ad; text-shadow: 0 0 8px rgba(142,68,173,0.9); }
+    .theme-lilith .banner-name {
+      background-image: linear-gradient(180deg, #e8c8ff 0%, #c99fe0 45%, #8e44ad 100%);
+      color: #c99fe0;
+      -webkit-text-stroke: 1px rgba(142, 68, 173, 0.6);
+      text-shadow: 0 0 6px rgba(200, 120, 255, 0.5), 0 0 18px rgba(142, 68, 173, 0.5);
+    }
+    .theme-lilith .banner-name::after {
+      background: linear-gradient(100deg, transparent, rgba(200, 120, 255, 0.75), transparent);
+    }
+
+    /* ---------- ④ 科里维坦 · 冰川龙息 ---------- */
+    .spirit-skill-banner.theme-koriv::before,
+    .spirit-skill-banner.theme-koriv::after {
+      background: linear-gradient(90deg, transparent, #aee8ff, transparent);
+    }
+    .theme-koriv .banner-symbols { color: #aee8ff; text-shadow: 0 0 10px rgba(174,232,255,0.9); }
+    .theme-koriv .banner-name {
+      background-image: linear-gradient(180deg, #f0ffff 0%, #d6f4ff 45%, #5aa8c8 100%);
+      color: #d6f4ff;
+      -webkit-text-stroke: 1px rgba(255, 255, 255, 0.5);
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.5), 0 0 22px rgba(174, 232, 255, 0.4);
+    }
+    .theme-koriv .banner-name::after {
+      background: linear-gradient(100deg, transparent, rgba(220, 250, 255, 0.85), transparent);
+    }
+
+    /* ---------- ⑤ 雷恩 · 街头痞气 ---------- */
+    .spirit-skill-banner.theme-ren::before,
+    .spirit-skill-banner.theme-ren::after {
+      background: linear-gradient(90deg, transparent, #8a5f34, transparent);
+    }
+    .theme-ren .banner-symbols { color: #8a5f34; text-shadow: 0 0 6px rgba(138,95,52,0.8); }
+    .theme-ren .banner-name {
+      background-image: linear-gradient(180deg, #f0d0a0 0%, #d8b070 45%, #8a5f34 100%);
+      color: #d8b070;
+      -webkit-text-stroke: 1px rgba(90, 60, 30, 0.7);
+      text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5), -1px -1px 0 rgba(138, 95, 52, 0.4);
+    }
+    .theme-ren .banner-name::after {
+      background: linear-gradient(100deg, transparent, rgba(138, 95, 52, 0.6), transparent);
+    }
+
+    /* ---------- ⑥ 莎提拉 · 血祭死灵 ---------- */
+    .spirit-skill-banner.theme-satira::before,
+    .spirit-skill-banner.theme-satira::after {
+      background: linear-gradient(90deg, transparent, #c0392b, transparent);
+    }
+    .theme-satira .banner-symbols { color: #c0392b; text-shadow: 0 0 8px rgba(192,57,43,0.9); }
+    .theme-satira .banner-name {
+      background-image: linear-gradient(180deg, #f0b0a0 0%, #e08a7a 45%, #c0392b 100%);
+      color: #e08a7a;
+      -webkit-text-stroke: 1px rgba(140, 30, 20, 0.7);
+      text-shadow: 0 0 6px rgba(255, 140, 120, 0.5), 0 3px 10px rgba(0, 0, 0, 0.5);
+    }
+    .theme-satira .banner-name::after {
+      background: linear-gradient(100deg, transparent, rgba(255, 130, 110, 0.75), transparent);
+    }
+
+    /* ---------- ⑦ 莉耶芙 · 妖精诡趣 ---------- */
+    .spirit-skill-banner.theme-liefe::before,
+    .spirit-skill-banner.theme-liefe::after {
+      background: linear-gradient(90deg, transparent, #27ae60, transparent);
+    }
+    .theme-liefe .banner-symbols { color: #27ae60; text-shadow: 0 0 8px rgba(46,204,113,0.8); }
+    .theme-liefe .banner-name {
+      background-image: linear-gradient(180deg, #e0ffe8 0%, #9ff0c0 45%, #27ae60 100%);
+      color: #9ff0c0;
+      -webkit-text-stroke: 1px rgba(39, 174, 96, 0.6);
+      text-shadow: 0 0 6px rgba(120, 255, 170, 0.5), 0 0 16px rgba(46, 204, 113, 0.4);
+    }
+    .theme-liefe .banner-name::after {
+      background: linear-gradient(100deg, transparent, rgba(130, 255, 180, 0.75), transparent);
+    }
+
+    /* ---------- ⑧ 索菲亚 · 圣光天使 ---------- */
+    .spirit-skill-banner.theme-sophia::before,
+    .spirit-skill-banner.theme-sophia::after {
+      background: linear-gradient(90deg, transparent, #f0d48a, transparent);
+    }
+    .theme-sophia .banner-symbols { color: #f0d48a; text-shadow: 0 0 12px rgba(240,212,138,0.9); }
+    .theme-sophia .banner-name {
+      background-image: linear-gradient(180deg, #ffffff 0%, #fff0d0 45%, #f0c870 100%);
+      color: #f0d48a;
+      -webkit-text-stroke: 1px rgba(255, 250, 235, 0.6);
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.85), 0 0 24px rgba(255, 255, 255, 0.6), 0 0 46px rgba(255, 245, 210, 0.45);
+    }
+    .theme-sophia .banner-name::after {
+      background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+    }
+
+    /* ---------- ⑨ 伊莉丝 · 魔王晶核 ---------- */
+    .spirit-skill-banner.theme-iris::before,
+    .spirit-skill-banner.theme-iris::after {
+      background: linear-gradient(90deg, transparent, #a855f7, transparent);
+    }
+    .theme-iris .banner-symbols { color: #a855f7; text-shadow: 0 0 8px rgba(168,85,247,0.9); }
+    .theme-iris .banner-name {
+      background-image: linear-gradient(180deg, #f0e0ff 0%, #d8b0f8 45%, #a855f7 100%);
+      color: #d8b0f8;
+      -webkit-text-stroke: 1px rgba(168, 85, 247, 0.6);
+      text-shadow: 0 0 6px rgba(220, 160, 255, 0.5), 0 0 18px rgba(168, 85, 247, 0.5);
+    }
+    .theme-iris .banner-name::after {
+      background: linear-gradient(100deg, transparent, rgba(210, 140, 255, 0.8), transparent);
+    }
+
+    /* ===== 专属特效层（每个英灵一个招牌特效） ===== */
+    /* ① 艾莉卡 · 斩击光刃：一道斜光从左侧横扫而过 */
+    .theme-eria .skill-effect {
+      background: linear-gradient(100deg, transparent 20%, rgba(255,214,190,0.85) 50%, transparent 80%);
+      transform: skewX(-16deg);
+      transform-origin: left center;
+      animation: fx-eria-slash 4.2s ease-in-out infinite;
+    }
+    @keyframes fx-eria-slash {
+      0%, 42% { transform: skewX(-16deg) translateX(-140%); opacity: 0; }
+      52%     { transform: skewX(-16deg) translateX(0); opacity: 1; }
+      64%     { transform: skewX(-16deg) translateX(140%); opacity: 0.85; }
+      72%, 100% { transform: skewX(-16deg) translateX(220%); opacity: 0; }
+    }
+    /* ② 伊利亚 · 金色法阵：圆环由中心扩散 */
+    .theme-ilia .skill-effect {
+      background: radial-gradient(circle, transparent 42%, rgba(240,212,138,0.9) 50%, transparent 58%);
+      transform-origin: center;
+      animation: fx-ilia-ring 4.6s ease-out infinite;
+    }
+    @keyframes fx-ilia-ring {
+      0%, 36% { transform: scale(0.25); opacity: 0; }
+      50%     { transform: scale(1); opacity: 1; }
+      68%, 100% { transform: scale(1.7); opacity: 0; }
+    }
+    /* ③ 莉莉丝 · 湮灭漩涡：暗紫向中心收缩吞没 */
+    .theme-lilith .skill-effect {
+      background: radial-gradient(circle, rgba(142,68,173,0.9) 0%, rgba(91,42,112,0.5) 32%, transparent 62%);
+      transform-origin: center;
+      animation: fx-lilith-implode 4.2s ease-in-out infinite;
+    }
+    @keyframes fx-lilith-implode {
+      0%, 30% { transform: scale(1.6); opacity: 0; }
+      46%     { transform: scale(0.55); opacity: 0.95; }
+      62%     { transform: scale(0.25); opacity: 0.5; }
+      78%, 100% { transform: scale(1.5); opacity: 0; }
+    }
+    /* ④ 科里维坦 · 冰川凝结：冰晶从两侧向中间蔓延 */
+    .theme-koriv .skill-effect {
+      background: linear-gradient(90deg, rgba(174,232,255,0.55), transparent 38%, transparent 62%, rgba(174,232,255,0.55));
+      transform-origin: center;
+      animation: fx-koriv-frost 4.5s ease-in-out infinite;
+    }
+    @keyframes fx-koriv-frost {
+      0%, 40% { transform: scaleX(0); opacity: 0; }
+      55%     { transform: scaleX(1); opacity: 0.9; }
+      75%, 100% { transform: scaleX(1.05); opacity: 0; }
+    }
+    /* ⑤ 雷恩 · 街头冲击：土黄冲击波从中心炸开 */
+    .theme-ren .skill-effect {
+      background: radial-gradient(circle, rgba(216,176,112,0.9) 0%, rgba(138,95,52,0.4) 35%, transparent 65%);
+      transform-origin: center;
+      animation: fx-ren-boom 3.9s ease-out infinite;
+    }
+    @keyframes fx-ren-boom {
+      0%, 44% { transform: scale(0.2); opacity: 0; }
+      56%     { transform: scale(1); opacity: 1; }
+      74%, 100% { transform: scale(1.9); opacity: 0; }
+    }
+    /* ⑥ 莎提拉 · 血潮涌动：血色雾气自底部翻涌 */
+    .theme-satira .skill-effect {
+      background: linear-gradient(180deg, transparent 30%, rgba(192,57,43,0.55) 72%, rgba(192,57,43,0.95));
+      transform-origin: bottom;
+      animation: fx-satira-surge 4.3s ease-in-out infinite;
+    }
+    @keyframes fx-satira-surge {
+      0%, 38% { transform: translateY(105%); opacity: 0; }
+      52%     { transform: translateY(0); opacity: 0.9; }
+      74%, 100% { transform: translateY(-24%); opacity: 0; }
+    }
+    /* ⑦ 莉耶芙 · 森之萌发：翠绿辉光自上下两端绽放 */
+    .theme-liefe .skill-effect {
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(46,204,113,0.65), transparent 45%),
+        radial-gradient(ellipse at 50% 100%, rgba(46,204,113,0.65), transparent 45%);
+      transform-origin: center;
+      animation: fx-liefe-bloom 4.4s ease-in-out infinite;
+    }
+    @keyframes fx-liefe-bloom {
+      0%, 40% { transform: scale(0.4); opacity: 0; }
+      54%     { transform: scale(1); opacity: 0.95; }
+      72%, 100% { transform: scale(1.35); opacity: 0; }
+    }
+    /* ⑧ 索菲亚 · 圣光之墙：一堵圣光墙忽然闪现而过（铺满整条横幅） */
+    .theme-sophia .skill-effect {
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.95) 12%, rgba(255,255,255,0.98) 50%, rgba(255,255,255,0.95) 88%, rgba(255,255,255,0) 100%);
+      transform-origin: center;
+      animation: fx-sophia-wall 4s ease-in-out infinite;
+    }
+    @keyframes fx-sophia-wall {
+      0%, 48% { transform: scaleX(0.05); opacity: 0; }
+      56%     { transform: scaleX(1); opacity: 1; }
+      66%     { transform: scaleX(1.05); opacity: 0.6; }
+      80%, 100% { transform: scaleX(1.1); opacity: 0; }
+    }
+    /* ⑨ 伊莉丝 · 晶核爆发：紫晶棱光自中心迸发旋转 */
+    .theme-iris .skill-effect {
+      background: radial-gradient(circle, rgba(168,85,247,0.9) 0%, rgba(168,85,247,0.32) 36%, transparent 64%);
+      transform-origin: center;
+      animation: fx-iris-crystal 4.1s ease-out infinite;
+    }
+    @keyframes fx-iris-crystal {
+      0%, 32% { transform: scale(0.3) rotate(-8deg); opacity: 0; }
+      50%     { transform: scale(1.1) rotate(6deg); opacity: 1; }
+      72%, 100% { transform: scale(1.9) rotate(-6deg); opacity: 0; }
+    }
+
+    /* 兜底主题 */
+    .spirit-skill-banner.theme-default::before,
+    .spirit-skill-banner.theme-default::after {
+      background: linear-gradient(90deg, transparent, #d4af6a, transparent);
+    }
+    .theme-default .banner-symbols { color: #d4af6a; }
+    .theme-default .banner-name {
+      background-image: linear-gradient(180deg, #fff0d0 0%, #f0d48a 45%, #c9a13b 100%);
+      color: #f0d48a;
+      -webkit-text-stroke: 1px rgba(201, 161, 59, 0.6);
+      text-shadow: 0 0 6px rgba(255, 225, 150, 0.5), 0 0 18px rgba(201, 161, 59, 0.4);
+    }
+
+    @media (max-width: 600px) {
+      .banner-name { font-size: 20px; letter-spacing: 3px; }
+      .banner-symbols { font-size: 13px; letter-spacing: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-header">
+    <h1>✦ 英灵技 · 效果预览 ✦</h1>
+    <p>以下为 <b>&lt;英灵技·技能名&gt;</b> 标签在消息中的渲染效果</p>
+  </div>
+
+  <div class="toolbar">
+    <button onclick="renderAll()">🔄 重新渲染</button>
+    <button onclick="showRaw()">📄 显示原始标签</button>
+    <span class="hint">点击上方按钮切换查看</span>
+  </div>
+
+  <!-- 模拟 AI 消息（原始标签形式） -->
+  <div class="message-sim">
+    <div class="sim-label">▍模拟 AI 消息（含英灵技标签）</div>
+    <div id="message-content" class="message-bubble"></div>
+  </div>
+
+  <script>
+    // 与英灵技渲染脚本一致的原始标签内容（单标签，无描述）
+    const RAW_SKILLS = `<英灵技·绝境斩杀·残响>
+
+<英灵技·万象真理·残响>
+
+<英灵技·湮灭法则·残响>
+
+<英灵技·半龙化>
+
+<英灵技·绝对零度龙息>
+
+<英灵技·不讲武德的痛击>
+
+<英灵技·血祭·幽魂之拥>
+
+<英灵技·森之降临>
+
+<英灵技·绝境圣壁>
+
+<英灵技·弱者的反击>`;
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // 技能名 → 英灵主题映射（不同英灵渲染截然不同）
+    const SKILL_THEMES = {
+      '绝境斩杀·残响':  { theme: 'eria',    icon: '🗡️', hero: '断钢的勇者 · 艾莉卡', deco: '⚔', sideL: '✕', sideR: '✕' },
+      '万象真理·残响':  { theme: 'ilia',    icon: '🔮', hero: '燃尽的贤者 · 伊利亚', deco: '✧', sideL: '✦', sideR: '✧' },
+      '湮灭法则·残响':  { theme: 'lilith',  icon: '🌙', hero: '被夺的魔女 · 莉莉丝', deco: '☾', sideL: '☾', sideR: '☽' },
+      '半龙化':          { theme: 'koriv',   icon: '🐉', hero: '末代的神龙 · 科里维坦', deco: '❄', sideL: '❄', sideR: '❄' },
+      '绝对零度龙息':    { theme: 'koriv',   icon: '🐉', hero: '末代的神龙 · 科里维坦', deco: '❄', sideL: '❄', sideR: '❄' },
+      '不讲武德的痛击':  { theme: 'ren',     icon: '🍺', hero: '初代勇者 · 雷恩', deco: '✕', sideL: '✚', sideR: '✚' },
+      '血祭·幽魂之拥':  { theme: 'satira',  icon: '💀', hero: '第四代魔女 · 莎提拉', deco: '☠', sideL: '✶', sideR: '✷' },
+      '森之降临':        { theme: 'liefe',   icon: '🧚', hero: '指引妖精 · 莉耶芙', deco: '✿', sideL: '✿', sideR: '✿' },
+      '绝境圣壁':        { theme: 'sophia',  icon: '🕊️', hero: '小圣女 · 索菲亚', deco: '✝', sideL: '✝', sideR: '✝' },
+      '弱者的反击':      { theme: 'iris',    icon: '👿', hero: '小魔王 · 伊莉丝', deco: '▲', sideL: '▲', sideR: '▲' },
+    };
+
+    // 解析 <英灵技·技能名>（单标签，无描述）或 <英灵技·技能名> 描述 </英灵技>（旧格式）为招式名横幅 HTML
+    function parseSpiritSkill(content) {
+      if (!content || content.indexOf('<英灵技') === -1) return null;
+      let html = '';
+      const regex = /<英灵技·([^>]+)>(?:([\s\S]*?)<\/英灵技>)?/g;
+      let match;
+      let changed = false;
+      while ((match = regex.exec(content)) !== null) {
+        const skillName = match[1].trim();
+        // 不输出技能描述，只渲染招式名横幅
+        const meta = SKILL_THEMES[skillName] || SKILL_THEMES[skillName.replace(/[·\s]/g, '')] || { theme: 'default', icon: '⚔', hero: '英灵', deco: '✦' };
+        const themeCls = 'theme-' + meta.theme;
+        html += `<div class="spirit-skill-banner ${themeCls}">`;
+        html += `<canvas class="skill-particles"></canvas>`;
+        html += `<div class="skill-effect"></div>`;
+        html += `<div class="banner-symbols">${meta.deco} ${meta.deco} ${meta.deco}</div>`;
+        html += `<div class="banner-row">`;
+        html += `<span class="banner-side left">${meta.sideL || meta.deco}</span>`;
+        html += `<span class="banner-name">${escapeHtml(skillName)}</span>`;
+        html += `<span class="banner-side right">${meta.sideR || meta.deco}</span>`;
+        html += `</div>`;
+        html += `</div>`;
+        changed = true;
+      }
+      return changed ? html : null;
+    }
+
+    // ============================================================
+    //  Canvas 粒子特效引擎（粒子分散在整个横幅内流动）
+    // ============================================================
+    // type: 粒子流动类型
+    //   slash  → 剑气：光刃在横幅内随机位置生成，向右横扫流动（艾莉卡·绝境斩杀）
+    //   swirl  → 湮灭漩涡：暗紫粒子绕中心旋转流动，分散成漩涡（莉莉丝·湮灭法则）
+    //   drift  → 金色法阵光点漂浮（伊利亚·万象真理）
+    //   frost  → 冰晶飘落结霜（科里维坦·半龙化）
+    //   dust   → 粗粝尘粒缓慢漂浮（雷恩·不讲武德的痛击）
+    //   rise   → 血色雾气升腾（莎提拉·血祭）
+    //   spore  → 翠绿孢子漂浮（莉耶芙·森之降临）
+    //   holy   → 圣光粒子弥漫闪烁（索菲亚·绝境圣壁）
+    //   shard  → 紫晶碎片漂浮流动（伊莉丝·弱者的反击）
+    const PARTICLE_CONF = {
+      eria:    { type: 'slash',  count: 45, colors: ['#ffd0c0', '#e8b0a0', '#9c4a4a'], speed: 0.8, size: [1, 2.5], life: [70, 120], sway: true },
+      ilia:    { type: 'drift',  count: 36, colors: ['#f0d48a', '#c9a13b', '#fff6d8'], speed: 0.25, size: [1, 2.5], life: [110, 180], twinkle: true },
+      lilith:  { type: 'swirl',  count: 60, colors: ['#8e44ad', '#c99fe0', '#5b2a70'], speed: 0.01, size: [1.5, 3], life: [180, 280] },
+      koriv:   { type: 'frost',  count: 50, colors: ['#ffffff', '#aee8ff', '#d6f4ff'], speed: 0.3, size: [1.5, 3], life: [120, 190], sway: true },
+      ren:     { type: 'dust',   count: 40, colors: ['#8a5f34', '#d8b070', '#4a3520'], speed: 0.2, size: [2, 4], life: [90, 150], sway: true },
+      satira:  { type: 'rise',   count: 50, colors: ['#c0392b', '#e08a7a', '#7a1f15'], speed: 0.5, size: [2, 3.5], life: [90, 150], sway: true },
+      liefe:   { type: 'spore',  count: 40, colors: ['#27ae60', '#9ff0c0', '#e0ffe8'], speed: 0.25, size: [1.5, 3], life: [110, 180], twinkle: true },
+      sophia:  { type: 'holy',   count: 60, colors: ['#ffffff', '#fff6d8', '#ffe9b0'], speed: 0.3, size: [1, 2.5], life: [110, 170], twinkle: true },
+      iris:    { type: 'shard',  count: 50, colors: ['#a855f7', '#d8b0f8', '#6a2a9e'], speed: 0.25, size: [1.5, 3], life: [120, 190], sway: true },
+      'default': { type: 'drift', count: 30, colors: ['#d4af6a', '#f0d48a'], speed: 0.2, size: [1, 2], life: [90, 140] },
+    };
+
+    function startSkillParticles(canvas) {
+      const banner = canvas.closest('.spirit-skill-banner');
+      if (!banner) return;
+      // 若已有运行中的循环先取消（支持刷新强制重启粒子）
+      if (canvas._raf) { cancelAnimationFrame(canvas._raf); canvas._raf = null; }
+      const themeCls = Array.from(banner.classList).find(c => c.indexOf('theme-') === 0) || 'theme-default';
+      const theme = themeCls.replace('theme-', '');
+      const conf = PARTICLE_CONF[theme] || PARTICLE_CONF['default'];
+
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+      let W = 0, H = 0, raf = null;
+      let particles = [];
+
+      // 用 clientWidth/Height（不受 transform 缩放影响），并延迟到 banner-pop 动画结束后测量
+      function resize() {
+        const cw = banner.clientWidth;
+        const ch = banner.clientHeight;
+        W = Math.max(cw, 60);
+        H = Math.max(ch, 40);
+        canvas.width = Math.round(W * dpr);
+        canvas.height = Math.round(H * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function makeParticle() {
+        const cx = W / 2;
+        const cy = H / 2;
+        const base = {
+          x: 0, y: 0, vx: 0, vy: 0,
+          size: conf.size[0] + Math.random() * (conf.size[1] - conf.size[0]),
+          color: conf.colors[Math.floor(Math.random() * conf.colors.length)],
+          life: 0,
+          maxLife: conf.life[0] + Math.random() * (conf.life[1] - conf.life[0]),
+          alpha: 1,
+          phase: Math.random() * Math.PI * 2,
+          swayAmp: 0.5 + Math.random() * 1,
+          shape: 0,
+          rrX: 0, rrY: 0, ang: 0,
+        };
+        const t = conf.type;
+        // 所有粒子都在整个横幅内分散生成并流动，不聚集在中心
+        if (t === 'slash') {
+          // 剑气：在横幅内随机位置生成，向右横扫流动
+          base.x = Math.random() * W;
+          base.y = Math.random() * H;
+          base.vx = conf.speed * (0.6 + Math.random() * 0.8);
+          base.vy = (Math.random() - 0.5) * 0.3;
+          base.shape = 1; // 线条
+        } else if (t === 'swirl') {
+          // 湮灭漩涡：在横幅内椭圆轨道上分布，绕中心旋转流动（铺满整个横幅）
+          const a = Math.random() * Math.PI * 2;
+          const rrX = W * (0.15 + Math.random() * 0.35);
+          const rrY = H * (0.3 + Math.random() * 0.55);
+          base.x = cx + Math.cos(a) * rrX;
+          base.y = cy + Math.sin(a) * rrY;
+          base.rrX = rrX;
+          base.rrY = rrY;
+          base.ang = a;
+        } else if (t === 'holy') {
+          // 圣光：光点在整个横幅内缓慢向上飘散闪烁
+          base.x = Math.random() * W;
+          base.y = H * (0.1 + Math.random() * 0.9);
+          base.vx = (Math.random() - 0.5) * 0.4;
+          base.vy = -conf.speed * (0.3 + Math.random());
+        } else if (t === 'frost') {
+          // 结霜：冰晶在横幅内随机分布，缓慢飘落
+          base.x = Math.random() * W;
+          base.y = Math.random() * H;
+          base.vx = (Math.random() - 0.5) * 0.3;
+          base.vy = conf.speed * (0.4 + Math.random());
+        } else if (t === 'rise') {
+          // 血雾：从底部升腾，x 分散
+          base.x = Math.random() * W;
+          base.y = H + 5;
+          base.vy = -conf.speed * (0.5 + Math.random());
+        } else if (t === 'spore') {
+          // 孢子：随机漂浮闪烁
+          base.x = Math.random() * W;
+          base.y = Math.random() * H;
+          base.vx = (Math.random() - 0.5) * conf.speed;
+          base.vy = (Math.random() - 0.5) * conf.speed;
+        } else if (t === 'shard') {
+          // 紫晶碎片：在横幅内随机漂浮流动
+          base.x = Math.random() * W;
+          base.y = Math.random() * H;
+          base.vx = (Math.random() - 0.5) * conf.speed;
+          base.vy = (Math.random() - 0.5) * conf.speed;
+          base.shape = 2; // 菱形
+        } else if (t === 'dust') {
+          // 尘土：在横幅内缓慢漂浮
+          base.x = Math.random() * W;
+          base.y = Math.random() * H;
+          base.vx = (Math.random() - 0.5) * conf.speed;
+          base.vy = (Math.random() - 0.5) * conf.speed;
+        } else {
+          // drift：缓慢漂浮
+          base.x = Math.random() * W;
+          base.y = Math.random() * H;
+          base.vx = (Math.random() - 0.5) * conf.speed;
+          base.vy = (Math.random() - 0.5) * conf.speed;
+        }
+        return base;
+      }
+
+      function update(p) {
+        p.life++;
+        if (p.life > p.maxLife) return false;
+
+        if (conf.gravity) p.vy += conf.gravity;
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (conf.type === 'swirl') {
+          // 湮灭漩涡：粒子沿椭圆轨道绕中心缓慢旋转流动，铺满整个横幅
+          const cx = W / 2, cy = H / 2;
+          p.ang = (p.ang || 0) + 0.01;
+          p.x = cx + Math.cos(p.ang) * p.rrX;
+          p.y = cy + Math.sin(p.ang) * p.rrY;
+        }
+        if (conf.sway) {
+          p.x += Math.sin((p.life / p.maxLife) * Math.PI * 4 + p.phase) * p.swayAmp;
+        }
+        if (conf.twinkle) {
+          p.alpha = 0.4 + 0.6 * Math.abs(Math.sin(p.phase + p.life * 0.12));
+        } else {
+          const t = p.life / p.maxLife;
+          p.alpha = t < 0.2 ? t / 0.2 : (1 - t) / 0.8;
+        }
+        return p.x > -30 && p.x < W + 30 && p.y > -30 && p.y < H + 30;
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, W, H);
+        const cy = H / 2;
+        for (const p of particles) {
+          if (p.alpha <= 0.01) continue;
+          ctx.globalAlpha = p.alpha;
+          if (p.shape === 1) {
+            // 斩击光刃线条
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = p.size;
+            ctx.beginPath();
+            ctx.moveTo(p.x - p.vx * 1.5, p.y - p.vy * 1.5);
+            ctx.lineTo(p.x + p.vx * 3, p.y + p.vy * 3);
+            ctx.stroke();
+          } else if (p.shape === 2) {
+            // 菱形碎片
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y - p.size * 1.6);
+            ctx.lineTo(p.x + p.size, p.y);
+            ctx.lineTo(p.x, p.y + p.size * 1.6);
+            ctx.lineTo(p.x - p.size, p.y);
+            ctx.closePath();
+            ctx.fill();
+          } else {
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function loop() {
+        const target = conf.count;
+        while (particles.length < target && Math.random() < 0.75) {
+          particles.push(makeParticle());
+        }
+        particles = particles.filter(update);
+        draw();
+        raf = requestAnimationFrame(loop);
+        canvas._raf = raf;
+      }
+
+      // 等 banner-pop 动画(0.6s)结束后再测量尺寸并启动
+      setTimeout(() => {
+        resize();
+        for (let i = 0; i < Math.min(conf.count, 25); i++) particles.push(makeParticle());
+        if (!raf) { raf = requestAnimationFrame(loop); canvas._raf = raf; }
+      }, 620);
+
+      // 视口可见性优化
+      const io = new IntersectionObserver((entries) => {
+        const visible = entries[0].isIntersecting;
+        if (visible && !raf) {
+          raf = requestAnimationFrame(loop);
+          canvas._raf = raf;
+        } else if (!visible && raf) {
+          cancelAnimationFrame(raf);
+          raf = null;
+          canvas._raf = null;
+        }
+      });
+      io.observe(banner);
+      // 兜底：延迟后强制 resize 一次（确保 canvas 尺寸匹配 banner）
+      setTimeout(() => { if (W === 0 || H === 0) resize(); }, 1000);
+    }
+
+    function initAllParticles(force) {
+      document.querySelectorAll('.spirit-skill-banner canvas.skill-particles').forEach(canvas => {
+        if (force || !canvas.dataset.initialized) {
+          canvas.dataset.initialized = '1';
+          startSkillParticles(canvas);
+        }
+      });
+    }
+
+    function renderAll() {
+      const bubble = document.getElementById('message-content');
+      const raw = RAW_SKILLS.trim();
+      // 将每个标签替换为卡片
+      const rendered = raw.replace(/<英灵技·[^>]+>(?:[\s\S]*?<\/英灵技>)?/g, (tag) => {
+        return parseSpiritSkill(tag);
+      });
+      bubble.innerHTML = rendered;
+      // 强制刷新：重新播放粒子和特效动画
+      initAllParticles(true);
+    }
+
+    function showRaw() {
+      const bubble = document.getElementById('message-content');
+      bubble.innerHTML = '<div style="white-space:pre-wrap;color:#b9a6d8;">' + escapeHtml(RAW_SKILLS.trim()) + '</div>';
+    }
+
+    // 初始渲染
+    renderAll();
+  </script>
+
+</body>
+</html>

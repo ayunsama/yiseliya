@@ -1,4 +1,4 @@
-﻿```html
+```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -298,6 +298,16 @@
       line-height: 1.4;
       word-break: break-word;
       }
+      .jrpg-school-group-header {
+      font-weight: bold;
+      color: #6b2e2e;
+      margin: 10px 0 2px 0;
+      padding: 3px 8px;
+      font-size: 13px;
+      background: rgba(231, 76, 60, 0.06);
+      border-left: 3px solid #e67e22;
+      border-radius: 3px;
+      }
 
       /* ===== 商店 ===== */
       .jrpg-shop-grid {
@@ -406,29 +416,14 @@
       line-height: 1.4;
       }
 
-      /* NPC 编辑区 (原) */
-      .jrpg-npc-edit-zone {
-      display: none;
-      margin-top: 8px;
-      padding: 10px;
-      background: rgba(139, 107, 74, 0.08);
-      border: 1px dashed #c4a77d;
-      border-radius: 4px;
+      /* 勾选招募高亮（原编辑展开区已移除） */
+      .jrpg-npc-card.checked {
+      border-color: #c0392b;
+      background: rgba(192, 57, 43, 0.05);
+      box-shadow: 0 0 0 1px rgba(192, 57, 43, 0.2);
       }
-      .jrpg-npc-card.expanded .jrpg-npc-edit-zone {
-      display: block;
-      animation: fadeIn 0.2s;
-      }
-      .jrpg-npc-edit-zone .jrpg-cc-input {
-      margin-bottom: 6px;
-      font-size: 12px;
-      padding: 6px;
-      }
-      .jrpg-npc-edit-zone label {
-      font-size: 11px;
-      color: #6b4e31;
-      margin-bottom: 2px;
-      display: block;
+      .jrpg-npc-card.checked .jrpg-npc-name {
+      color: #9a2a1a;
       }
 
       /* ===== 新增：详细数值展示区 ===== */
@@ -1252,24 +1247,17 @@
                             <div class="open-status">✓ 已选择</div>
                         </button>
                         <button class="jrpg-opening-btn" onclick="applyOpeningPreset(7)" id="open-btn-7">
-                            <span class="open-icon">🪽</span>
-                            <div class="open-name">翼民骑士</div>
-                            <div class="open-desc">艾洛菲拉第三中队的翼民骑士，受命深入崩落带调查异常。追踪流向地脉锚点的活性黑泥，在异变体触锚的那一刻，于炸毁锚点、撤退回报与深入裂缝之间做出抉择。</div>
+                            <span class="open-icon">🗝️</span>
+                            <div class="open-name">裂隙门钥</div>
+                            <div class="open-desc">梅萨利亚港的底层苦力，在搁浅走私船的底舱捡到传说级奇物「万界门钥」。触碰的瞬间，一道通往异界宝藏的银白裂隙在面前撕开——也许，穷了二十年的日子，终于要到头了。</div>
                             <span class="open-badge">开场白 ⑦</span>
                             <div class="open-status">✓ 已选择</div>
                         </button>
                         <button class="jrpg-opening-btn" onclick="applyOpeningPreset(8)" id="open-btn-8">
-                            <span class="open-icon">🗝️</span>
-                            <div class="open-name">裂隙门钥</div>
-                            <div class="open-desc">梅萨利亚港的底层苦力，在搁浅走私船的底舱捡到传说级奇物「万界门钥」。触碰的瞬间，一道通往异界宝藏的银白裂隙在面前撕开——也许，穷了二十年的日子，终于要到头了。</div>
-                            <span class="open-badge">开场白 ⑧</span>
-                            <div class="open-status">✓ 已选择</div>
-                        </button>
-                        <button class="jrpg-opening-btn" onclick="applyOpeningPreset(9)" id="open-btn-9">
                             <span class="open-icon">🕰️</span>
                             <div class="open-name">最后的勇者</div>
                             <div class="open-desc">圣光历1510年决战期，第五代讨伐战失利的第十年。你是被加护者莉莉娅从异世界召唤的「最后的勇者」，体内沉积六十二次轮回的余烬，初王圣剑与救世小队正静候你拔剑觉醒命格。</div>
-                            <span class="open-badge">开场白 ⑨</span>
+                            <span class="open-badge">开场白 ⑧</span>
                             <div class="open-status">✓ 已选择</div>
                         </button>
                     </div>
@@ -1290,6 +1278,9 @@
                     <div>
                         <label class="jrpg-cc-label">年龄</label>
                         <input type="number" class="jrpg-cc-input" id="cc-age" min="0" max="9999" value="17" placeholder="17">
+                        <label class="jrpg-cc-label" style="margin-top:4px; font-size:12px; font-weight:normal; display:flex; align-items:center; gap:4px;">
+                            <input type="checkbox" id="cc-age-grow" checked style="vertical-align:middle;"> 年龄成长系统（1~18岁随年龄增长自动获得属性点）
+                        </label>
                     </div>
                 </div>
 
@@ -1375,7 +1366,6 @@
                     <option value="__MEIMEI_2__">🐑 软草甸王国的流浪商人</option>
                     <option value="__DAYAN__">🔥 大炎龙朝·龙裔遗孤</option>
                     <option value="__GROUP__">🚌 群穿 — 毕业旅行的异世坠落</option>
-                    <option value="__WING_KNIGHT__">🪽 翼民骑士 — 崩落带的调查者</option>
                     <option value="__WORLD_CHOSEN__">🌟 世界眷顾之子 — 本源注视的剑子</option>
                     <option value="__RIFT_GATE__">🗝️ 裂隙门钥 — 梅萨利亚港的拾遗者</option>
                     <option value="__LAST_HOPE__">🕰️ 最后的勇者 — 绝境长城的异界召唤者</option>
@@ -1627,6 +1617,40 @@
                         🛈 已选：<strong>无回路</strong> — 无法使用任何魔法
                     </div>
                 </div>
+
+                <!-- ===== 资质 ===== -->
+                <div style="margin-top:14px; padding-top:12px; border-top:1px dashed #d2b48c;">
+                    <label class="jrpg-cc-label">🧬 资质 <span style="font-weight:normal;color:#7f8c8d;">（消耗购点购置，由高到低影响经验获取效率；默认平庸）</span></label>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px;" id="talent-selector">
+                        <label class="jrpg-circuit-option" data-level="0" onclick="selectTalent(0)">
+                            <input type="radio" name="talent" value="0"> 🥀 低劣 <span class="circuit-cost">无需购点</span>
+                            <div class="circuit-desc">天资匮乏，进步缓慢。经验获取效率 80%</div>
+                        </label>
+                        <label class="jrpg-circuit-option" data-level="1" onclick="selectTalent(1)">
+                            <input type="radio" name="talent" value="1" checked> ◆ 平庸 <span class="circuit-cost">默认（无需购点）</span>
+                            <div class="circuit-desc">常人资质。经验获取效率 100%</div>
+                        </label>
+                        <label class="jrpg-circuit-option" data-level="2" onclick="selectTalent(2)">
+                            <input type="radio" name="talent" value="2"> ◇ 普通 <span class="circuit-cost">消耗1购点</span>
+                            <div class="circuit-desc">略有慧根，进步稳定。经验获取效率 110%</div>
+                        </label>
+                        <label class="jrpg-circuit-option" data-level="3" onclick="selectTalent(3)">
+                            <input type="radio" name="talent" value="3"> ☆ 优秀 <span class="circuit-cost">消耗3购点</span>
+                            <div class="circuit-desc">天赋异禀，举一反三。经验获取效率 125%</div>
+                        </label>
+                        <label class="jrpg-circuit-option" data-level="4" onclick="selectTalent(4)">
+                            <input type="radio" name="talent" value="4"> ★ 卓越 <span class="circuit-cost">消耗5购点</span>
+                            <div class="circuit-desc">万里挑一，触类旁通。经验获取效率 145%</div>
+                        </label>
+                        <label class="jrpg-circuit-option" data-level="5" onclick="selectTalent(5)">
+                            <input type="radio" name="talent" value="5"> ✦ 天才 <span class="circuit-cost">消耗8购点</span>
+                            <div class="circuit-desc">百年不遇，一日千里。经验获取效率 160%</div>
+                        </label>
+                    </div>
+                    <div id="talent-bonus-display" style="margin-top:8px; padding:8px 10px; background:rgba(142,68,173,0.06); border-left:3px solid #8e44ad; border-radius:0 4px 4px 0; font-size:12px; color:#2c3e50; line-height:1.5;">
+                        🛈 已选：<strong>平庸</strong> — 常人资质，经验获取效率 100%
+                    </div>
+                </div>
             </div>
 
             <!-- ====== 第3页：职业 ====== -->
@@ -1706,6 +1730,41 @@
                             <option value="魔王" class="apocalypse-class" style="display:none;">魔王</option>
                             <option value="不死人" class="apocalypse-class" style="display:none;">不死人</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- ===== 🛠 自创职业：AI 生成 1-20 级定制技能树（与状态栏自创职业体系联动） ===== -->
+                <div class="jrpg-custom-skilltree-box" id="custom-job-creator" style="margin-top:8px; margin-bottom:16px;">
+                    <div class="section-header" onclick="toggleCustomJobCreator()">
+                        <span>
+                            <span class="arrow" id="cjc-arrow">▶</span>
+                            <span class="section-title">🛠 自创职业</span>
+                            <span class="section-subtitle">（官方职业表以外的新职业：输入名称 → 选成长风格 → 描述定位，AI 生成 1-20 级定制技能树，并自动作为该职业的主技能树加入主修/兼职下拉）</span>
+                        </span>
+                    </div>
+                    <div class="jrpg-custom-skilltree-body" id="cjc-body">
+                        <div class="jrpg-grid-2" style="margin-top:2px;">
+                            <div>
+                                <label class="jrpg-cc-label" style="font-size:12px;">职业名</label>
+                                <input type="text" class="jrpg-cc-input" id="cjc-job-name" maxlength="12" placeholder="例：龙战士 / 咒灵师 / 御雷武士…">
+                            </div>
+                            <div>
+                                <label class="jrpg-cc-label" style="font-size:12px;">成长风格 <span style="font-weight:normal;color:#7f8c8d;">（决定每级 HP/SP/MP 成长与技能资源倾向）</span></label>
+                                <select class="jrpg-cc-select" id="cjc-style">
+                                    <option value="混合" selected>混合 (每级 HP d8 + SP d6 + MP d4)</option>
+                                    <option value="武技">武技 (每级 HP d10 + SP d8，无MP)</option>
+                                    <option value="魔法">魔法 (每级 HP d6 + MP d8，无SP)</option>
+                                    <option value="神术">神术 (每级 HP d8 + MP d6，无SP)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <label class="jrpg-cc-label" style="font-size:12px; margin-top:8px;">职业定位与描述 <span style="font-weight:normal;color:#7f8c8d;">（AI 将据此设计技能树）</span></label>
+                        <textarea class="jrpg-cc-textarea" id="cjc-desc" placeholder="描述这个自创职业的定位、核心机制、战斗风格、技能倾向等…&#10;&#10;例：身缠龙魂的战士，龙化双臂以拳与爪作战；核心机制「龙鳞」叠层，低血量时爆发；技能倾向：近战突进、硬直打断、龙息吐纳。" style="min-height:90px;"></textarea>
+                        <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                            <button class="jrpg-btn-sm" style="width:auto;padding:6px 16px;font-size:12px;background:#8e44ad;color:#fff;border-color:#8e44ad;" id="cjc-generate">🤖 生成定制技能树 (1-20级)</button>
+                            <span style="font-size:11px;color:#7f8c8d;line-height:28px;">生成后自动保存到 $customSkillTrees（状态栏「技能树」页签可查看/学习），并作为该职业主技能树显示、加入职业下拉</span>
+                        </div>
+                        <div id="cjc-status" style="font-size:12px;color:#2980b9;margin-top:6px;display:none;padding:6px 10px;background:rgba(41,128,185,0.06);border-radius:4px;"></div>
                     </div>
                 </div>
 
@@ -1843,8 +1902,8 @@
                         <option value="元素的神授" data-desc="效果：所有元素系魔法伤害+25%；施法时获得30尺内魔力感知，可自动分辨敌方术式的属性与大致强度。代价：自身被对应元素攻击时伤害+30%（元素克制的双刃剑）。">元素的神授 (魔法·掌控)</option>
                         <option value="森林的神授" data-desc="效果：可与所有动植物进行有效交流，获得它们的视野与记忆片段；森林/密林中潜行与生存检定优势。代价：在非自然环境（城市、地牢、遗迹）中，加护效果消失，且感知-2。">森林的神授 (自然·共生)</option>
                         <option value="命运的神授" data-desc="效果：每日3次，任意检定（攻击/豁免/技能）失败后可立即重投，取较高值；可作用于30尺内一名友方。代价：每次使用后，下一次敌方的攻击检定获得+2加值（命运守恒）。">命运的神授 (命运·因果)</option>
-                        <option value="生命的神授" data-desc="效果：自身HP上限+30%；短休恢复量翻倍；每场战斗1次，可将一次致死伤害转化为1点HP锁血（伤害清零后保留1HP）。代价：无法被任何形式的"复活"或"回溯"效果影响（死亡回溯除外）。">生命的神授 (生命·延续)</option>
-                        <option value="渡鸦的神授" data-desc="效果：每座城市/城镇可标记1个"安全屋"，在任何位置可立即传送回该安全屋（每日1次）；可短暂看到死者生前的最后一幕。代价：每次使用传送后，未来12小时内HP上限临时-10%（不可叠加）。">渡鸦的神授 (神秘·穿梭)</option>
+                        <option value="生命的神授" data-desc="效果：自身HP上限+30%；短休恢复量翻倍；每场战斗1次，可将一次致死伤害转化为1点HP锁血（伤害清零后保留1HP）。代价：无法被任何形式的「复活」或「回溯」效果影响（死亡回溯除外）。">生命的神授 (生命·延续)</option>
+                        <option value="渡鸦的神授" data-desc="效果：每座城市/城镇可标记1个「安全屋」，在任何位置可立即传送回该安全屋（每日1次）；可短暂看到死者生前的最后一幕。代价：每次使用传送后，未来12小时内HP上限临时-10%（不可叠加）。">渡鸦的神授 (神秘·穿梭)</option>
                     </optgroup>
                     <optgroup label="终焉纪元·残缺命格（IF线限定）" id="apocalypse-blessings" style="display:none;">
                         <option value="狂战命格（残缺）" data-desc="【肉体极境】龙骸之躯：基础HP上限+200%，免疫物理暴击与强制位移。痛觉熔炉：受到的所有伤害按1:1比例转化为SP。权能·逆鳞血怒：强制吸收半径100尺内所有友方目标即将受到的下一次致命伤害。代价：血怒状态下每轮流失10%最大HP，极易被魔潮污染导致敌我不分，必须依赖【圣女】的持续净化与治愈来维持理智与生命。">狂战命格 (残缺·肉体极境)</option>
@@ -1880,6 +1939,14 @@
                     <option value="决战期" data-tension="90" data-desc="魔王降世或大陆级战争已爆发；世界命运悬而未决；四大传说存在是否齐备直接决定大陆存亡。全大陆进入战时状态，平民逃难，军队集结，各国暂时搁置争端面对共同威胁。每一天都可能是最后一天。">决战期 — 终焉之战 (紧张度81~100)</option>
                 </select>
                 <div class="jrpg-blessing-detail" id="era-detail" style="border-left-color:#8e44ad;">新大陆殖民摩擦开始浮出水面，帝国与城邦之间关系趋于紧张；民间流传魔王即将苏醒的预言；冒险者公会开始增发莫尔加纳相关任务。商人开始观望，边境军队戒备提升，教会内部讨论预言的声音增加。</div>
+                <div style="margin-top:12px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:10px 14px; background:linear-gradient(135deg, rgba(142,68,173,0.10), rgba(39,174,96,0.06)); border:1px solid #8e44ad; border-radius:8px; box-shadow:inset 0 1px 0 rgba(255,255,255,0.4);">
+                    <button class="jrpg-btn-sm" style="display:flex; align-items:center; gap:6px; width:auto; padding:8px 18px; font-size:13px; font-weight:bold; background:#8e44ad; color:#fff; border:none; border-radius:20px; box-shadow:0 2px 6px rgba(142,68,173,0.4); cursor:pointer; transition:transform .12s, box-shadow .12s;" id="legend-awaken-toggle" onclick="toggleLegendsAwaken()" onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='translateY(0)'">
+                        <span id="legend-awaken-icon" style="font-size:15px;">✨</span><span id="legend-awaken-label">四传奇觉醒</span>
+                    </button>
+                    <span style="font-size:11.5px; color:#6a4b8a; line-height:1.5; max-width:430px;">
+                        一键启停四位传奇的「已觉醒命格」状态。开启后，她们会以觉醒后的身份与实力登场；关闭则回到未觉醒状态。
+                    </span>
+                </div>
             </div>
 
             <!-- ====== 第5页：行囊·装备点数系统 ====== -->
@@ -1937,16 +2004,27 @@
                             </div>
                         </div>
                         <div id="leg-examples" class="jrpg-variant-examples" style="display:none;">
-                            💡 <strong>提示：</strong>选择一个快速风格，或在下方面描述你想要的传奇武器。AI 会结合你的性格、人设、属性与职业自动定制。
+                            💡 <strong>提示：</strong>先选风格或写描述，再选好<b>数量</b>，点击「AI 生成」。效果数值会按本作规则写成清晰固定值（如 命中+2、额外1d6伤害、防御+2），不会出现百分比。
                         </div>
                         <div style="margin-bottom:8px;">
                             <label class="jrpg-cc-label">定制方向描述 <span style="font-weight:normal;color:#7f8c8d;">(AI将据此生成，可补充性格/偏好)</span></label>
-                            <textarea class="jrpg-cc-textarea" id="cc-legendary-gear" placeholder="描述你想要的传奇武器风格、机制、外观等...&#10;&#10;例：一柄与灵魂绑定的断钢大剑，持有者生命值越低剑刃越炽热，暴击率越高，对魔族额外伤害。&#10;核心机制：随着战斗不断成长，解锁勇者传承之力。"></textarea>
+                            <textarea class="jrpg-cc-textarea" id="cc-legendary-gear" placeholder="描述你想要的传奇武器风格、机制、外观等...&#10;&#10;例：一柄与灵魂绑定的断钢大剑——持有者HP每降低10点，剑刃攻击检定+1（上限+3）；暴击范围20→19-20；对魔族额外1d6神圣伤害。&#10;核心机制：随战斗成长，解锁勇者传承之力（伤害骰4d6→5d6）。"></textarea>
                         </div>
                         <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
                             <button class="jrpg-btn-sm" style="width:auto;padding:6px 16px;font-size:12px;background:#c0392b;color:#fff;border-color:#c0392b;" onclick="generateLegendaryWithAI()">🤖 AI 生成传奇装备</button>
+                            <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#7f8c8d;line-height:28px;">
+                                数量
+                                <select id="leg-count" style="padding:3px 8px;font-size:12px;border:1px solid #c0392b;border-radius:14px;background:#fff;color:#5a2a2a;cursor:pointer;line-height:normal;">
+                                    <option value="1">1 件</option>
+                                    <option value="2">2 件</option>
+                                    <option value="3" selected>3 件</option>
+                                    <option value="4">4 件</option>
+                                    <option value="5">5 件</option>
+                                    <option value="6">6 件</option>
+                                </select>
+                            </label>
                             <button class="jrpg-btn-sm" style="width:auto;padding:6px 16px;font-size:12px;background:#8e44ad;color:#fff;border-color:#8e44ad;" onclick="saveLegendaryGear()">💾 保存到变量</button>
-                            <span style="font-size:11px;color:#7f8c8d;line-height:28px;">先选风格/写描述 → AI 生成 → 可微调后保存</span>
+                            <span style="font-size:11px;color:#7f8c8d;line-height:28px;">先选风格/写描述 → 选数量 → AI 生成 → 可微调后保存</span>
                         </div>
                         <div id="leg-generate-status" style="font-size:12px;color:#c0392b;margin-top:6px;display:none;padding:6px 10px;background:rgba(192,57,43,0.06);border-radius:4px;"></div>
                         <div id="leg-result" style="margin-top:8px; max-height:240px; overflow-y:auto;"></div>
@@ -1964,7 +2042,7 @@
 
             <!-- ====== 第6页：伙伴 (中度自定义 + 详细数值) ====== -->
             <div id="content6" class="jrpg-tab-panel">
-                <label class="jrpg-cc-label" style="border-bottom:1px dashed #d2b48c; padding-bottom:5px;">招募初始伙伴 <span style="font-weight:normal;color:#7f8c8d;">(勾选后可编辑主要信息，并可查看详细数值)</span></label>
+                <label class="jrpg-cc-label" style="border-bottom:1px dashed #d2b48c; padding-bottom:5px;">招募初始伙伴 <span style="font-weight:normal;color:#7f8c8d;">(勾选即可招募入队，点卡片可查看详细数值)</span></label>
                 <div class="jrpg-npc-grid" id="npc-grid">
                     <!-- 塞西莉亚 -->
                     <div class="jrpg-npc-card" id="npc-card-cecilia">
@@ -1974,16 +2052,6 @@
                                 <div class="jrpg-npc-name">塞西莉亚 (银发少女)</div>
                                 <div class="jrpg-npc-desc">精灵 / 元素法师。寻找特定草药而离开密林，清冷但对外界充满好奇。</div>
                             </div>
-                        </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="塞西莉亚·法恩迪尔">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="精灵">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="元素法师">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="寻找特定草药而离开密林，清冷但对外界充满好奇。">
                         </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('cecilia')">📊 查看详细数值</button>
@@ -2000,16 +2068,6 @@
                                 <div class="jrpg-npc-desc">海妖 / 斥候。逃离深海阶级跑到陆地，贪财但关键时刻讲义气。</div>
                             </div>
                         </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="阿奎娅">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="海妖">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="斥候">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="逃离深海阶级跑到陆地，贪财但关键时刻讲义气。">
-                        </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('aqua')">📊 查看详细数值</button>
                         </div>
@@ -2024,16 +2082,6 @@
                                 <div class="jrpg-npc-name">卡拉克 (见习祭司)</div>
                                 <div class="jrpg-npc-desc">蜥蜴种 / 神官。为完成蜕皮试炼而离巢，沉稳、忠诚，信仰大蛇母。</div>
                             </div>
-                        </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="卡拉克">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="蜥蜴种">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="神官">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="为完成蜕皮试炼而离巢，沉稳、忠诚，信仰大蛇母。">
                         </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('kalak')">📊 查看详细数值</button>
@@ -2050,16 +2098,6 @@
                                 <div class="jrpg-npc-desc">原始人类 / 狂战士。为了证明勇武踏上旅途，充满野性。</div>
                             </div>
                         </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="恩雅">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="原始人类">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="狂战士">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="为了证明勇武踏上旅途，充满野性。">
-                        </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('enya')">📊 查看详细数值</button>
                         </div>
@@ -2074,16 +2112,6 @@
                                 <div class="jrpg-npc-name">铜须 (年轻铁匠)</div>
                                 <div class="jrpg-npc-desc">矮人 / 战士。固执的年轻矮人工匠，为了寻找传说金属离开故乡。</div>
                             </div>
-                        </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="铜须·巴拉库兹">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="矮人">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="战士">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="固执的年轻矮人工匠，为了寻找传说金属离开故乡。">
                         </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('copper')">📊 查看详细数值</button>
@@ -2100,16 +2128,6 @@
                                 <div class="jrpg-npc-desc">鹰族兽人 / 猎人。因故被氏族放逐，沉默寡言但箭术精准。</div>
                             </div>
                         </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="锐眼·卡尔">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="鹰族兽人">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="猎人">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="因故被氏族放逐，沉默寡言但箭术精准。">
-                        </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('karl')">📊 查看详细数值</button>
                         </div>
@@ -2124,16 +2142,6 @@
                                 <div class="jrpg-npc-name">瑟菲 (恐高的信使)</div>
                                 <div class="jrpg-npc-desc">翼民 / 斥候。患有恐高症的翼民，不敢飞太高，只能做跑腿工作。</div>
                             </div>
-                        </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="瑟菲">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="翼民">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="斥候">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="患有恐高症的翼民，不敢飞太高，只能做跑腿工作。">
                         </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('sephi')">📊 查看详细数值</button>
@@ -2150,16 +2158,6 @@
                                 <div class="jrpg-npc-desc">龙裔 / 骑士。来自极北，寻找失踪族长而来到南方，坚韧可靠。</div>
                             </div>
                         </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="瓦伦·霜牙">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="龙裔">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="骑士">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="来自极北，寻找失踪族长而来到南方，坚韧可靠。">
-                        </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('valen')">📊 查看详细数值</button>
                         </div>
@@ -2174,16 +2172,6 @@
                                 <div class="jrpg-npc-name">皮平 (流浪厨师)</div>
                                 <div class="jrpg-npc-desc">半身人 / 药剂师。热爱美食，背着铁锅旅行，精通草药和调料。</div>
                             </div>
-                        </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="皮平">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="半身人">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="药剂师">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="热爱美食，背着铁锅旅行，精通草药和调料。">
                         </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('pipin')">📊 查看详细数值</button>
@@ -2200,16 +2188,6 @@
                                 <div class="jrpg-npc-desc">血族 / 魔剑士。隐藏身份流浪，表面厌世，内心渴望温暖。</div>
                             </div>
                         </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="艾莉亚·诺克提亚">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="血族">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="魔剑士">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="隐藏身份流浪，表面厌世，内心渴望温暖。">
-                        </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('aria')">📊 查看详细数值</button>
                         </div>
@@ -2224,16 +2202,6 @@
                                 <div class="jrpg-npc-name">嘟拉 (逃跑的奴隶)</div>
                                 <div class="jrpg-npc-desc">鱼人 / 斥候。从海妖奴役中逃离，对陆地充满好奇且忠诚。</div>
                             </div>
-                        </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="嘟拉">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="鱼人">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="斥候">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="从海妖奴役中逃离，对陆地充满好奇且忠诚。">
                         </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('dura')">📊 查看详细数值</button>
@@ -2250,16 +2218,6 @@
                                 <div class="jrpg-npc-desc">人类 / 神官。一同长大的玩伴，性格温柔，是最坚实的后盾。</div>
                             </div>
                         </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="艾琳">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="人类">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="神官">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="一同长大的玩伴，性格温柔，是最坚实的后盾。">
-                        </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('erin')">📊 查看详细数值</button>
                         </div>
@@ -2274,16 +2232,6 @@
                                 <div class="jrpg-npc-name">艾伦 (见习勇者)</div>
                                 <div class="jrpg-npc-desc">人类 / 战士。蔷薇镇工匠之子，热血笨蛋少年，一心想成为传说中的勇者。</div>
                             </div>
-                        </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="艾伦·弗林特">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="人类">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="战士">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="蔷薇镇工匠之子，故事听多了热血上头，背起家传铁剑出门当勇者。">
                         </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('allen')">📊 查看详细数值</button>
@@ -2300,16 +2248,6 @@
                                 <div class="jrpg-npc-desc">人类 / 药剂师。背井离乡的乡间少女，初到梅萨利亚港，面对大城市既紧张又坚定。</div>
                             </div>
                         </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="黛芙妮·维恩">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="人类">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="药剂师">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="王国乡间药剂师之女，初到梅萨利亚港，带着母亲的旧药箱闯荡大城市。">
-                        </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('tess')">📊 查看详细数值</button>
                         </div>
@@ -2324,16 +2262,6 @@
                                 <div class="jrpg-npc-name">伊尔莎 (逃逸的符文师)</div>
                                 <div class="jrpg-npc-desc">人类 / 符文师。帝国魔导学院出身，为逃避工厂征召而逃亡，性格警惕。</div>
                             </div>
-                        </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="伊尔莎·霍尔曼">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="人类">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="符文师">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="帝国魔导学院优等生，为逃避工厂征召逃出帝国，警惕又疲惫。">
                         </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('aira')">📊 查看详细数值</button>
@@ -2350,16 +2278,6 @@
                                 <div class="jrpg-npc-desc">人类 / 召唤师。三岁与元素精灵缔约，生来有召唤师资质，却家贫辍学，带着精灵流落街头，贪财到啃鞋底，攒钱想去时钟塔。</div>
                             </div>
                         </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="米拉·潘尼">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="人类">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="召唤师">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="三岁与元素精灵缔约的天才召唤师，因家贫流落街头，贪财省吃俭用攒钱想进时钟塔进修。">
-                        </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('mira')">📊 查看详细数值</button>
                         </div>
@@ -2374,16 +2292,6 @@
                                 <div class="jrpg-npc-name">加百列·索利安 (巡礼的圣骑士)</div>
                                 <div class="jrpg-npc-desc">人类 / 圣殿骑士。死脑筋一根筋，教典说什么就信什么，笨拙得让人着急，却比谁都更值得托付后背。</div>
                             </div>
-                        </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="加百列·索利安">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="人类">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="圣殿骑士">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="死脑筋的圣殿骑士，教典怎么说他就怎么做，笨拙而赤诚，和同为一条筋的瓦伦意外合得来。">
                         </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('sera')">📊 查看详细数值</button>
@@ -2400,16 +2308,6 @@
                                 <div class="jrpg-npc-desc">人类 / 死灵法师。时钟塔外围学徒，受不了苦力活，学了半吊子死灵术出逃。外貌清秀难辨雌雄。</div>
                             </div>
                         </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="洛伦兹·格雷">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="人类">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="死灵法师">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="时钟塔外围学徒出身，不堪苦役学了半吊子死灵术出走，容貌清秀、雌雄莫辨。">
-                        </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('lorenz')">📊 查看详细数值</button>
                         </div>
@@ -2424,16 +2322,6 @@
                                 <div class="jrpg-npc-name">薇娅拉·银鬃 (资深狂战)</div>
                                 <div class="jrpg-npc-desc">狼族×人类混血 / 狂战士。母系狼族、父系人类，用一柄狼牙巨刃把"混血杂种"打成传说的资深冒险者，强气而会照顾后辈。</div>
                             </div>
-                        </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="薇娅拉·银鬃">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="兽人（狼族）×人类混血">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="狂战士">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="狼族母系、人类父系的资深冒险者，强悍直率，表面凌厉、实则很会照顾后辈。">
                         </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('lyra')">📊 查看详细数值</button>
@@ -2450,16 +2338,6 @@
                                 <div class="jrpg-npc-desc">人类 / 无职业。暂时没有派系支持的落难王女，似乎隐藏着秘密。</div>
                             </div>
                         </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="爱丽丝·阿尔比恩">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="人类">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="无职业">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="暂时没有派系支持的落难王女，似乎隐藏着秘密。">
-                        </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('alice')">📊 查看详细数值</button>
                         </div>
@@ -2474,16 +2352,6 @@
             <div class="jrpg-npc-name">莉莉丝·诺恩 (魔女导师)</div>
             <div class="jrpg-npc-desc">人类 / 魔女。全大陆教会头号通缉犯，臭名昭著的魔女候选。</div>
         </div>
-    </div>
-    <div class="jrpg-npc-edit-zone">
-        <label>姓名</label>
-        <input type="text" class="jrpg-cc-input npc-edit-name" value="莉莉丝·诺恩">
-        <label>种族</label>
-        <input type="text" class="jrpg-cc-input npc-edit-race" value="人类">
-        <label>职业</label>
-        <input type="text" class="jrpg-cc-input npc-edit-class" value="魔女">
-        <label>背景描述</label>
-        <input type="text" class="jrpg-cc-input npc-edit-desc" value="全大陆教会头号通缉犯，臭名昭著的魔女候选。">
     </div>
     <div class="jrpg-npc-detail-toggle">
         <button onclick="toggleNpcDetail('lilith')">📊 查看详细数值</button>
@@ -2500,16 +2368,6 @@
                                 <div class="jrpg-npc-desc">人类 / 神官。火种第十七代主祭，圣女命格承载者。</div>
                             </div>
                         </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="艾蕾亚·索菲亚">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="人类">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="神官">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="火种地下教会第十七代主祭，索利昂最后一代神选，圣女命格承载者。">
-                        </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('apoc_eria')">📊 查看详细数值</button>
                         </div>
@@ -2522,16 +2380,6 @@
                                 <div class="jrpg-npc-name">凯尔 (勇者)</div>
                                 <div class="jrpg-npc-desc">人类 / 战士。火种前线突击兵，勇者命格承载者。</div>
                             </div>
-                        </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="凯尔">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="人类">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="战士">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="火种前线突击兵，七岁时失去双亲，从能握剑起就开始训练。">
                         </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('apoc_kel')">📊 查看详细数值</button>
@@ -2546,16 +2394,6 @@
                                 <div class="jrpg-npc-desc">精灵 / 元素法师。火种后勤魔法支援，贤者命格承载者。</div>
                             </div>
                         </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="希尔薇娅·艾恩诺尔">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="精灵">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="元素法师">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="火种后勤魔法支援，精灵与人类混居据点长大，与凯尔青梅竹马。">
-                        </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('apoc_sylvia')">📊 查看详细数值</button>
                         </div>
@@ -2568,16 +2406,6 @@
                                 <div class="jrpg-npc-name">卡拉 (狂战)</div>
                                 <div class="jrpg-npc-desc">兽人混血 / 狂战士。火种突击分队队长，狂战命格承载者。</div>
                             </div>
-                        </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="卡拉">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="兽人混血">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="狂战士">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="火种突击分队队长，体内兽人血统被狂战命格彻底激活。">
                         </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('apoc_kara')">📊 查看详细数值</button>
@@ -2592,16 +2420,6 @@
                                 <div class="jrpg-npc-desc">人类 / 猎人。火种狙击手，神射命格承载者。</div>
                             </div>
                         </div>
-                        <div class="jrpg-npc-edit-zone">
-                            <label>姓名</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-name" value="菲恩">
-                            <label>种族</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-race" value="人类">
-                            <label>职业</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-class" value="猎人">
-                            <label>背景描述</label>
-                            <input type="text" class="jrpg-cc-input npc-edit-desc" value="火种狙击手，十四岁时家人被统领贝利亚尔的征收队带走，用发卡磨成箭头射杀第一个魔族。">
-                        </div>
                         <div class="jrpg-npc-detail-toggle">
                             <button onclick="toggleNpcDetail('apoc_finn')">📊 查看详细数值</button>
                         </div>
@@ -2612,8 +2430,15 @@
 
                 <div style="margin-top:18px; border-top:2px solid #8b6b4a; padding-top:12px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <label class="jrpg-cc-label" style="margin:0;">📜 自定义伙伴 <span style="font-weight:normal;color:#7f8c8d;">(深度创建，按变量结构Schema)</span></label>
+                        <label class="jrpg-cc-label" style="margin:0;">📜 自定义伙伴 <span style="font-weight:normal;color:#7f8c8d;">(深度创建 / AI生成，均按变量结构Schema写入)</span></label>
                         <button class="jrpg-btn-sm" style="width:auto;padding:6px 16px;font-size:13px;background:#8b6b4a;color:#f4ebd8;border-color:#4a3623;" onclick="addCustomNpc()">＋ 添加伙伴</button>
+                    </div>
+                    <!-- 🤖 AI 生成伙伴 -->
+                    <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap; background:rgba(142,68,173,0.05); border:1px solid rgba(142,68,173,0.25); border-radius:6px; padding:8px 10px;">
+                        <span style="font-size:13px; font-weight:bold; color:#6b3a8e; white-space:nowrap;">🤖 AI 生成伙伴</span>
+                        <input type="text" id="npc-ai-prompt" class="jrpg-cc-input" style="flex:1; min-width:220px; margin-bottom:0; font-size:12px; padding:6px 10px;" placeholder="描述你想要的角色，如：我想要个龙娘——银发红瞳、热情开朗的火龙幼裔剑士，Lv.7 精英…">
+                        <button class="jrpg-btn-sm" style="width:auto;padding:6px 16px;font-size:12px;background:#8e44ad;color:#fff;border-color:#8e44ad;" onclick="generateNpcWithAI()">✨ 生成</button>
+                        <span id="npc-ai-status" style="font-size:11px;color:#7f8c8d;"></span>
                     </div>
                     <div id="custom-npc-container">
                         <!-- 动态插入自定义NPC表单 -->
@@ -2676,6 +2501,33 @@
                             <div class="jrpg-npc-name">🧚 指引妖精·莉耶芙</div>
                             <div class="jrpg-npc-desc">自称纯真善良的引路妖精。性格活泼黏人，非常适合新手冒险者获取指引。<br><b>「擅长」：</b>禁忌魔法与深渊知识解析、敌人心理弱点洞察、伪装欺骗策略——以及写出最完美的悲剧故事。</div>
                             <div class="jrpg-spirit-quote" style="color:#27ae60;">「嘻嘻嘻，人家是莉耶芙哦！会一直陪着你的！」</div>
+                        </div>
+                    </label>
+                    <!-- 盲目的莉莉娅 -->
+                    <label class="jrpg-spirit-card" id="spirit-card-lilia">
+                        <input type="radio" name="hero-spirit" value="英灵/盲目的莉莉娅" onchange="selectHeroSpirit(this)">
+                        <div class="jrpg-npc-info">
+                            <div class="jrpg-npc-name">⌛ 盲目的莉莉娅</div>
+                            <div class="jrpg-npc-desc">圣光历600年为对抗第二代魔王而无限次死亡回溯、以双眼为代价换来唯一胜机的"时之祭司"。<br><b>擅长：</b>时间系术式原理、历史与预言、避免重蹈覆辙的决策学、死亡回溯。</div>
+                            <div class="jrpg-spirit-quote" style="color:#c9a063;">「别急着走这条路。我见过它的结局——不算好，但也不是最坏的。」</div>
+                        </div>
+                    </label>
+                    <!-- 圣光神索利昂 -->
+                    <label class="jrpg-spirit-card" id="spirit-card-soleia">
+                        <input type="radio" name="hero-spirit" value="英灵/圣光神索利昂" onchange="selectHeroSpirit(this)">
+                        <div class="jrpg-npc-info">
+                            <div class="jrpg-npc-name">☀ 圣光神·索利昂</div>
+                            <div class="jrpg-npc-desc">圣光主神的黎明侧化身，为指引勇者降临英灵殿，将神力压缩在英灵上限。外表庄重圣洁，一开口就破功。<br><b>擅长：</b>圣光神术全理论、勇者命格鉴别、深渊教廷弱点、教会隐秘。</div>
+                            <div class="jrpg-spirit-quote" style="color:#d8b870;">「外表庄重是工作要求，嘴碎是天赋异禀。两样我都要，很合理吧？」</div>
+                        </div>
+                    </label>
+                    <!-- 深渊的魅魔·阿丝茉德 -->
+                    <label class="jrpg-spirit-card" id="spirit-card-asmod">
+                        <input type="radio" name="hero-spirit" value="英灵/深渊的魅魔·阿丝茉德" onchange="selectHeroSpirit(this)">
+                        <div class="jrpg-npc-info">
+                            <div class="jrpg-npc-name">💋 深渊的魅魔·阿丝茉德</div>
+                            <div class="jrpg-npc-desc">异界召唤的魅魔恶魔，潜伏王国上层近七十年，引诱主教腐化贵族，最终被圣殿骑士斩杀。<br><b>擅长：</b>魅惑伪装与话术、读欲、宫廷秘辛、审讯说服。</div>
+                            <div class="jrpg-spirit-quote" style="color:#f09ac8;">「过来，孩子……告诉我，你今晚最想要什么？」</div>
                         </div>
                     </label>
                     <!-- ===== 终焉纪元IF线专属英灵（默认隐藏） ===== -->
@@ -2892,6 +2744,46 @@
             <div style="font-size:12px; color:#7f8c8d; margin-top:10px; line-height: 1.4;">复制后粘贴到聊天输入框并发送，AI将为你生成开场白并初始化队伍数据。</div>
         </div>
 
+        <!-- ===== 主角数据存档（角色卡变量，跨聊天页面持久） ===== -->
+        <div style="margin-top:16px; padding:14px 16px; background:rgba(39,174,96,0.07); border:1px solid #27ae60; border-radius:8px; box-shadow:inset 0 1px 0 rgba(255,255,255,0.4);">
+            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                <span style="font-weight:bold; color:#27ae60; font-size:13.5px;">💾 主角数据存档</span>
+                <button class="jrpg-btn-sm" style="width:auto;padding:6px 16px;font-size:12px;background:#27ae60;color:#fff;border:none;border-radius:16px;box-shadow:0 2px 5px rgba(39,174,96,0.35);cursor:pointer;" onclick="saveProtagonistData()">💾 保存数据</button>
+                <button class="jrpg-btn-sm" style="width:auto;padding:6px 16px;font-size:12px;background:#2980b9;color:#fff;border:none;border-radius:16px;box-shadow:0 2px 5px rgba(41,128,185,0.35);cursor:pointer;" onclick="openSaveListPopup()">🗂 查看存档</button>
+                <span style="font-size:11.5px;color:#5d8a6e;line-height:1.5;max-width:460px;">
+                    把当前主角数据留在角色卡上，换聊天页也能继续。点「保存数据」记一份；点「查看存档」能看到所有存过的记录，点任意一条即可恢复。
+                </span>
+            </div>
+        </div>
+
+        <!-- 存档列表弹窗 -->
+        <div id="protagonist-save-popup" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(20,30,20,0.45); align-items:center; justify-content:center; padding:20px;" onclick="if(event.target===this)closeSaveListPopup()">
+            <div style="width:min(680px, 96vw); max-height:82vh; overflow-y:auto; background:#faf6ef; border:1px solid #d2b48c; border-radius:10px; box-shadow:0 12px 40px rgba(0,0,0,0.35); padding:18px 20px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                    <span style="font-weight:bold; color:#6b4e31; font-size:15px;">🗂 主角数据存档</span>
+                    <span style="font-size:12px; color:#7f8c8d;">共 <span id="save-popup-count">0</span> 份 · 点击卡片即可恢复到当前角色</span>
+                    <button style="background:#c0392b; color:#fff; border:none; border-radius:16px; padding:5px 14px; font-size:12px; cursor:pointer;" onclick="closeSaveListPopup()">关闭</button>
+                </div>
+                <div id="save-popup-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+                <div id="save-popup-empty" style="display:none; text-align:center; color:#aaa; padding:40px 0; font-size:13px;">还没有存档，先在上面点「保存数据」记一份吧～</div>
+            </div>
+        </div>
+
+        <!-- 通用确认弹窗（替代系统 confirm，用于导入/删除/签订契约后询问） -->
+        <div id="home-confirm-popup" style="display:none; position:fixed; inset:0; z-index:10000; background:rgba(20,30,20,0.5); align-items:center; justify-content:center; padding:20px;" onclick="if(event.target===this)resolveHomeConfirm(false)">
+            <div style="width:min(420px, 92vw); background:#faf6ef; border:1px solid #d2b48c; border-radius:12px; box-shadow:0 14px 44px rgba(0,0,0,0.4); padding:20px 22px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                    <span style="font-size:18px;" id="home-confirm-icon">❓</span>
+                    <span style="font-weight:bold; color:#6b4e31; font-size:15px;" id="home-confirm-title">确认</span>
+                </div>
+                <div style="font-size:13px; color:#4a3623; line-height:1.7; white-space:pre-wrap; margin-bottom:18px;" id="home-confirm-message"></div>
+                <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button style="background:#b8a88a; color:#fff; border:none; border-radius:16px; padding:8px 20px; font-size:13px; cursor:pointer;" onclick="resolveHomeConfirm(false)">取消</button>
+                    <button style="background:#2980b9; color:#fff; border:none; border-radius:16px; padding:8px 20px; font-size:13px; cursor:pointer;" id="home-confirm-ok" onclick="resolveHomeConfirm(true)">确定</button>
+                </div>
+            </div>
+        </div>
+
     </div><!-- /jrpg-cc-wrapper -->
 
     <script>
@@ -3058,21 +2950,30 @@ window.toggleMeimeiDLC=toggleMeimeiDLC;window.toggleDayanDLC=toggleDayanDLC;wind
             '英灵/第四代魔女莎提拉': '第四代魔女·莎提拉',
             '英灵/小圣女索菲亚': '小圣女·索菲亚',
             '英灵/小魔王伊莉丝': '小魔王·伊莉丝',
-            '英灵/指引妖精莉耶芙': '指引妖精·莉耶芙'
+            '英灵/指引妖精莉耶芙': '指引妖精·莉耶芙',
+            '英灵/盲目的莉莉娅': '盲目的莉莉娅',
+            '英灵/圣光神索利昂': '圣光神·索利昂',
+            '英灵/深渊的魅魔·阿丝茉德': '深渊的魅魔·阿丝茉德'
         };
         var allSpiritEntries = [
             '英灵/初代勇者雷恩',
             '英灵/第四代魔女莎提拉',
             '英灵/小圣女索菲亚',
             '英灵/小魔王伊莉丝',
-            '英灵/指引妖精莉耶芙'
+            '英灵/指引妖精莉耶芙',
+            '英灵/盲目的莉莉娅',
+            '英灵/圣光神索利昂',
+            '英灵/深渊的魅魔·阿丝茉德'
         ];
         var spiritDefaultContents = {
             '英灵/初代勇者雷恩': '初代勇者雷恩的英灵残响。擅长无限制格斗与逃跑路线规划。',
             '英灵/第四代魔女莎提拉': '第四代魔女莎提拉的英灵残响。精通死灵术与暗属性魔法。',
             '英灵/小圣女索菲亚': '小圣女索菲亚的英灵残响。擅长圣光神术与不死生物弱点。',
             '英灵/小魔王伊莉丝': '小魔王伊莉丝的英灵残响。精通陷阱与以弱胜强战术。',
-            '英灵/指引妖精莉耶芙': '自称纯真善良的指引妖精。非常乐于帮助新手冒险者，提供详细的战术指导与危险预警。性格活泼可爱，会一直陪伴在御主身边。'
+            '英灵/指引妖精莉耶芙': '自称纯真善良的指引妖精。非常乐于帮助新手冒险者，提供详细的战术指导与危险预警。性格活泼可爱，会一直陪伴在御主身边。',
+            '英灵/盲目的莉莉娅': '盲目的莉莉娅的英灵残响。圣光历600年以无限次死亡回溯凑齐第二代四传奇、以双眼换取唯一胜机的"时之祭司"。擅长时间系术式原理、历史与预言、避免重蹈覆辙的决策学。',
+            '英灵/圣光神索利昂': '圣光主神索利昂的黎明侧化身残响。为指引勇者将神力压缩在英灵上限，外表庄重圣洁而性格活泼爱吐槽。擅长圣光神术全理论、勇者命格鉴别、教会隐秘与深渊教廷弱点。',
+            '英灵/深渊的魅魔·阿丝茉德': '异界召唤的魅魔恶魔残响。潜伏人类王国近七十年，引诱主教腐化贵族，最终被圣殿骑士斩杀。擅长魅惑伪装与话术、读欲、宫廷秘辛、审讯说服。'
         };
         // 终焉纪元IF线专属英灵（仅在DLC启用时激活）
         var apocalypseSpiritNames = {
@@ -3265,14 +3166,15 @@ window.toggleMeimeiDLC=toggleMeimeiDLC;window.toggleDayanDLC=toggleDayanDLC;wind
         })();
 
         // ============================================================
-        //  NPC 编辑展开 (原)
+        //  NPC 勾选（编辑功能已移除：不再展开 姓名/种族/职业/背景描述 编辑；勾选仅用于招募选中）
         // ============================================================
         function toggleNpcEdit(checkbox) {
             var card = checkbox.closest('.jrpg-npc-card');
+            if (!card) return;
             if (checkbox.checked) {
-                card.classList.add('expanded');
+                card.classList.add('checked');
             } else {
-                card.classList.remove('expanded');
+                card.classList.remove('checked');
             }
         }
 
@@ -4287,8 +4189,8 @@ if (lilithCard) {
     var lilithCheck = lilithCard.querySelector('.npc-checkbox');
     if (lilithCheck) {
         lilithCheck.checked = false;
-        // 如果卡片处于展开状态，可移除 expanded 类
-        lilithCard.classList.remove('expanded');
+        // 如果卡片处于展开状态，可移除 checked 高亮
+        lilithCard.classList.remove('checked');
     }
 }
 
@@ -4310,10 +4212,6 @@ if (lilithCard) {
             }
             if (val === '__GROUP__') {
                 applyGroupReincarnationPreset();
-                return;
-            }
-            if (val === '__WING_KNIGHT__') {
-                applyWingKnightPreset();
                 return;
             }
             if (val === '__WORLD_CHOSEN__') {
@@ -4565,7 +4463,7 @@ if (lilithCard) {
         lilithCheck.checked = true;
         // 同时展开编辑区
         var card = lilithCheck.closest('.jrpg-npc-card');
-        if (card) card.classList.add('expanded');
+        if (card) card.classList.add('checked');
     }
 }
 
@@ -4676,7 +4574,7 @@ function applyDemonPreset() {
 // ============================================================
 function applyOpeningPreset(index) {
     // 清除所有按钮的active状态
-    for (var i = 1; i <= 9; i++) {
+    for (var i = 1; i <= 8; i++) {
         var btn = document.getElementById('open-btn-' + i);
         if (btn) btn.classList.remove('active');
     }
@@ -4706,20 +4604,17 @@ function applyOpeningPreset(index) {
         case 6: // 开场白6：世界眷顾之子·奥古斯特
             applyWorldChosenChildPreset();
             break;
-        case 7: // 开场白7：翼民骑士·地脉锚点
-            applyWingKnightPreset();
-            break;
-        case 8: // 开场白8：裂隙门钥
+        case 7: // 开场白7：裂隙门钥
             applyRiftGatePreset();
             break;
-        case 9: // 开场白9：最后的勇者
+        case 8: // 开场白8：最后的勇者
             applyLastHopePreset();
             break;
     }
 
     // ---- 跳转到第零楼的对应swipe页 ----
     // 开场白1→第2页(swipe_id=1)，开场白2→第3页(swipe_id=2)，以此类推
-    // 开场白6→swipe_id=6（第7页），开场白7→swipe_id=7（第8页）；若第零楼页数不足需调整 targetSwipeId
+    // 开场白6→swipe_id=6（第7页），开场白7→swipe_id=7（第8页），开场白8→swipe_id=8（第9页）；若第零楼页数不足需调整 targetSwipeId
     try {
         var targetSwipeId = index; // 1→1, 2→2, 3→3, 4→4
         var th = window.TavernHelper;
@@ -4981,79 +4876,9 @@ function applyGroupReincarnationPreset() {
 }
 
 // ============================================================
-//  🪽 翼民骑士·崩落带调查（开场白7）
-//  艾洛菲拉第三中队翼民骑士 · Lv5骑士 · 调查碎风岛旧址异常
+//  🗝️ 裂隙门钥开局（梅萨利亚港的拾遗者）
 // ============================================================
-function applyWingKnightPreset() {
-    // 1. 设定种族为翼民（敏+2 感+1）
-    var raceSel = document.getElementById('cc-race');
-    raceSel.value = '翼民';
-    raceSel.classList.remove('jrpg-locked-select');
-    document.getElementById('race-lock-badge').style.display = 'none';
-    updateRaceBonus();
-
-    // 2. 设定等级为5（匹配开场白中的 Lv5 骑士）
-    var levelInput = document.getElementById('cc-level');
-    levelInput.value = 5;
-    levelInput.classList.remove('jrpg-locked');
-    document.getElementById('level-lock-badge').style.display = 'none';
-    onLevelChange();
-
-    // 3. 设定职业为骑士（需力量13 魅力12，见下方属性）
-    var classSel = document.getElementById('cc-class');
-    classSel.value = '骑士';
-    classSel.classList.remove('jrpg-locked-select');
-    document.getElementById('class-lock-badge').style.display = 'none';
-
-    // 4. 设定信仰为无信仰（无魔力回路，且对献祭体制心存疑虑）
-    var faithSel = document.getElementById('cc-faith');
-    faithSel.value = '无信仰';
-
-    // 5. 设定降临地点为艾瑟尔邦联·外围崩落区·碎风岛旧址
-    var locSel = document.getElementById('cc-location');
-    locSel.value = '艾瑟尔邦联·外围崩落区·碎风岛旧址';
-    locSel.classList.remove('jrpg-locked-select');
-    document.getElementById('loc-lock-badge').style.display = 'none';
-
-    // 6. 设定时期为动荡期（紧张度52，崩落带异变扩散）
-    var eraSel = document.getElementById('cc-era');
-    eraSel.value = '动荡期';
-    updateEraDetail();
-
-    // 7. 设定加护为无（无回路骑士，无魔法/神术/加护）
-    var blessSel = document.getElementById('cc-blessing-type');
-    blessSel.value = '无';
-    blessSel.classList.remove('jrpg-locked-select');
-    document.getElementById('bless-lock-badge').style.display = 'none';
-    updateBlessingDetail();
-
-    // 8. 设定年龄为23
-    var ageInput = document.getElementById('cc-age');
-    ageInput.value = 23;
-
-    // 9. 填写身份背景
-    var identityText = document.getElementById('cc-identity');
-    identityText.value = 
-        '艾洛菲拉第三中队的翼民骑士，二十三岁，无魔力回路，以短矛与飞行技巧见长。\n\n' +
-        '圣光历1497年1月1日黄昏，总执政泽菲洛斯的青色令条送到营房：碎风岛旧址昨夜低频震颤、云层下起了黑雾，命艾洛菲拉就近核实。这是这个月第三封类似的令条——沉锚屿、云巢废矿口都报过同样的异常，而近两年派进崩落带的七支核实队，归来者不足一半。\n\n' +
-        '你孤身飞入崩落带，在六百年废墟的矿洞里发现会腐蚀合金、自发幽绿光的活性黑泥，它正流向地脉锚点。骸骨脚边躺着议事厅去年签发的『核实沉锚屿』令条；一名佩戴艾洛菲拉旧式编制号的守备兵异变体，正把手按上锚点。风铃作响，风向变了。炸掉锚点、原路退回，还是循风钻进裂缝——你只有几息的工夫做决定。';
-
-    // 10. 设定属性（基础值；翼民+敏2感1 → 力13 敏14 体12 智12 感13 魅12）
-    //      骑士职业要求力量13 魅力12，均已满足
-    var wingAttrs = { str: 13, dex: 12, con: 12, int: 12, wis: 12, cha: 12 };
-    for (var wa in wingAttrs) {
-        baseAttrs[wa] = wingAttrs[wa];
-        document.getElementById('base-' + wa).innerText = wingAttrs[wa];
-    }
-    ccPoints = 0;
-    document.getElementById('cc-points').innerText = '0';
-
-    // 11. 刷新界面
-    updateClass();
-    calcStats();
-
-    alert('🪽 已切换为「翼民骑士·崩落带」开场白！\n你受命调查碎风岛旧址的异常震颤与黑雾，孤身闯入六百年废墟，直面活性黑泥与议事厅的阴谋。\n种族翼民 / Lv5骑士 / 动荡期 / 无加护；已按开场白设定填好地点、时期与属性。');
-}function applyRiftGatePreset() {
+function applyRiftGatePreset() {
     // 1. 种族为人类
     var raceSel = document.getElementById('cc-race');
     raceSel.value = '人类';
@@ -5286,6 +5111,11 @@ function applyWorldChosenChildPreset() {
     eraSel.value = '暗流期';
     updateEraDetail();
 
+    // 6.5. 设定资质为平庸（默认，无需购点；高亮第1项）
+    try {
+        selectTalent(1);
+    } catch (e) { console.warn('资质初始化失败:', e); }
+
     // 7. 设定魔力回路为优良（诞生即受本源注视，魔力亲和；需4购点）
     if (ccPoints >= 4) {
         selectCircuit(3);
@@ -5462,12 +5292,12 @@ function applyApocalypsePreset(type) {
         warrior: 'apoc-kel'
     };
     var companionId = companionMap[type];
-    document.querySelectorAll('.npc-checkbox').forEach(function(cb) { cb.checked = false; cb.closest('.jrpg-npc-card').classList.remove('expanded'); });
+    document.querySelectorAll('.npc-checkbox').forEach(function(cb) { cb.checked = false; cb.closest('.jrpg-npc-card').classList.remove('checked'); });
     if (companionId) {
         var targetCard = document.getElementById('npc-card-' + companionId);
         if (targetCard) {
             var checkbox = targetCard.querySelector('.npc-checkbox');
-            if (checkbox) { checkbox.checked = true; targetCard.classList.add('expanded'); }
+            if (checkbox) { checkbox.checked = true; targetCard.classList.add('checked'); }
         }
     }
 
@@ -5509,7 +5339,7 @@ function applyApocalypseMessiahPreset() {
     identityText.value = '你是第五代魔王奥姆尼斯。三百年前你在莫尔加纳讨伐战中击败了四位传奇，剥离魔女命格重塑为魔王命格。你未发动焦土战争，而是选择以渊神之名统治世界。三百年后的今天，你已凝聚神格晋升为常神。世界在你的治下维持着虚假的和平。但现在，反抗军"火种"已聚集了五位残缺命格的承载者——他们正在密谋推翻你的统治。';
 
     // 清除所有同伴选择
-    document.querySelectorAll('.npc-checkbox').forEach(function(cb) { cb.checked = false; cb.closest('.jrpg-npc-card').classList.remove('expanded'); });
+    document.querySelectorAll('.npc-checkbox').forEach(function(cb) { cb.checked = false; cb.closest('.jrpg-npc-card').classList.remove('checked'); });
 
     updateClass();
     calcStats();
@@ -5654,7 +5484,7 @@ function applyUndyingPreset() {
     // 11. 取消所有同伴选择
     document.querySelectorAll('.npc-checkbox').forEach(function(cb) {
         cb.checked = false;
-        cb.closest('.jrpg-npc-card').classList.remove('expanded');
+        cb.closest('.jrpg-npc-card').classList.remove('checked');
     });
 
     // 12. 刷新界面
@@ -6055,6 +5885,86 @@ function applyUndyingPreset() {
             calcStats();
         }
 
+        var talentLevel = 1; // 0=低劣 1=平庸(默认) 2=普通 3=优秀 4=卓越 5=天才
+        // 用户是否在本页显式选择过资质/魔力回路（防止「再次生成」用默认值覆盖存档中的已有值）
+        var talentDirty = false;
+        var circuitDirty = false;
+        var talentCostMap = [0, 0, 1, 3, 5, 8];
+        var talentNames = ['低劣', '平庸', '普通', '优秀', '卓越', '天才'];
+        var talentDescs = [
+            '天资匮乏，进步缓慢。经验获取效率 80%',
+            '常人资质，进步平稳。经验获取效率 100%',
+            '略有慧根，进步稳定。经验获取效率 110%',
+            '天赋异禀，举一反三。经验获取效率 125%',
+            '万里挑一，触类旁通。经验获取效率 145%',
+            '百年不遇，一日千里。经验获取效率 160%'
+        ];
+        var talentEffMap = [80, 100, 110, 125, 145, 160];
+
+        // 免购点回填（导入存档/恢复用）：只改 UI 与内部变量，不扣购点、不设 dirty（保留存档原值防覆盖）
+        function forceSelectTalent(level) {
+            talentLevel = Math.max(0, Math.min(5, parseInt(level, 10) || 1));
+            var tbd = document.getElementById('talent-bonus-display');
+            if (tbd) tbd.innerHTML = '🛈 已选：<strong>' + talentNames[talentLevel] + '</strong> — ' + talentDescs[talentLevel];
+            var selBox = document.getElementById('talent-selector');
+            if (!selBox) return;
+            var opts = selBox.querySelectorAll('.jrpg-circuit-option');
+            for (var i = 0; i < opts.length; i++) {
+                var lv = parseInt(opts[i].getAttribute('data-level'), 10);
+                opts[i].classList.toggle('selected', lv === talentLevel);
+                var rb = opts[i].querySelector('input[type=radio]');
+                if (rb) rb.checked = (lv === talentLevel);
+            }
+        }
+
+        function selectTalent(level) {
+            var oldCost = talentCostMap[talentLevel] || 0;
+            var newCost = talentCostMap[level] || 0;
+            ccPoints += oldCost; // 退还旧资质消耗
+            if (ccPoints - newCost < 0) {
+                ccPoints -= oldCost; // 退还不够，恢复原状
+                alert('购点不足！需要 ' + newCost + ' 点，当前剩余 ' + (ccPoints) + ' 点。请先减少属性分配。');
+                return;
+            }
+            talentLevel = level;
+            talentDirty = true;   // 用户显式选择 → 允许覆盖存档值
+            ccPoints -= newCost;
+            document.getElementById('cc-points').innerText = ccPoints;
+
+            // 更新UI高亮
+            document.querySelectorAll('#talent-selector .jrpg-circuit-option').forEach(function(el) {
+                el.classList.toggle('selected', parseInt(el.getAttribute('data-level')) === level);
+            });
+
+            // 更新说明文字
+            document.getElementById('talent-bonus-display').innerHTML = '🛈 已选：<strong>' + talentNames[level] + '</strong> — ' + talentDescs[level];
+        }
+        window.selectTalent = selectTalent;
+
+        // 免购点回填（导入存档/恢复用）：只改 UI 与内部变量，不扣购点、不设 dirty（保留存档原值防覆盖）
+        function forceSelectCircuit(level) {
+            circuitLevel = Math.max(0, Math.min(5, parseInt(level, 10) || 0));
+            var bonusText = '';
+            var nm = circuitNames[circuitLevel];
+            if (circuitLevel === 0) bonusText = '已选：<strong>' + nm + '</strong> — 无法使用任何魔法';
+            else if (circuitLevel === 1) bonusText = '已选：<strong>' + nm + '</strong> — ❗回路低劣，MP上限-25%，施法稳定性差，法术有概率失败';
+            else if (circuitLevel === 2) bonusText = '已选：<strong>' + nm + '</strong> — 大众水准，MP无加成也无惩罚，可正常学习魔法';
+            else if (circuitLevel === 3) bonusText = '已选：<strong>' + nm + '</strong> — MP上限+25%，可同时维持2个法术，施法稳定性优秀';
+            else if (circuitLevel === 4) bonusText = '已选：<strong>' + nm + '</strong> — MP上限+50%，可同时维持2个法术，法术伤害骰数+1（例如4d6→5d6，即多投一颗伤害骰），学习速度翻倍';
+            else if (circuitLevel === 5) bonusText = '已选：<strong>' + nm + '</strong> — MP上限+100%，可同时维持3个法术，法术伤害骰数+2（例如4d6→6d6，即多投两颗伤害骰），学习速度三倍，多派系兼修无惩罚';
+            var cbd = document.getElementById('circuit-bonus-display');
+            if (cbd) cbd.innerHTML = '🛈 ' + bonusText;
+            var selBox = document.getElementById('circuit-selector');
+            if (!selBox) return;
+            var opts = selBox.querySelectorAll('.jrpg-circuit-option');
+            for (var i = 0; i < opts.length; i++) {
+                var lv = parseInt(opts[i].getAttribute('data-level'), 10);
+                opts[i].classList.toggle('selected', lv === circuitLevel);
+                var rb = opts[i].querySelector('input[type=radio]');
+                if (rb) rb.checked = (lv === circuitLevel);
+            }
+        }
+
         function selectCircuit(level) {
             var oldCost = circuitCostMap[circuitLevel] || 0;
             var newCost = circuitCostMap[level] || 0;
@@ -6066,11 +5976,12 @@ function applyUndyingPreset() {
                 return;
             }
             circuitLevel = level;
+            circuitDirty = true;   // 用户显式选择 → 允许覆盖存档值
             ccPoints -= newCost;
             document.getElementById('cc-points').innerText = ccPoints;
 
-            // 更新UI高亮
-            document.querySelectorAll('.jrpg-circuit-option').forEach(function(el) {
+            // 更新UI高亮（限定电路容器，避免误伤复用同类名的「资质」选择器高亮）
+            document.querySelectorAll('#circuit-selector .jrpg-circuit-option').forEach(function(el) {
                 el.classList.toggle('selected', parseInt(el.getAttribute('data-level')) === level);
             });
 
@@ -6104,24 +6015,24 @@ function applyUndyingPreset() {
                 { lvl: 3, n: "嘲讽", c: 2, d: "SP3 | 迫使一名敌人接下来2轮优先攻击你" },
                 { lvl: 3, n: "战斗架势", c: 2, d: "SP2切换 | 战斗开始时免费选一：猛攻（攻+2防-2）/固守（防+2攻-2）/均衡" },
                 { lvl: 5, n: "武器大师", c: 3, d: "[被动] 所有武器攻击检定+1" },
-                { lvl: 5, n: "二次攻击", c: 3, d: "[被动] 每轮1次额外攻击" },
+                { lvl: 5, n: "二次攻击", c: 3, d: "[被动·SP3/轮] 每轮最快额外1次攻击：需本轮开始前消耗SP3，不足则本轮无额外攻击" },
                 { lvl: 5, n: "死战", c: 3, d: "[被动·升级不屈] DC降至10" },
                 { lvl: 5, n: "反击", c: 3, d: "SP2 [反应] 被近战攻击后反击一次，1次/轮" },
-                { lvl: 7, n: "三次攻击", c: 4, d: "[被动] 每轮2次额外攻击" },
+                { lvl: 7, n: "三次攻击", c: 4, d: "[被动·SP5/轮] 每轮最快额外2次攻击：需本轮开始前消耗SP5，不足则按比例减少次数" },
                 { lvl: 7, n: "武器专精大师", c: 4, d: "[被动] 已选武器暴击范围19-20" },
-                { lvl: 9, n: "四次攻击", c: 5, d: "[被动] 每轮3次额外攻击" },
+                { lvl: 9, n: "四次攻击", c: 5, d: "[被动·SP8/轮] 每轮最快额外3次攻击：需本轮开始前消耗SP8，不足则按比例减少次数；连击上限=3次额外" },
                 { lvl: 9, n: "钢铁意志", c: 5, d: "[被动] 免疫恐惧、魅惑；精神类效果豁免优势" },
                 { lvl: 9, n: "压制打击", c: 5, d: "SP4 | 近战命中后目标力量或敏捷豁免DC18，失败则缴械或击倒（选一）" },
-                { lvl: 11, n: "武器至尊", c: 6, d: "[被动·升级] 已选武器暴击范围18-20，暴击伤害骰×3" },
+                { lvl: 11, n: "武器至尊", c: 6, d: "[被动·升级] 已选武器暴击范围19-20，暴击伤害骰×2（与Lv7叠加后维持18-20）" },
                 { lvl: 11, n: "势不可挡", c: 6, d: "[被动] 移动不因敌人借机攻击而中断；冲锋期间免疫束缚和倒地" },
                 { lvl: 11, n: "破甲", c: 6, d: "SP5 | 下一次攻击无视目标一半防御值" },
-                { lvl: 13, n: "战争化身", c: 7, d: "SP8 | 进入战争状态：攻击检定+3，每轮额外攻击再+1，持续5轮，结束后力竭2轮" },
+                { lvl: 13, n: "战争化身", c: 7, d: "SP8 | 进入战争状态：攻击检定+3，本轮额外攻击+1，持续5轮；期间连击SP减半（向上取整），结束后力竭2轮" },
                 { lvl: 13, n: "绝对反击", c: 7, d: "[被动·升级] 每轮可反击次数=力量修正，且反击命中追加一次额外攻击" },
-                { lvl: 15, n: "传说一击", c: 8, d: "SP10 | 1次/战斗，单次攻击伤害骰全部取最大值+力量修正×3" },
+                { lvl: 15, n: "传说一击", c: 8, d: "SP10 | 1次/战斗，单次攻击伤害骰全部取最大值+力量修正×2" },
                 { lvl: 15, n: "不死战魂", c: 8, d: "[被动·升级] HP归零时自动成功保留1HP，且接下来2轮攻击优势；2次/日" },
                 { lvl: 17, n: "万军之敌", c: 9, d: "[被动] 被3名以上敌人包围时全属性修正+2，所有攻击获优势" },
-                { lvl: 17, n: "终焉之剑", c: 9, d: "SP12 | 1次/日，宣告一名敌人为终焉目标：对其所有攻击自动暴击，持续至目标死亡或3轮结束" },
-                { lvl: 19, n: "剑圣", c: 10, d: "[被动] 所有武器攻击检定+3；暴击范围17-20；暴击伤害骰×4；每轮攻击次数无上限（受SP限制）" }
+                { lvl: 17, n: "终焉之剑", c: 9, d: "SP12 | 1次/日，宣告一名敌人为终焉目标：对其所有攻击改为优势（不再无条件自动暴击），持续至目标死亡或3轮结束" },
+                { lvl: 19, n: "剑圣", c: 10, d: "[被动] 所有武器攻击检定+3；暴击范围18-20；暴击伤害骰×3；每轮额外攻击上限仍为3次（SP规则同上）" }
             ],
             "骑士": [
                 { lvl: 1, n: "盾牌专精", c: 1, d: "[被动] 持盾防御额外+1" },
@@ -6234,111 +6145,111 @@ function applyUndyingPreset() {
                 { lvl: 15, n: "毁灭打击", c: 8, d: "SP10 | 1次/战斗。舍弃兵器耐久的全力一击，单次伤害数值 = 武器基础伤害骰 × 力量修正倍数（最少×3），极易导致普通武器当场粉碎" },
                 { lvl: 17, n: "原初狂暴", c: 9, d: "SP15 | 1次/日，进入原初返祖状态：力量与体质修正额外+5，免疫大部分非高阶魔法的心智控制；武器掷骰只要并非自然1，统统视同触发暴击；持续3轮，结束后HP必定降至1且陷入瘫痪" },
                 { lvl: 17, n: "战场支配", c: 9, d: "[被动·狂暴中] 野兽威压：R30尺内任何弱于自身阶级的敌人必须通过意志豁免DC22，失败者由于极度战栗，不可将包含你在内的区域作为物理反击首选目标" },
-                { lvl: 19, n: "肉身战神", c: 10, d: "[被动] 终极阈值：狂暴状态下力量修正+8，暴击范围15-20，暴击伤害×3。你获得全系元素的物理基础抗性（伤害减半）。HP归零时靠死前执念继续挥刃，唯一的制止条件是：单次承受伤害超越你最大HP，肉体被完全解构或粉烂。" }
+                { lvl: 19, n: "肉身战神", c: 10, d: "[被动] 终极阈值：狂暴状态下力量修正+6，暴击范围17-20，暴击伤害×3。你获得全系元素的物理基础抗性（伤害减半）。但狂暴结束后的力竭升级为2级（大幅削弱行动与检定，需长休恢复）；HP归零时靠死前执念继续挥刃，唯一的制止条件是：单次承受伤害超越你最大HP，肉体被完全解构或粉烂。" }
             ],
             "元素法师": [
-                { lvl: 1, n: "火球", c: 1, d: "MP2 | R60尺，1d8火焰，溅射5尺（敏捷豁免减半）" },
-                { lvl: 1, n: "火焰护盾", c: 1, d: "MP2 | 自身，近战攻击者受1d4火伤，持续3轮" },
-                { lvl: 1, n: "燃烬之风", c: 1, d: "MP1 | 附赠动作，下一次火系术式附加1d4灼烧伤害" },
-                { lvl: 1, n: "水箭", c: 1, d: "MP2 | R30尺，1d8水，击退5尺" },
-                { lvl: 1, n: "冰雾护盾", c: 1, d: "MP2 | 自身，远程攻击承受-1罚值，近战攻击者敏捷豁免DC12否则滑倒" },
-                { lvl: 1, n: "涟漪步", c: 1, d: "MP1 | 附赠动作，移动+10尺且不受困难地形影响，持续1轮" },
-                { lvl: 1, n: "风刃", c: 1, d: "MP2 | R90尺，1d6风，无视部分掩体" },
-                { lvl: 1, n: "气旋护盾", c: 1, d: "MP2 | 自身，远程投射物命中-1，范围攻击伤害减半" },
-                { lvl: 1, n: "轻身术", c: 1, d: "MP1 | 附赠动作，自身或一友方跳跃距离加倍，坠落伤害减半，持续1分钟" },
-                { lvl: 1, n: "岩弹", c: 1, d: "MP2 | R60尺，1d8土，命中后目标移速减半1轮" },
-                { lvl: 1, n: "大地护盾", c: 1, d: "MP2 | 自身，物理防御+2，可吸收10点伤害后破碎" },
-                { lvl: 1, n: "磐石之握", c: 1, d: "MP1 | R30尺，地表伸出一只石手抓住目标，力量豁免DC13否则无法移动1轮" },
-                { lvl: 1, n: "电击", c: 1, d: "MP2 | R60尺，1d10雷，目标若穿金属甲则豁免劣化" },
-                { lvl: 1, n: "静电干扰", c: 1, d: "MP2 | 自身周围10尺，敌方远程攻击命中-1，持续3轮" },
-                { lvl: 1, n: "雷光步", c: 1, d: "MP1 | 附赠动作，化为闪电移动到30尺内可见位置，路径上生物受到1d4雷伤" },
-                { lvl: 1, n: "霜冻射线", c: 1, d: "MP2 | R60尺，1d8冰，目标移动减半1轮" },
-                { lvl: 1, n: "寒冰护甲", c: 1, d: "MP2 | 自身，获得临时HP 5点，近战攻击者被减速1轮" },
-                { lvl: 1, n: "冻结之触", c: 1, d: "MP1 | 近战，触碰目标体质豁免DC13否则被冻结1轮（无法行动）" },
-                { lvl: 1, n: "魔力感知", c: 1, d: "MP1 | 智力检定DC10探测附近魔力源" },
-                { lvl: 1, n: "法杖熟练", c: 1, d: "[被动] 使用法杖施法检定+1" },
-                { lvl: 3, n: "烈焰爆", c: 2, d: "MP5 | 自身为中心R15尺，3d6火焰，敏捷豁免DC15减半" },
-                { lvl: 3, n: "炽热射线", c: 2, d: "MP3 | R120尺，单体，2d8火焰，重击范围+1" },
-                { lvl: 3, n: "冰锥术", c: 2, d: "MP5 | 锥形范围，3d6冰，体质豁免DC15失败则冻结1轮" },
-                { lvl: 3, n: "水牢术", c: 2, d: "MP4 | R30尺，单体目标被困水球中，每轮体质豁免DC14否则窒息（最多3轮）" },
-                { lvl: 3, n: "雷击", c: 2, d: "MP5 | R60尺，3d8雷，目标若穿金属甲则豁免劣化" },
-                { lvl: 3, n: "风行者步", c: 2, d: "MP4 | 自身移动速度翻倍且不受机会攻击，持续1轮" },
-                { lvl: 3, n: "地震术", c: 2, d: "MP5 | R20尺地面，2d8土，敏捷豁免DC15否则倒地" },
-                { lvl: 3, n: "岩壁术", c: 2, d: "MP4 | 在相邻位置升起10×10尺岩壁（HP=法师等级×10），可阻挡移动和视线" },
-                { lvl: 3, n: "连锁闪电", c: 2, d: "MP5 | 主目标3d8雷，跳跃至2个次要目标造成一半伤害" },
-                { lvl: 3, n: "电磁脉冲", c: 2, d: "MP4 | R20尺爆发，所有构装体眩晕1轮，金属武器暂时磁性失效（攻击劣势）" },
-                { lvl: 3, n: "冰棺术", c: 2, d: "MP5 | R30尺，单体目标被坚冰包裹1轮，无法行动但免疫外界伤害" },
-                { lvl: 3, n: "凛风冲击", c: 2, d: "MP4 | 锥形范围，3d6冰+敏捷豁免DC15否则击退10尺" },
-                { lvl: 3, n: "第二元素", c: 2, d: "[被动] 可选修第二种元素的初级术式（获得对应元素基础），解锁其技能树" },
-                { lvl: 3, n: "元素穿透", c: 2, d: "[被动] 穿透目标魔法抗性时自身智力检定获得优势" },
-                { lvl: 3, n: "远距施法", c: 2, d: "[附赠动作] 消耗MP额外+1，使单次术式射程+50%" },
-                { lvl: 5, n: "炎柱", c: 3, d: "MP8 | 指定一点R10尺火焰柱，5d6火焰，持续3轮（进入或开始回合时受伤）" },
-                { lvl: 5, n: "焦土光环", c: 3, d: "MP6 | 自身光环R10尺，持续1分钟，每轮自动对范围内所有敌人造成1d6火焰伤害" },
-                { lvl: 5, n: "深渊漩涡", c: 3, d: "MP8 | R15尺区域，4d6水，力量豁免DC15失败被拖入中心并束缚1轮" },
-                { lvl: 5, n: "潮汐装甲", c: 3, d: "MP6 | 自身，获得临时HP=智力修正×5，近战攻击者被水幕反击1d4水伤，持续1分钟" },
-                { lvl: 5, n: "龙卷风", c: 3, d: "MP8 | R20尺圆柱，高40尺，4d6风，力量豁免DC15失败被卷起并抛出20尺" },
-                { lvl: 5, n: "大气装甲", c: 3, d: "MP6 | 自身，获得对远程攻击的伤害减免3点，且移动时无视困难地形，持续10分钟" },
-                { lvl: 5, n: "地刺陷阱", c: 3, d: "MP8 | R20尺区域变为针刺地形，进入或开始回合受到2d8穿刺伤害，持续1分钟" },
-                { lvl: 5, n: "晶化皮肤", c: 3, d: "MP6 | 自身，物理伤害减免5，但移动速度-10尺，持续10分钟" },
-                { lvl: 5, n: "雷暴云", c: 3, d: "MP8 | R20尺高空悬停云团，每轮向随机敌人降下3d6雷击，持续3轮" },
-                { lvl: 5, n: "超载", c: 3, d: "MP6 | 自身，接下来三回合雷系术式伤害最大化，但每次施法后自身受到1d4过载伤害" },
-                { lvl: 5, n: "冰川裂隙", c: 3, d: "MP8 | 直线50尺，5d6冰，地面变为困难地形持续1分钟，通过需敏捷豁免" },
-                { lvl: 5, n: "永恒冻土", c: 3, d: "MP6 | R20尺区域，所有敌人移动速度减半，每轮开始受1d6冰伤，持续1分钟" },
-                { lvl: 5, n: "法术反制", c: 3, d: "MP4 | [反应] 反制可见敌方术式，双方智力检定对抗" },
-                { lvl: 5, n: "元素亲和", c: 3, d: "[被动] 主元素术式MP消耗-1，最低为1" },
-                { lvl: 5, n: "群体施法", c: 3, d: "施法时MP消耗额外+3 | 单体术式扩展至多目标（最高目标数=智力修正值）" },
-                { lvl: 7, n: "元素融合·熔岩", c: 4, d: "MP12 | R20尺，5d6火焰+3d6钝击，地面化为熔岩区域持续3轮" },
-                { lvl: 7, n: "元素融合·暴风雨", c: 4, d: "MP12 | R30尺，4d6冰+4d6雷，每轮随机击退敌人" },
-                { lvl: 7, n: "元素融合·沙尘暴", c: 4, d: "MP12 | R25尺，4d6风+3d6土，所有远程攻击自动失准，移动速度减半" },
-                { lvl: 7, n: "元素融合·磁暴", c: 4, d: "MP12 | R20尺，5d8雷，金属目标额外束缚1轮" },
-                { lvl: 7, n: "元素融合·冰风暴", c: 4, d: "MP12 | R25尺，4d6冰+3d6风，区域内每轮开始受到1d6冰伤且速度减半" },
-                { lvl: 7, n: "元素融合·极寒深渊", c: 4, d: "MP12 | R20尺，5d8冰，失败者冻结2轮，成功速度减半" },
-                { lvl: 7, n: "瞬发法术", c: 4, d: "[被动] 1次/短休，一个需要标准动作的术式转为附赠动作释放" },
-                { lvl: 7, n: "元素化身", c: 4, d: "MP15 | 1次/长休，躯体半元素化，持续3轮（火：近战反伤2d6，火系+1d6；冰：10尺减速，冰系免前置；风：飞行60尺免借机；土：AC+4，范围+50%）" },
-                { lvl: 9, n: "火焰风暴", c: 5, d: "MP12 | R30尺区域，6d6火焰持续3轮，每轮可重选目标" },
-                { lvl: 9, n: "大漩涡", c: 5, d: "MP12 | R25尺，5d8水，力量豁免DC16否则被拉向中心无法移动，持续3轮" },
-                { lvl: 9, n: "飓风之眼", c: 5, d: "MP12 | R30尺，6d8风+雷，每轮可重新指定方向，区域内远程攻击失准" },
-                { lvl: 9, n: "大地吞噬", c: 5, d: "MP12 | R25尺，4d10土+束缚，力量豁免DC18逃脱，持续3轮" },
-                { lvl: 9, n: "雷霆万钧", c: 5, d: "MP12 | R40尺锥形，6d8雷，命中金属装备目标则临时削减其AC 2点" },
-                { lvl: 9, n: "绝对零度", c: 5, d: "MP12 | R20尺区域，5d8冰冻，失败者陷入深寒僵死（移动清零，不可闪避）持续2轮" },
-                { lvl: 9, n: "第三元素", c: 5, d: "[被动] 可选修第三种元素的初级术式。所有已掌握Lv1术式MP消耗恒定减1（最低为1）" },
-                { lvl: 9, n: "元素抗拒", c: 5, d: "[被动] 获得主元素属性抗性（伤害减半）；副元素造成的影响豁免检定优势" },
-                { lvl: 11, n: "陨石术", c: 6, d: "MP16 | R20尺强力轰击，8d6火焰+4d6钝击，落点结构严重损毁" },
-                { lvl: 11, n: "海啸术", c: 6, d: "MP16 | 宽30尺长60尺巨浪，6d6水伤害并击倒，力量豁免DC18" },
-                { lvl: 11, n: "风暴召唤", c: 6, d: "MP16 | R50尺高空压制持续5轮，每轮随机对2个敌方投下4d8雷风混合伤害" },
-                { lvl: 11, n: "地壳变动", c: 6, d: "MP16 | R30尺地形强制重塑（可生成阻断级岩壁或深渊陷阱）" },
-                { lvl: 11, n: "天罚", c: 6, d: "MP16 | 单体目标，10d8雷伤，智力豁免DC20减半，若目标为金属构装体直接摧毁" },
-                { lvl: 11, n: "冰河期", c: 6, d: "MP16 | R40尺极端冻结结界持续5轮，每轮造成2d8冰伤，除施法者外移速减半" },
-                { lvl: 11, n: "交响施法", c: 6, d: "[动作] 消耗对应的总MP叠加值，同回合内同时结印施展两个不同元素的术式，1次/长休" },
-                { lvl: 13, n: "火元素领域", c: 7, d: "MP20 | R40尺，持续5轮。领域内火系伤害+智力修正，敌方火系术式伤害减半" },
-                { lvl: 13, n: "水元素领域", c: 7, d: "MP20 | R40尺，持续5轮。领域内水/冰伤害+智力修正，盟友获得水中呼吸和游泳速度" },
-                { lvl: 13, n: "风元素领域", c: 7, d: "MP20 | R50尺，持续5轮。领域内友方飞行速度+30尺，风系暴击率+1" },
-                { lvl: 13, n: "土元素领域", c: 7, d: "MP20 | R40尺，持续5轮。领域内友方AC+2，每次受到近战攻击可反弹1d6土伤" },
-                { lvl: 13, n: "雷元素领域", c: 7, d: "MP20 | R40尺，持续5轮。领域内雷系术式可额外弹跳一次，友方获得电击抗性" },
-                { lvl: 13, n: "冰元素领域", c: 7, d: "MP20 | R40尺，持续5轮。领域内每轮自动对敌方造成1d6冰伤，友方冰系伤害+智力修正" },
-                { lvl: 13, n: "同构转化", c: 7, d: "[被动] 可将已知法术结构转化为任何已掌握的元素属性（例：水球代替火球），保留原判定范围仅更变伤害类型" },
-                { lvl: 15, n: "万火归宗", c: 8, d: "[被动] 所有火系术式MP消耗-2（最低1），范围技可自由选择目标不伤队友" },
-                { lvl: 15, n: "万流归元", c: 8, d: "[被动] 所有水系术式射程+50%，水牢术可同时囚禁两个目标" },
-                { lvl: 15, n: "万象风语", c: 8, d: "[被动] 风系术式射程变为1.5倍，风刃可攻击两个相邻目标" },
-                { lvl: 15, n: "不动如山", c: 8, d: "[被动] 土系术式施放时自身免疫强制移动和倒地，岩壁HP翻倍" },
-                { lvl: 15, n: "迅雷不及", c: 8, d: "[被动] 所有雷系术式的先攻权获得优势，电击射程提升至120尺" },
-                { lvl: 15, n: "绝对零度·被动", c: 8, d: "[被动] 霜冻射线有概率冻结目标（若造成伤害超过目标体质豁免DC，则冻结1轮）" },
-                { lvl: 15, n: "毁灭重压", c: 8, d: "MP25 | 1次/长休。R50尺区域10d10混合元素直接坍塌。目标体质或敏捷豁免DC20，失败承受全额伤害，成功则减半" },
-                { lvl: 17, n: "元素篡夺", c: 9, d: "[被动] 代替魔力构建，施法者可通过消耗等量SP（体力）来强制驱使环境中已存在的对应元素，作用范围R100尺" },
-                { lvl: 17, n: "伪法则剥夺", c: 9, d: "MP30 | 1次/长休。选定一种元素在R100尺内实行绝对剥夺。5轮内除施法者本身外，任何个体的该元素法术强制失效" },
-                { lvl: 17, n: "不灭之炎", c: 9, d: "MP25 | 1次/长休。选定自身或一友方，死后可立即以半血复活，并释放一次免费烈焰爆" },
-                { lvl: 17, n: "深海沉睡", c: 9, d: "MP25 | 1次/长休。R50尺区域内敌方全体昏睡2轮（不死生物/构装体免疫），无需专注" },
-                { lvl: 17, n: "真空绝息", c: 9, d: "MP25 | 1次/长休。R30尺区域内空气被抽干，生物每轮体质豁免DC18否则窒息1轮，持续3轮" },
-                { lvl: 17, n: "石化凝视", c: 9, d: "MP25 | 1次/长休。单体目标体质豁免DC20，失败则永久石化（解石化需高等复原术）" },
-                { lvl: 17, n: "雷神附体", c: 9, d: "MP25 | 1次/长休。化身雷电，3轮内免疫雷伤，每次移动可附带4d6雷伤于路径敌人" },
-                { lvl: 17, n: "永冻冰柩", c: 9, d: "MP25 | 1次/长休。单体目标永久冻结（除非被高等解魔法解除），期间目标不会死亡但无法行动" },
-                { lvl: 19, n: "贤者源态法则", c: 10, d: "[被动] 获得元素化身体质。1次/长休可开启源态，期间施展所有元素术式不消耗MP，持续3轮。结束时必须进行体质豁免DC22，若失败，回路将遭遇重度晶化反噬（最大HP永久-5或直到接受传说级净化修复）" },
-                { lvl: 19, n: "焚天法则", c: 10, d: "开启源态时，火系术式伤害骰取最大值；结束时体质豁免DC+5，反噬风险加剧" },
-                { lvl: 19, n: "永恒冰河", c: 10, d: "开启源态时，所有水/冰术式附加减速效果（移动减半），且冻结状态延长1轮" },
-                { lvl: 19, n: "天空主宰", c: 10, d: "开启源态时，获得完美飞行（悬浮），且所有风系伤害附加1d8音爆伤害" },
-                { lvl: 19, n: "大地意志", c: 10, d: "开启源态时，自身周围20尺内地面化为流沙（敌人移动减半），且每轮自动对一名敌人发动免费磐石之握" },
-                { lvl: 19, n: "永劫雷狱", c: 10, d: "开启源态时，全场所有敌人每轮受到1d12雷伤，且自身雷系术式无需专注即可维持" },
-                { lvl: 19, n: "霜寒神域", c: 10, d: "开启源态时，全场温度骤降，所有敌方获得极度严寒（每轮体质豁免DC20否则受到2d8冰伤并减速）" }
+                { lvl: 1, n: "火球", c: 1, school: "fire", d: "MP2 | R60尺，1d8火焰，溅射5尺（敏捷豁免减半）" },
+                { lvl: 1, n: "火焰护盾", c: 1, school: "fire", d: "MP2 | 自身，近战攻击者受1d4火伤，持续3轮" },
+                { lvl: 1, n: "燃烬之风", c: 1, school: "fire", d: "MP1 | 附赠动作，下一次火系术式附加1d4灼烧伤害" },
+                { lvl: 1, n: "水箭", c: 1, school: "water", d: "MP2 | R30尺，1d8水，击退5尺" },
+                { lvl: 1, n: "冰雾护盾", c: 1, school: "ice", d: "MP2 | 自身，远程攻击承受-1罚值，近战攻击者敏捷豁免DC12否则滑倒" },
+                { lvl: 1, n: "涟漪步", c: 1, school: "water", d: "MP1 | 附赠动作，移动+10尺且不受困难地形影响，持续1轮" },
+                { lvl: 1, n: "风刃", c: 1, school: "wind", d: "MP2 | R90尺，1d6风，无视部分掩体" },
+                { lvl: 1, n: "气旋护盾", c: 1, school: "wind", d: "MP2 | 自身，远程投射物命中-1，范围攻击伤害减半" },
+                { lvl: 1, n: "轻身术", c: 1, school: "wind", d: "MP1 | 附赠动作，自身或一友方跳跃距离加倍，坠落伤害减半，持续1分钟" },
+                { lvl: 1, n: "岩弹", c: 1, school: "earth", d: "MP2 | R60尺，1d8土，命中后目标移速减半1轮" },
+                { lvl: 1, n: "大地护盾", c: 1, school: "earth", d: "MP2 | 自身，物理防御+2，可吸收10点伤害后破碎" },
+                { lvl: 1, n: "磐石之握", c: 1, school: "earth", d: "MP1 | R30尺，地表伸出一只石手抓住目标，力量豁免DC13否则无法移动1轮" },
+                { lvl: 1, n: "电击", c: 1, school: "lightning", d: "MP2 | R60尺，1d10雷，目标若穿金属甲则豁免劣化" },
+                { lvl: 1, n: "静电干扰", c: 1, school: "lightning", d: "MP2 | 自身周围10尺，敌方远程攻击命中-1，持续3轮" },
+                { lvl: 1, n: "雷光步", c: 1, school: "lightning", d: "MP1 | 附赠动作，化为闪电移动到30尺内可见位置，路径上生物受到1d4雷伤" },
+                { lvl: 1, n: "霜冻射线", c: 1, school: "ice", d: "MP2 | R60尺，1d8冰，目标移动减半1轮" },
+                { lvl: 1, n: "寒冰护甲", c: 1, school: "ice", d: "MP2 | 自身，获得临时HP 5点，近战攻击者被减速1轮" },
+                { lvl: 1, n: "冻结之触", c: 1, school: "ice", d: "MP1 | 近战，触碰目标体质豁免DC13否则被冻结1轮（无法行动）" },
+                { lvl: 1, n: "魔力感知", c: 1, school: "common", d: "MP1 | 智力检定DC10探测附近魔力源" },
+                { lvl: 1, n: "法杖熟练", c: 1, school: "common", d: "[被动] 使用法杖施法检定+1" },
+                { lvl: 3, n: "烈焰爆", c: 2, school: "fire", d: "MP5 | 自身为中心R15尺，3d6火焰，敏捷豁免DC15减半" },
+                { lvl: 3, n: "炽热射线", c: 2, school: "fire", d: "MP3 | R120尺，单体，2d8火焰，重击范围+1" },
+                { lvl: 3, n: "冰锥术", c: 2, school: "ice", d: "MP5 | 锥形范围，3d6冰，体质豁免DC15失败则冻结1轮" },
+                { lvl: 3, n: "水牢术", c: 2, school: "water", d: "MP4 | R30尺，单体目标被困水球中，每轮体质豁免DC14否则窒息（最多3轮）" },
+                { lvl: 3, n: "雷击", c: 2, school: "lightning", d: "MP5 | R60尺，3d8雷，目标若穿金属甲则豁免劣化" },
+                { lvl: 3, n: "风行者步", c: 2, school: "wind", d: "MP4 | 自身移动速度翻倍且不受机会攻击，持续1轮" },
+                { lvl: 3, n: "地震术", c: 2, school: "earth", d: "MP5 | R20尺地面，2d8土，敏捷豁免DC15否则倒地" },
+                { lvl: 3, n: "岩壁术", c: 2, school: "earth", d: "MP4 | 在相邻位置升起10×10尺岩壁（HP=法师等级×10），可阻挡移动和视线" },
+                { lvl: 3, n: "连锁闪电", c: 2, school: "lightning", d: "MP5 | 主目标3d8雷，跳跃至2个次要目标造成一半伤害" },
+                { lvl: 3, n: "电磁脉冲", c: 2, school: "lightning", d: "MP4 | R20尺爆发，所有构装体眩晕1轮，金属武器暂时磁性失效（攻击劣势）" },
+                { lvl: 3, n: "冰棺术", c: 2, school: "ice", d: "MP5 | R30尺，单体目标被坚冰包裹1轮，无法行动但免疫外界伤害" },
+                { lvl: 3, n: "凛风冲击", c: 2, school: "ice", d: "MP4 | 锥形范围，3d6冰+敏捷豁免DC15否则击退10尺" },
+                { lvl: 3, n: "第二元素", c: 2, school: "common", d: "[被动] 可选修第二种元素的初级术式（获得对应元素基础），解锁其技能树" },
+                { lvl: 3, n: "元素穿透", c: 2, school: "common", d: "[被动] 穿透目标魔法抗性时自身智力检定获得优势" },
+                { lvl: 3, n: "远距施法", c: 2, school: "common", d: "[附赠动作] 消耗MP额外+1，使单次术式射程+50%" },
+                { lvl: 5, n: "炎柱", c: 3, school: "fire", d: "MP8 | 指定一点R10尺火焰柱，5d6火焰，持续3轮（进入或开始回合时受伤）" },
+                { lvl: 5, n: "焦土光环", c: 3, school: "fire", d: "MP6 | 自身光环R10尺，持续1分钟，每轮自动对范围内所有敌人造成1d6火焰伤害" },
+                { lvl: 5, n: "深渊漩涡", c: 3, school: "water", d: "MP8 | R15尺区域，4d6水，力量豁免DC15失败被拖入中心并束缚1轮" },
+                { lvl: 5, n: "潮汐装甲", c: 3, school: "water", d: "MP6 | 自身，获得临时HP=智力修正×5，近战攻击者被水幕反击1d4水伤，持续1分钟" },
+                { lvl: 5, n: "龙卷风", c: 3, school: "wind", d: "MP8 | R20尺圆柱，高40尺，4d6风，力量豁免DC15失败被卷起并抛出20尺" },
+                { lvl: 5, n: "大气装甲", c: 3, school: "wind", d: "MP6 | 自身，获得对远程攻击的伤害减免3点，且移动时无视困难地形，持续10分钟" },
+                { lvl: 5, n: "地刺陷阱", c: 3, school: "earth", d: "MP8 | R20尺区域变为针刺地形，进入或开始回合受到2d8穿刺伤害，持续1分钟" },
+                { lvl: 5, n: "晶化皮肤", c: 3, school: "earth", d: "MP6 | 自身，物理伤害减免5，但移动速度-10尺，持续10分钟" },
+                { lvl: 5, n: "雷暴云", c: 3, school: "lightning", d: "MP8 | R20尺高空悬停云团，每轮向随机敌人降下3d6雷击，持续3轮" },
+                { lvl: 5, n: "超载", c: 3, school: "lightning", d: "MP6 | 自身，接下来三回合雷系术式伤害最大化，但每次施法后自身受到1d4过载伤害" },
+                { lvl: 5, n: "冰川裂隙", c: 3, school: "ice", d: "MP8 | 直线50尺，5d6冰，地面变为困难地形持续1分钟，通过需敏捷豁免" },
+                { lvl: 5, n: "永恒冻土", c: 3, school: "ice", d: "MP6 | R20尺区域，所有敌人移动速度减半，每轮开始受1d6冰伤，持续1分钟" },
+                { lvl: 5, n: "法术反制", c: 3, school: "common", d: "MP4 | [反应] 反制可见敌方术式，双方智力检定对抗" },
+                { lvl: 5, n: "元素亲和", c: 3, school: "common", d: "[被动] 主元素术式MP消耗-1，最低为1" },
+                { lvl: 5, n: "群体施法", c: 3, school: "common", d: "施法时MP消耗额外+3 | 单体术式扩展至多目标（最高目标数=智力修正值）" },
+                { lvl: 7, n: "元素融合·熔岩", c: 4, school: "fire", d: "MP12 | R20尺，5d6火焰+3d6钝击，地面化为熔岩区域持续3轮" },
+                { lvl: 7, n: "元素融合·暴风雨", c: 4, school: "lightning", d: "MP12 | R30尺，4d6冰+4d6雷，每轮随机击退敌人" },
+                { lvl: 7, n: "元素融合·沙尘暴", c: 4, school: "earth", d: "MP12 | R25尺，4d6风+3d6土，所有远程攻击自动失准，移动速度减半" },
+                { lvl: 7, n: "元素融合·磁暴", c: 4, school: "lightning", d: "MP12 | R20尺，5d8雷，金属目标额外束缚1轮" },
+                { lvl: 7, n: "元素融合·冰风暴", c: 4, school: "ice", d: "MP12 | R25尺，4d6冰+3d6风，区域内每轮开始受到1d6冰伤且速度减半" },
+                { lvl: 7, n: "元素融合·极寒深渊", c: 4, school: "ice", d: "MP12 | R20尺，5d8冰，失败者冻结2轮，成功速度减半" },
+                { lvl: 7, n: "瞬发法术", c: 4, school: "common", d: "[被动] 1次/短休，一个需要标准动作的术式转为附赠动作释放" },
+                { lvl: 7, n: "元素化身", c: 4, school: "common", d: "MP15 | 1次/长休，躯体半元素化，持续3轮（火：近战反伤2d6，火系+1d6；冰：10尺减速，冰系免前置；风：飞行60尺免借机；土：AC+4，范围+50%）" },
+                { lvl: 9, n: "火焰风暴", c: 5, school: "fire", d: "MP12 | R30尺区域，6d6火焰持续3轮，每轮可重选目标" },
+                { lvl: 9, n: "大漩涡", c: 5, school: "water", d: "MP12 | R25尺，5d8水，力量豁免DC16否则被拉向中心无法移动，持续3轮" },
+                { lvl: 9, n: "飓风之眼", c: 5, school: "wind", d: "MP12 | R30尺，6d8风+雷，每轮可重新指定方向，区域内远程攻击失准" },
+                { lvl: 9, n: "大地吞噬", c: 5, school: "earth", d: "MP12 | R25尺，4d10土+束缚，力量豁免DC18逃脱，持续3轮" },
+                { lvl: 9, n: "雷霆万钧", c: 5, school: "lightning", d: "MP12 | R40尺锥形，6d8雷，命中金属装备目标则临时削减其AC 2点" },
+                { lvl: 9, n: "绝对零度", c: 5, school: "ice", d: "MP12 | R20尺区域，5d8冰冻，失败者陷入深寒僵死（移动清零，不可闪避）持续2轮" },
+                { lvl: 9, n: "第三元素", c: 5, school: "common", d: "[被动] 可选修第三种元素的初级术式。所有已掌握Lv1术式MP消耗恒定减1（最低为1）" },
+                { lvl: 9, n: "元素抗拒", c: 5, school: "common", d: "[被动] 获得主元素属性抗性（伤害减半）；副元素造成的影响豁免检定优势" },
+                { lvl: 11, n: "陨石术", c: 6, school: "fire", d: "MP16 | R20尺强力轰击，8d6火焰+4d6钝击，落点结构严重损毁" },
+                { lvl: 11, n: "海啸术", c: 6, school: "water", d: "MP16 | 宽30尺长60尺巨浪，6d6水伤害并击倒，力量豁免DC18" },
+                { lvl: 11, n: "风暴召唤", c: 6, school: "wind", d: "MP16 | R50尺高空压制持续5轮，每轮随机对2个敌方投下4d8雷风混合伤害" },
+                { lvl: 11, n: "地壳变动", c: 6, school: "earth", d: "MP16 | R30尺地形强制重塑（可生成阻断级岩壁或深渊陷阱）" },
+                { lvl: 11, n: "天罚", c: 6, school: "lightning", d: "MP16 | 单体目标，10d8雷伤，智力豁免DC20减半，若目标为金属构装体直接摧毁" },
+                { lvl: 11, n: "冰河期", c: 6, school: "ice", d: "MP16 | R40尺极端冻结结界持续5轮，每轮造成2d8冰伤，除施法者外移速减半" },
+                { lvl: 11, n: "交响施法", c: 6, school: "common", d: "[动作] 消耗对应的总MP叠加值，同回合内同时结印施展两个不同元素的术式，1次/长休" },
+                { lvl: 13, n: "火元素领域", c: 7, school: "fire", d: "MP20 | R40尺，持续5轮。领域内火系伤害+智力修正，敌方火系术式伤害减半" },
+                { lvl: 13, n: "水元素领域", c: 7, school: "water", d: "MP20 | R40尺，持续5轮。领域内水/冰伤害+智力修正，盟友获得水中呼吸和游泳速度" },
+                { lvl: 13, n: "风元素领域", c: 7, school: "wind", d: "MP20 | R50尺，持续5轮。领域内友方飞行速度+30尺，风系暴击率+1" },
+                { lvl: 13, n: "土元素领域", c: 7, school: "earth", d: "MP20 | R40尺，持续5轮。领域内友方AC+2，每次受到近战攻击可反弹1d6土伤" },
+                { lvl: 13, n: "雷元素领域", c: 7, school: "lightning", d: "MP20 | R40尺，持续5轮。领域内雷系术式可额外弹跳一次，友方获得电击抗性" },
+                { lvl: 13, n: "冰元素领域", c: 7, school: "ice", d: "MP20 | R40尺，持续5轮。领域内每轮自动对敌方造成1d6冰伤，友方冰系伤害+智力修正" },
+                { lvl: 13, n: "同构转化", c: 7, school: "common", d: "[被动] 可将已知法术结构转化为任何已掌握的元素属性（例：水球代替火球），保留原判定范围仅更变伤害类型" },
+                { lvl: 15, n: "万火归宗", c: 8, school: "fire", d: "[被动] 所有火系术式MP消耗-2（最低1），范围技可自由选择目标不伤队友" },
+                { lvl: 15, n: "万流归元", c: 8, school: "water", d: "[被动] 所有水系术式射程+50%，水牢术可同时囚禁两个目标" },
+                { lvl: 15, n: "万象风语", c: 8, school: "wind", d: "[被动] 风系术式射程变为1.5倍，风刃可攻击两个相邻目标" },
+                { lvl: 15, n: "不动如山", c: 8, school: "earth", d: "[被动] 土系术式施放时自身免疫强制移动和倒地，岩壁HP翻倍" },
+                { lvl: 15, n: "迅雷不及", c: 8, school: "lightning", d: "[被动] 所有雷系术式的先攻权获得优势，电击射程提升至120尺" },
+                { lvl: 15, n: "绝对零度·被动", c: 8, school: "ice", d: "[被动] 霜冻射线有概率冻结目标（若造成伤害超过目标体质豁免DC，则冻结1轮）" },
+                { lvl: 15, n: "毁灭重压", c: 8, school: "common", d: "MP25 | 1次/长休。R50尺区域10d10混合元素直接坍塌。目标体质或敏捷豁免DC20，失败承受全额伤害，成功则减半" },
+                { lvl: 17, n: "元素篡夺", c: 9, school: "common", d: "[被动] 代替魔力构建，施法者可通过消耗等量SP（体力）来强制驱使环境中已存在的对应元素，作用范围R100尺" },
+                { lvl: 17, n: "伪法则剥夺", c: 9, school: "common", d: "MP30 | 1次/长休。选定一种元素在R100尺内实行绝对剥夺。5轮内除施法者本身外，任何个体的该元素法术强制失效" },
+                { lvl: 17, n: "不灭之炎", c: 9, school: "fire", d: "MP25 | 1次/长休。选定自身或一友方，死后可立即以半血复活，并释放一次免费烈焰爆" },
+                { lvl: 17, n: "深海沉睡", c: 9, school: "water", d: "MP25 | 1次/长休。R50尺区域内敌方全体昏睡2轮（不死生物/构装体免疫），无需专注" },
+                { lvl: 17, n: "真空绝息", c: 9, school: "wind", d: "MP25 | 1次/长休。R30尺区域内空气被抽干，生物每轮体质豁免DC18否则窒息1轮，持续3轮" },
+                { lvl: 17, n: "石化凝视", c: 9, school: "earth", d: "MP25 | 1次/长休。单体目标体质豁免DC20，失败则永久石化（解石化需高等复原术）" },
+                { lvl: 17, n: "雷神附体", c: 9, school: "lightning", d: "MP25 | 1次/长休。化身雷电，3轮内免疫雷伤，每次移动可附带4d6雷伤于路径敌人" },
+                { lvl: 17, n: "永冻冰柩", c: 9, school: "ice", d: "MP25 | 1次/长休。单体目标永久冻结（除非被高等解魔法解除），期间目标不会死亡但无法行动" },
+                { lvl: 19, n: "贤者源态法则", c: 10, school: "common", d: "[被动] 获得元素化身体质。1次/长休可开启源态，期间施展所有元素术式不消耗MP，持续3轮。结束时必须进行体质豁免DC22，若失败，回路将遭遇重度晶化反噬（最大HP永久-5或直到接受传说级净化修复）" },
+                { lvl: 19, n: "焚天法则", c: 10, school: "fire", d: "开启源态时，火系术式伤害骰取最大值；结束时体质豁免DC+5，反噬风险加剧" },
+                { lvl: 19, n: "永恒冰河", c: 10, school: "ice", d: "开启源态时，所有水/冰术式附加减速效果（移动减半），且冻结状态延长1轮" },
+                { lvl: 19, n: "天空主宰", c: 10, school: "wind", d: "开启源态时，获得完美飞行（悬浮），且所有风系伤害附加1d8音爆伤害" },
+                { lvl: 19, n: "大地意志", c: 10, school: "earth", d: "开启源态时，自身周围20尺内地面化为流沙（敌人移动减半），且每轮自动对一名敌人发动免费磐石之握" },
+                { lvl: 19, n: "永劫雷狱", c: 10, school: "lightning", d: "开启源态时，全场所有敌人每轮受到1d12雷伤，且自身雷系术式无需专注即可维持" },
+                { lvl: 19, n: "霜寒神域", c: 10, school: "ice", d: "开启源态时，全场温度骤降，所有敌方获得极度严寒（每轮体质豁免DC20否则受到2d8冰伤并减速）" }
             ],
             "符文师": [
                 { lvl: 1, n: "符文刻印", c: 1, d: "MP2+矿石粉末（等级×1银盾） | [动作] 将单效果术式刻录于武器/防具，激活后释放" },
@@ -7371,10 +7282,15 @@ function applyUndyingPreset() {
             return ((parseInt(m[1] || 1, 10) || 1) * (parseInt(m[2], 10) || 0)) + (parseInt(m[3] || 0, 10) || 0);
         }
         function abilityMod(v) { return Math.floor((v - 10) / 2); }
-        // 剥离元素流派后缀：如「元素法师（水、火、冰）」→「元素法师」
+        // 剥离元素流派后缀：「元素法师（水、火、冰）」或「元素法师·水」→「元素法师」
         function normalizeJobNameForGrowth(jobName) {
-            var m = String(jobName || '').match(/^(.*?)（([^）]*)）$/);
-            return m ? m[1].trim() : String(jobName || '').trim();
+            var s = String(jobName || '').trim();
+            var m = s.match(/^(.*?)（([^）]*)）$/);
+            if (m) return m[1].trim();
+            var families = ['元素法师', '符文师', '塑能师', '死灵法师', '召唤师', '魔导技师', '精灵术士', '药剂师', '圣光法师', '邪术师'];
+            var parts = s.split('·');
+            if (parts.length >= 2 && families.indexOf(parts[0].trim()) !== -1) return parts[0].trim();
+            return s;
         }
         async function writeClassToVars() {
             var mainJob = document.getElementById('cc-class').value;
@@ -7451,6 +7367,12 @@ function applyUndyingPreset() {
                 var sk = list.find(function(s) { return s.n === skillName; });
                 if (sk) return { desc: sk.d, lvl: sk.lvl || 1 };
             }
+            // 🛠 自创职业：定制技能树作为该职业主技能树（技能名不带「·变体」），从 generatedVariantSkills 兜底取描述
+            var customV = generatedVariantSkills[jobName];
+            if (customV && customV.___isCustomTree && customV.skills) {
+                var csk = customV.skills.find(function(s) { return s.n === skillName; });
+                if (csk) return { desc: csk.d, lvl: csk.lvl || 1 };
+            }
             return null;
         }
         async function writeSkillsToVars() {
@@ -7513,6 +7435,28 @@ function applyUndyingPreset() {
             lightning: ['电击', '静电', '电磁', '闪电', '雷光', '雷击', '雷暴', '超载', '天罚', '迅雷', '雷神', '永劫', '雷霆', '磁暴'],
             ice: ['冰', '霜', '寒冰', '冻结', '冻土', '凛', '冰川', '严寒', '冰棺', '冰锥', '绝对零度', '永恒冰', '永冻', '极寒']
         };
+        // 元素法师技能树按学派分组：显示顺序与标题（火/水/冰/风/土/雷 + 通用）
+        var schoolOrder = ['fire', 'water', 'ice', 'wind', 'earth', 'lightning'];
+        var schoolGroupTitles = {
+            fire: '🔥 元素法师·火学派', water: '💧 元素法师·水学派',
+            ice: '❄️ 元素法师·冰学派', wind: '🌪 元素法师·风学派',
+            earth: '🪨 元素法师·土学派', lightning: '⚡ 元素法师·雷学派',
+            common: '🔮 元素法师·通用/无学派'
+        };
+        // 判断技能归属学派：优先显式 school 字段，兜底用 schoolKeywords 匹配技能名
+        function skillSchoolOf(sk) {
+            if (sk && sk.school) return sk.school;
+            for (var s in schoolKeywords) {
+                if (schoolKeywords.hasOwnProperty(s)) {
+                    for (var ki = 0; ki < schoolKeywords[s].length; ki++) {
+                        if (sk.n.indexOf(schoolKeywords[s][ki]) !== -1) {
+                            return s;
+                        }
+                    }
+                }
+            }
+            return 'common';
+        }
 
         function updateSchoolLimit(cb) {
             var limit = circuitSchoolLimit[circuitLevel] || 0;
@@ -7642,7 +7586,9 @@ function applyUndyingPreset() {
     }
 
     activeJobs.forEach(function(job) {
-        var skillList = dbSkills[job.name];
+        // 🛠 自创职业定制技能树：直接作为该职业的主技能树渲染（优先于 dbSkills，与状态栏行为一致，不再走「变体」通道）
+        var customTreeDef = (generatedVariantSkills[job.name] && generatedVariantSkills[job.name].___isCustomTree) ? generatedVariantSkills[job.name] : null;
+        var skillList = customTreeDef ? customTreeDef.skills : dbSkills[job.name];
         if (!skillList || skillList.length === 0) {
             if (meimeiSkillData && meimeiSkillData[job.name]) {
                 skillList = meimeiSkillData[job.name];
@@ -7655,8 +7601,9 @@ function applyUndyingPreset() {
 
         if (skillList && skillList.length > 0) {
             treeHtml += '<div style="font-weight:bold; color:#8b6b4a; margin: 8px 0 4px 0; border-bottom:1px solid #d2b48c;">◆ ' +
-                job.name + (job.isMain ? ' (主修)' : ' (兼职)') + ' - 分配: ' + job.allocLvl + ' 级</div>';
-            skillList.forEach(function(sk) {
+                job.name + (job.isMain ? ' (主修)' : ' (兼职)') + ' - 分配: ' + job.allocLvl + ' 级' +
+                (customTreeDef ? ' <span style="font-size:10px;color:#8e44ad;">🎨 定制技能树</span>' : '') + '</div>';
+            var renderSkillItem = function(sk) {
                 var locked = job.allocLvl < sk.lvl;
                 // 元素法师学派过滤：判断技能是否属于已选学派
                 var schoolLocked = false;
@@ -7666,21 +7613,10 @@ function applyUndyingPreset() {
                         checkedSchools.push(cb.value);
                     });
                     if (checkedSchools.length > 0) {
-                        // 判断技能归属学派
-                        var skSchool = null;
-                        for (var s in schoolKeywords) {
-                            if (schoolKeywords.hasOwnProperty(s)) {
-                                for (var ki = 0; ki < schoolKeywords[s].length; ki++) {
-                                    if (sk.n.indexOf(schoolKeywords[s][ki]) !== -1) {
-                                        skSchool = s;
-                                        break;
-                                    }
-                                }
-                                if (skSchool) break;
-                            }
-                        }
+                        // 判断技能归属学派（优先显式 school 字段，兜底关键词匹配）
+                        var skSchool = skillSchoolOf(sk);
                         // 有明确学派归属的技能，需要匹配已选学派
-                        if (skSchool && checkedSchools.indexOf(skSchool) === -1) {
+                        if (skSchool && skSchool !== 'common' && checkedSchools.indexOf(skSchool) === -1) {
                             schoolLocked = true;
                         }
                     }
@@ -7701,7 +7637,25 @@ function applyUndyingPreset() {
                         '<span style="color:#e74c3c;font-size:11px;"> [需该职业Lv' + sk.lvl + ']</span>' :
                         (schoolLocked ? '<span style="color:#d35400;font-size:11px;"> [未选修该学派]</span>' : '')) +
                     '</div><div class="jrpg-skill-desc">' + sk.d + '</div></div></div>';
-            });
+            };
+            if (job.name === '元素法师' && !customTreeDef) {
+                // 元素法师技能树按学派分组展示：火/水/冰/风/土/雷 + 通用
+                schoolOrder.forEach(function(school) {
+                    var group = skillList.filter(function(sk) { return skillSchoolOf(sk) === school; });
+                    if (!group.length) return;
+                    treeHtml += '<div class="jrpg-school-group-header">' + schoolGroupTitles[school] +
+                        ' <span style="font-size:10px;color:#b8a18a;font-weight:normal;">(' + group.length + '技能)</span></div>';
+                    group.forEach(function(sk) { renderSkillItem(sk); });
+                });
+                var commonGroup = skillList.filter(function(sk) { return skillSchoolOf(sk) === 'common'; });
+                if (commonGroup.length) {
+                    treeHtml += '<div class="jrpg-school-group-header">' + schoolGroupTitles.common +
+                        ' <span style="font-size:10px;color:#b8a18a;font-weight:normal;">(' + commonGroup.length + '技能)</span></div>';
+                    commonGroup.forEach(function(sk) { renderSkillItem(sk); });
+                }
+            } else {
+                skillList.forEach(function(sk) { renderSkillItem(sk); });
+            }
         } else {
             treeHtml += '<div style="font-weight:bold; color:#8b6b4a; margin: 8px 0 4px 0; border-bottom:1px solid #d2b48c;">◆ ' +
                 job.name + (job.isMain ? ' (主修)' : ' (兼职)') + '</div>';
@@ -7714,6 +7668,7 @@ function applyUndyingPreset() {
         var vData = generatedVariantSkills[gClass];
         var vSkills = vData.skills || [];
         if (vSkills.length === 0) return;
+        if (vData.___isCustomTree) return; // 🛠 定制技能树已作为该职业主技能树渲染，跳过「变体」块
         var foundJob = null;
         activeJobs.forEach(function(j) { if (j.name === gClass) foundJob = j; });
         var allocLvl = foundJob ? foundJob.allocLvl : 0;
@@ -7838,7 +7793,7 @@ function applyUndyingPreset() {
                     if (!mvuData.stat_data.$flags.紧张度已结算新闻 || typeof mvuData.stat_data.$flags.紧张度已结算新闻 !== 'object') {
                         mvuData.stat_data.$flags.紧张度已结算新闻 = {};
                     }
-                    Mvu.replaceMvuData(mvuData, scope).catch(function (e) {
+                    Promise.resolve(Mvu.replaceMvuData(mvuData, scope)).catch(function (e) {
                         console.warn('[首页] 联动紧张度写入失败(' + scope.type + '):', e);
                     });
                 }
@@ -7852,6 +7807,73 @@ function applyUndyingPreset() {
         window.syncEraToTension = syncEraToTension;
 
         // ============================================================
+        //  四传奇觉醒开关（点击直接写变量：一键全部觉醒 / 全部解除）
+        // ============================================================
+        var LEGEND_NAMES = ['莉莉丝', '艾莉卡', '科里维坦', '伊利亚'];
+
+        function updateLegendAwakenBtn(awakened) {
+            var btn = document.getElementById('legend-awaken-toggle');
+            if (!btn) return;
+            var label = document.getElementById('legend-awaken-label');
+            var icon = document.getElementById('legend-awaken-icon');
+            if (label) label.textContent = '四传奇觉醒：' + (awakened ? '已开启' : '已关闭');
+            if (icon) icon.textContent = awakened ? '🌟' : '✨';
+            btn.style.background = awakened ? '#27ae60' : '#8e44ad';
+            btn.style.boxShadow = awakened ? '0 2px 6px rgba(39,174,96,0.45)' : '0 2px 6px rgba(142,68,173,0.4)';
+            btn.style.color = '#fff';
+        }
+
+        function getLegendAwakenState() {
+            try {
+                if (typeof Mvu === 'undefined') return false;
+                var mvuData = Mvu.getMvuData({ type: 'message', message_id: 'latest' });
+                var rec = _.get(mvuData, 'stat_data.世界.四传奇觉醒', {});
+                return LEGEND_NAMES.every(function (n) { return rec[n] === true; });
+            } catch (e) {
+                return false;
+            }
+        }
+
+        async function toggleLegendsAwaken() {
+            try {
+                if (typeof Mvu === 'undefined') {
+                    if (window.toastr) toastr.error('MVU 框架未初始化');
+                    return;
+                }
+                var mvuData = Mvu.getMvuData({ type: 'message', message_id: 'latest' });
+                if (!mvuData) {
+                    if (window.toastr) toastr.error('未获取到变量数据');
+                    return;
+                }
+                var rec = _.get(mvuData, 'stat_data.世界.四传奇觉醒', {});
+                var allOn = LEGEND_NAMES.every(function (n) { return rec[n] === true; });
+                var next = !allOn;
+                // 消息楼层最新 + 聊天表 双写（与 世界时期联动紧张度 同一模式，确保各读取作用域可见）
+                function applyScope(scope) {
+                    var d = Mvu.getMvuData(scope);
+                    if (!d) return;
+                    if (!d.stat_data) d.stat_data = {};
+                    if (!d.stat_data.世界) d.stat_data.世界 = {};
+                    var r = d.stat_data.世界.四传奇觉醒 || {};
+                    LEGEND_NAMES.forEach(function (n) { r[n] = next; });
+                    d.stat_data.世界.四传奇觉醒 = r;
+                    Promise.resolve(Mvu.replaceMvuData(d, scope)).catch(function (e) {
+                        console.warn('[首页] 四传奇觉醒写入失败(' + scope.type + '):', e);
+                    });
+                }
+                applyScope({ type: 'message', message_id: 'latest' });
+                applyScope({ type: 'chat' });
+                updateLegendAwakenBtn(next);
+                if (window.toastr) toastr.success(next ? '四传奇觉醒已开启：莉莉丝/艾莉卡/科里维坦/伊利亚已觉醒命格！' : '四传奇觉醒已关闭');
+                console.log('[首页] 四传奇觉醒 → ' + (next ? '全部觉醒' : '全部解除'));
+            } catch (e) {
+                console.error('⚠ 切换四传奇觉醒失败:', e);
+                if (window.toastr) toastr.error('四传奇觉醒切换失败：' + e.message);
+            }
+        }
+        window.toggleLegendsAwaken = toggleLegendsAwaken;
+
+        // ============================================================
         //  自定义NPC管理系统（深度创建，多NPC支持）
         // ============================================================
         var customNpcs = [];
@@ -7861,7 +7883,7 @@ function applyUndyingPreset() {
             var id = 'cnpc_' + (customNpcIdCounter++);
             var npc = {
                 id: id,
-                name: '', race: '', identity: '', className: '', rank: '普通',
+                name: '', race: '', identity: '', className: '', rank: '普通', level: 1,
                 faction: '', relation: '', favor: 50,
                 appearance: '', personality: '', desc: '', inner: '',
                 stats: { 力量: 8, 敏捷: 8, 体质: 8, 智力: 8, 感知: 8, 魅力: 8 },
@@ -7869,6 +7891,238 @@ function applyUndyingPreset() {
             };
             customNpcs.push(npc);
             renderCustomNpcs();
+        }
+
+        // ============================================================
+        //  🤖 AI 生成伙伴（提示词 → 生成符合 stat_data.同伴 变量结构的伙伴，自动加入 customNpcs）
+        //  落格路径：customNpcs → submitCC 写 stat_data.同伴.{名字}（字段对齐「变量结构脚本·同伴」）
+        // ============================================================
+
+        // ---- 宽容 JSON 解析（对象优先，兼容 AI 脏输出）----
+        // 定位字符串外某字符位置
+        function findCharOutOfString(text, from, target) {
+            var inStr = false, esc = false;
+            for (var i = from; i < text.length; i++) {
+                var ch = text.charAt(i);
+                if (inStr) {
+                    if (esc) esc = false;
+                    else if (ch === '\\') esc = true;
+                    else if (ch === '"') inStr = false;
+                    continue;
+                }
+                if (ch === '"') { inStr = true; continue; }
+                if (ch === target) return i;
+            }
+            return -1;
+        }
+        // 从 start（必须是 {）找到配对的 }（字符串感知、支持嵌套对象/数组）
+        function findObjectEnd(text, start) {
+            var depth = 0, inStr = false, esc = false;
+            for (var i = start; i < text.length; i++) {
+                var ch = text.charAt(i);
+                if (inStr) {
+                    if (esc) esc = false;
+                    else if (ch === '\\') esc = true;
+                    else if (ch === '"') inStr = false;
+                    continue;
+                }
+                if (ch === '"') { inStr = true; continue; }
+                if (ch === '{' || ch === '[') { depth++; continue; }
+                if (ch === '}' || ch === ']') {
+                    depth--;
+                    if (depth === 0) return i;
+                }
+            }
+            return -1;
+        }
+        // 字符串感知的宽松清理：去 // 与 /* */ 注释、把字符串内裸换行转义、去尾逗号（函数式，无 $ 字面量）
+        function looseCleanJson(src) {
+            var out = '';
+            var inStr = false, esc = false, inLine = false, inBlock = false;
+            var i = 0;
+            while (i < src.length) {
+                var ch = src.charAt(i);
+                var nx = (i + 1 < src.length) ? src.charAt(i + 1) : '';
+                if (inLine) {
+                    if (ch === '\n') { inLine = false; out += ch; }
+                    i++;
+                    continue;
+                }
+                if (inBlock) {
+                    if (ch === '*' && nx === '/') { inBlock = false; i += 2; continue; }
+                    i++;
+                    continue;
+                }
+                if (inStr) {
+                    if (esc) { out += ch; esc = false; i++; continue; }
+                    if (ch === '\\') { out += ch; esc = true; i++; continue; }
+                    if (ch === '"') { out += ch; inStr = false; i++; continue; }
+                    if (ch === '\n' || ch === '\r') { out += '\\n'; i++; continue; }  // 裸换行 → \n 字面
+                    out += ch;
+                    i++;
+                    continue;
+                }
+                if (ch === '"') { out += ch; inStr = true; i++; continue; }
+                if (ch === '/' && nx === '/') { inLine = true; i += 2; continue; }
+                if (ch === '/' && nx === '*') { inBlock = true; i += 2; continue; }
+                out += ch;
+                i++;
+            }
+            // 去尾逗号（函数式回调，避免 $1 字面量）
+            out = out.replace(/,\s*([\]}])/g, function (mm, g1) { return g1; });
+            return out;
+        }
+        // 主解析：标准 → 取对象 → 宽松清理 → 再解析；若整体是数组则解包取首个对象
+        function unwrapAiResult(result) {
+            if (Array.isArray(result)) {
+                for (var ui = 0; ui < result.length; ui++) {
+                    var it = result[ui];
+                    if (it && typeof it === 'object' && !Array.isArray(it)) return it;
+                }
+                return null;
+            }
+            return result;
+        }
+        function parseAiNpcJson(text) {
+            var s = String(text == null ? '' : text);
+            // 剥代码围栏（```json 或 ~~~）
+            var fm = s.match(/(?:```|~~~)(?:json)?\s*([\s\S]*?)(?:```|~~~)/i);
+            if (fm) s = fm[1];
+            try { return unwrapAiResult(JSON.parse(s)); } catch (e0) { /* 走宽松路径 */ }
+            var start = findCharOutOfString(s, 0, '{');
+            if (start === -1) throw new Error('未找到 JSON 对象起始 {');
+            var end = findObjectEnd(s, start);
+            if (end === -1) throw new Error('JSON 括号未闭合');
+            var cand = s.substring(start, end + 1);
+            try { return unwrapAiResult(JSON.parse(cand)); } catch (e1) {
+                var cleaned = looseCleanJson(cand);
+                try { return unwrapAiResult(JSON.parse(cleaned)); } catch (e2) {
+                    throw new Error('JSON 解析失败：' + e2.message);
+                }
+            }
+        }
+
+        function clampInt(v, min, max, def) {
+            var n = parseInt(v, 10);
+            if (isNaN(n)) return def;
+            return Math.max(min, Math.min(max, n));
+        }
+        // 宽松取六维：兼容 中文键 与 英文缩写
+        function pickStat(stats, cnKeys, enKeys) {
+            if (!stats || typeof stats !== 'object') return 8;
+            for (var i = 0; i < cnKeys.length; i++) {
+                if (stats[cnKeys[i]] !== undefined) return clampInt(stats[cnKeys[i]], 8, 30, 8);
+            }
+            for (var j = 0; j < enKeys.length; j++) {
+                if (stats[enKeys[j]] !== undefined) return clampInt(stats[enKeys[j]], 8, 30, 8);
+            }
+            return 8;
+        }
+        // AI 原始数据 → customNpc 条目（结构对齐 stat_data.同伴 Schema）
+        function normalizeAiNpc(raw) {
+            raw = (raw && typeof raw === 'object' && !Array.isArray(raw)) ? raw : {};
+            var stats = (raw.stats || raw.属性 || {});
+            var rank = String(raw.rank || raw.等阶 || '普通').trim();
+            var rankOk = ['普通', '超凡', '精英', '史诗', '传说'].indexOf(rank) !== -1;
+            if (!rankOk) rank = '普通';
+            var level = clampInt(raw.level || raw.等级, 1, 9999, 1);
+            // 等阶缺省时按等级推断
+            if (rank === '普通' && level >= 5) {
+                rank = level >= 17 ? '传说' : level >= 13 ? '史诗' : level >= 9 ? '精英' : level >= 5 ? '超凡' : '普通';
+            }
+            return {
+                id: 'cnpc_ai_' + (customNpcIdCounter++),
+                name: String(raw.name || raw.姓名 || '').trim(),
+                race: raw.race || raw.种族 || '',
+                gender: raw.gender || raw.性别 || '',
+                age: raw.age !== undefined ? raw.age : (raw.年龄 !== undefined ? raw.年龄 : ''),
+                birth: raw.birth || raw.出生年月日 || '',   // 一经确定不改；格式 圣光历YYYY年M月D日
+                identity: raw.identity || raw.身份 || '',
+                className: raw.className || raw.职业 || raw.class || '',
+                faction: raw.faction || raw.所属势力 || raw.势力 || '',
+                relation: raw.relation || raw.与主角关系 || '',
+                rank: rank,
+                level: level,
+                favor: clampInt(raw.favor !== undefined ? raw.favor : raw.好感度, 0, 100, 50),
+                appearance: raw.appearance || raw.外貌 || '',
+                personality: raw.personality || raw.性格 || '',
+                inner: raw.inner || raw.心里话 || '',
+                desc: raw.desc || raw.背景故事 || raw.背景 || '',
+                stats: {
+                    力量: pickStat(stats, ['力量'], ['str', 'STR', 'Str']),
+                    敏捷: pickStat(stats, ['敏捷'], ['dex', 'DEX', 'Dex']),
+                    体质: pickStat(stats, ['体质'], ['con', 'CON', 'Con']),
+                    智力: pickStat(stats, ['智力'], ['int', 'INT', 'Int']),
+                    感知: pickStat(stats, ['感知'], ['wis', 'WIS', 'Wis']),
+                    魅力: pickStat(stats, ['魅力'], ['cha', 'CHA', 'Cha'])
+                },
+                skills: Array.isArray(raw.skills) ? raw.skills.map(function(s) { return { name: s.name || s.名称 || '', desc: s.desc || s.描述 || '' }; }).filter(function(s) { return s.name; }) : [],
+                items: Array.isArray(raw.items) ? raw.items.map(function(s) { return { name: s.name || s.物品名 || '', desc: s.desc || s.描述 || '' }; }).filter(function(s) { return s.name; }) : []
+            };
+        }
+        function generateNpcWithAI() {
+            var input = document.getElementById('npc-ai-prompt');
+            var status = document.getElementById('npc-ai-status');
+            var want = input ? input.value.trim() : '';
+            if (!want) { alert('请先描述你想要的角色（例：我想要个龙娘——银发红瞳的火龙幼裔剑士，精英级）'); return; }
+            if (typeof generateRaw === 'undefined') {
+                alert('⚠️ 当前环境不支持AI生成，请确认酒馆助手已加载。\n\n可改用「＋ 添加伙伴」手动创建。');
+                return;
+            }
+            if (status) { status.textContent = '🔄 正在生成…'; status.style.color = '#8e44ad'; }
+            var promptText = '请根据用户描述生成一名伊瑟利亚世界的初始伙伴角色，结果必须与 stat_data.同伴 变量结构严格一致。\n\n';
+            promptText += '【用户描述】\n' + want + '\n\n';
+            promptText += '要求：\n';
+            promptText += '1. 只输出一个 JSON 对象，不要输出任何其他文字、代码围栏或注释。\n';
+            promptText += '2. 必填字段：name(姓名，唯一简洁)、race(种族)、gender(性别)、age(年龄，数字或描述)、identity(身份/职业角色)、className(职业，必须是本世界职业名：战士/骑士/猎人/斥候/狂战士/元素法师/符文师/塑能师/死灵法师/召唤师/圣光法师/德鲁伊/精灵术士/神官/圣殿骑士/魔剑士/药剂师/魔兽使等，或合理自定义)、faction(所属势力)、relation(与主角关系)、rank(等阶：普通/超凡/精英/史诗/传说)、level(等级，与等阶匹配：普通1-4/超凡5-8/精英9-12/史诗13-16/传说17-20)、favor(好感度0-100)、appearance(外貌一段)、personality(性格一段或2-3个词)、inner(心里话一句)、desc(背景故事2-3句)。\n';
+            promptText += '3. 可选字段：birth(出生年月日，格式 圣光历YYYY年M月D日，可按年龄推算)、gender/age 之外的详细设定由你补全。\n';
+            promptText += '4. stats(六维属性)：{ "力量":N,"敏捷":N,"体质":N,"智力":N,"感知":N,"魅力":N }，整数 8~20，与等阶匹配（普通8-12/超凡10-14/精英12-16/史诗16-20/传说20-25，至少1项优势、1项短板，主属性修正为最高项）。\n';
+            promptText += '5. 可选 skills：[{ "name":"技能名","desc":"效果（用清晰数值与修正，如 消耗SP2、攻击+2，禁止百分比与超模）" }]，1~3个，职业相符。\n';
+            promptText += '6. 可选 items：[{ "name":"物品名","desc":"描述" }]，0~2个随身物品。\n';
+            promptText += '7. 种族必须选自本世界种族（人类/精灵/矮人/兽人/翼民/海妖/龙裔/半身人/地精/血族/混血/龙族半龙/新大陆蜥蜴种等）或按描述合理设定；龙娘/兽娘等混血按合理设定即可。\n';
+            promptText += '8. 数值整体贴合伊瑟利亚体系：禁止给低等级角色过高的属性与技能强度。\n';
+            promptText += '输出 JSON 示例：\n';
+            promptText += '{ "name": "示例名", "race": "龙裔", "gender": "女", "age": "约120岁", "identity": "流浪剑士", "className": "战士", "faction": "无", "relation": "旅途结识", "rank": "精英", "level": 9, "favor": 60, "appearance": "…", "personality": "…", "inner": "…", "desc": "…", "stats": { "力量": 16, "敏捷": 12, "体质": 14, "智力": 10, "感知": 12, "魅力": 14 }, "skills": [ { "name": "龙焰吐息", "desc": "消耗SP3，对R15尺锥形敌人造成2d6火焰伤害" } ], "items": [] }';
+
+            window.__ISURIA_NON_RP__ = true;
+            try {
+                generateRaw({
+                    user_input: promptText,
+                    should_silence: true,
+                    overrides: {
+                        world_info_before: '', world_info_after: '', persona_description: '',
+                        char_description: '', char_personality: '', scenario: '',
+                        dialogue_examples: '', chat_history: { prompts: [] }
+                    }
+                }).then(function(result) {
+                    var parsed = null;
+                    var resultText = String(result || '');
+                    try { parsed = parseAiNpcJson(resultText); }
+                    catch (e) { parsed = null; }
+                    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+                        // 解析失败时把原文片段带出来，便于排查 AI 实际输出
+                        var frag = resultText.replace(/\s+/g, ' ').slice(0, 160);
+                        throw new Error('未能解析为有效的JSON对象（原文开头：' + (frag || '（空响应）') + '…）');
+                    }
+                    var npc = normalizeAiNpc(parsed);
+                    if (!npc.name) throw new Error('生成结果缺少姓名(name)字段');
+                    if (!npc.className) throw new Error('生成结果缺少职业(className)字段');
+                    // 同名去重：已存在同名则自动加后缀，避免覆盖 stat_data.同伴 键
+                    var existing = {};
+                    for (var i = 0; i < customNpcs.length; i++) { existing[customNpcs[i].name] = true; }
+                    if (existing[npc.name]) npc.name = npc.name + '·Ⅱ';
+                    customNpcs.push(npc);
+                    renderCustomNpcs();
+                    if (status) { status.textContent = '✅ 已生成「' + npc.name + '」（' + npc.race + '/' + npc.className + ' Lv.' + npc.level + ' ' + npc.rank + '），可在下方表单微调，随角色一起提交写入 stat_data.同伴'; status.style.color = '#27ae60'; }
+                    var cont = document.getElementById('custom-npc-container');
+                    if (cont) cont.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }).catch(function(e) {
+                    console.error('AI生成伙伴失败:', e);
+                    if (status) { status.textContent = '❌ 生成失败：' + e.message + '。可改用「＋ 添加伙伴」手动创建'; status.style.color = '#c0392b'; }
+                });
+            } finally {
+                window.__ISURIA_NON_RP__ = false;
+            }
         }
 
         function removeCustomNpc(id) {
@@ -8009,6 +8263,7 @@ function applyUndyingPreset() {
                     html += '<option value="' + ranks[ri] + '"' + (npc.rank === ranks[ri] ? ' selected' : '') + '>' + ranks[ri] + '</option>';
                 }
                 html += '</select></div>';
+                html += '<div><label style="font-size:11px;color:#6b4e31;">等级</label><input type="number" min="1" max="9999" class="jrpg-cc-input" style="width:60px;margin-bottom:0;font-size:12px;padding:3px 6px;" value="' + (npc.level||1) + '" oninput="updateCustomNpcField(\'' + npc.id + '\',\'level\',parseInt(this.value)||1)" title="位阶将按等级自动判定（普通/超凡/精英/史诗/传说）"></div>';
                 html += '<div><label style="font-size:11px;color:#6b4e31;">好感度</label><input type="number" min="0" max="100" class="jrpg-cc-input" style="width:60px;margin-bottom:0;font-size:12px;padding:3px 6px;" value="' + npc.favor + '" oninput="updateCustomNpcField(\'' + npc.id + '\',\'favor\',parseInt(this.value)||50)"></div>';
                 html += '</div>';
 
@@ -9668,20 +9923,59 @@ function applyUndyingPreset() {
             var mainClass = document.getElementById('cc-class').value || '该职业';
             var examples = document.getElementById('leg-examples');
             if (!descField) return;
-            descField.value = '【传奇武器风格：' + style + '】\n核心思路：' + desc + '\n适用于职业：' + mainClass + '\n\n请为' + mainClass + '定制一套符合其性格、人设、属性与职业的专属传奇武器。';
+            descField.value = '【传奇武器风格：' + style + '】\n核心思路：' + desc + '\n适用于职业：' + mainClass + '\n\n请为' + mainClass + '定制一套符合其性格、人设、属性与职业的专属传奇武器。\n效果数值请写成清晰固定修正（如 命中+2、额外1d6伤害、防御+2），不要百分比。';
             if (examples) examples.style.display = 'block';
             if (!legOpen) toggleLegendaryPanel();
         }
         window.applyLegendPreset = applyLegendPreset;
 
         // 生成传奇装备（AI 根据角色性格/人设/属性/职业自动定制）
+        // ===== 健壮 JSON 提取（AI 输出带围栏/尾随文字/描述含括号时仍正确解析） =====
+        function extractJsonArray(text) {
+            var raw = String(text == null ? '' : text);
+            var cand = null;
+            var fm = raw.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+            if (fm) cand = fm[1];
+            else cand = raw;
+            var start = cand.indexOf('[');
+            if (start === -1) start = cand.indexOf('{');
+            if (start !== -1) {
+                var opener = cand[start], closer = opener === '[' ? ']' : '}';
+                var depth = 0, end = -1;
+                for (var i = start; i < cand.length; i++) {
+                    var ch = cand[i];
+                    if (ch === '"') {
+                        i++;
+                        while (i < cand.length) {
+                            if (cand[i] === '\\') { i += 2; continue; }
+                            if (cand[i] === '"') break;
+                            i++;
+                        }
+                    } else if (ch === opener) depth++;
+                    else if (ch === closer) { depth--; if (depth === 0) { end = i; break; } }
+                }
+                if (end !== -1) cand = cand.substring(start, end + 1);
+            }
+            cand = cand.replace(/,\s*([\]}])/g, '$1');
+            cand = cand.replace(/[,;]+\s*$/g, '');
+            try { return JSON.parse(cand); }
+            catch (e) {
+                var fixed = cand.replace(/,\s*([\]}])/g, '$1');
+                try { return JSON.parse(fixed); }
+                catch (e2) {
+                    throw new Error('JSON解析失败：' + e2.message + ' | 原文尾部: …' + cand.slice(-120));
+                }
+            }
+        }
+        window.extractJsonArray = extractJsonArray;
+
         async function generateLegendaryWithAI() {
             var statusEl = document.getElementById('leg-generate-status');
             var resultEl = document.getElementById('leg-result');
             var gearField = document.getElementById('cc-legendary-gear');
             if (!gearField) return;
 
-            if (typeof generate === 'undefined') {
+            if (typeof generateRaw === 'undefined') {
                 alert('⚠️ 当前环境不支持AI生成，请确认酒馆助手已加载。\n\n替代方案：手动在上方描述框中填写传奇装备，然后点击"保存到变量"。');
                 return;
             }
@@ -9710,7 +10004,12 @@ function applyUndyingPreset() {
 
             var customDesc = gearField.value.trim();
 
-            var promptText = '请为以下角色定制一套专属传奇装备（可包含武器/防具/饰品），要紧密贴合其性格、人设、属性与职业。\n\n';
+            // 用户自定义生成数量（面板「数量」下拉，1~6，默认 3）
+            var legCount = parseInt((document.getElementById('leg-count') || {}).value, 10);
+            if (!(legCount >= 1)) legCount = 3;
+            legCount = Math.max(1, Math.min(6, legCount));
+
+            var promptText = '请为以下角色定制 ' + legCount + ' 件专属传奇装备（可包含武器/防具/饰品，须与角色风格成套），要紧密贴合其性格、人设、属性与职业。\n\n';
             promptText += '【角色信息】\n';
             promptText += '姓名：' + charName + ' 性别：' + gender + ' 年龄：' + age + '\n';
             promptText += '种族：' + race + '\n';
@@ -9723,30 +10022,41 @@ function applyUndyingPreset() {
             promptText += '\n请严格按照以下JSON格式输出传奇装备数据（不要输出其他文字，只输出JSON）：\n';
             promptText += '```json\n';
             promptText += '[\n';
-            promptText += '  { "name": "装备名称", "type": "武器/防具/饰品", "effect": "效果描述（含具体数值与机制）", "desc": "外观与来历故事描述" },\n';
+            promptText += '  { "name": "装备名称", "type": "武器/防具/饰品", "effect": "效果描述（用清晰的数值与修正，禁止百分比）", "desc": "外观与来历故事描述" },\n';
             promptText += '  ...\n';
             promptText += ']\n';
             promptText += '```\n\n';
             promptText += '要求：\n';
-            promptText += '1. 生成 2~4 件传奇装备，风格必须与角色性格、人设、属性、职业高度契合\n';
-            promptText += '2. 效果要具体，包含数值或机制说明，体现"传奇/命格寄予"的强度\n';
+            promptText += '1. 严格生成恰好 ' + legCount + ' 件（不多不少），风格与角色性格、人设、属性、职业高度契合，且彼此成套呼应\n';
+            promptText += '2. effect 用清晰的数值与修正表达，遵守本作数值规则：\n';
+            promptText += '   - 属性/命中/防御/施法修正：用「+N / -N」固定值（如 力量修正+1、攻击检定+2、防御值+2、MP消耗-1），每项 +1~+4，禁止超过 +5\n';
+            promptText += '   - 伤害加成：用固定骰或骰面升阶（如 额外1d6火焰伤害 / 伤害骰 4d6→5d6），禁止超过 2d10\n';
+            promptText += '   - 恢复类：用固定数值（如 每轮结束恢复3点HP）或按 体质修正/职业骰，禁止百分比\n';
+            promptText += '   - 冷却/蓄力/持续：用轮数表述（如 冷却减少1轮），禁止百分比\n';
+            promptText += '   - 暴击：用暴击范围表述（如 暴击范围 20→19-20），禁止写「暴击率+X%」\n';
+            promptText += '   - 减伤/增伤/抗性：禁止百分比（如禁写「受到伤害-15%」），改用固定减伤（如 每次受到攻击伤害-2）或具体机制\n';
+            promptText += '   - 所有数值以角色总等级 Lv.' + lvl + ' 为基准校准，禁止与体系不符的超模数值（如 Lv.3 就给 +10 命中）\n';
             promptText += '3. desc 要包含外观与来历，有史诗感和故事性\n';
-            promptText += '4. 若角色有命格/加护，装备最好与命格主题相呼应';
+            promptText += '4. 若角色有命格/加护，装备最好与命格主题相呼应\n';
+            promptText += '5. 只输出JSON数组本身，不要代码围栏、不要解释、不要多余文字';
 
             try {
-                var result = await generate({ user_input: promptText, should_silence: true });
+                // 非 RP 生成标志：跳过紧张度脚本的【世界动态】注入，避免污染"只输出 JSON"的技能树任务
+                window.__ISURIA_NON_RP__ = true;
+                try {
+                var result = await generateRaw({
+                    user_input: promptText,
+                    should_silence: true,
+                    overrides: {
+                        world_info_before: '', world_info_after: '', persona_description: '',
+                        char_description: '', char_personality: '', scenario: '',
+                        dialogue_examples: '', chat_history: { prompts: [] }
+                    }
+                });
+                } finally { window.__ISURIA_NON_RP__ = false; }
                 statusEl.innerHTML = '✅ AI响应完成，正在解析…';
 
-                var jsonMatch = result.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-                var jsonStr = jsonMatch ? jsonMatch[1] : result;
-
-                var startBracket = jsonStr.indexOf('[');
-                var endBracket = jsonStr.lastIndexOf(']');
-                if (startBracket !== -1 && endBracket !== -1) {
-                    jsonStr = jsonStr.substring(startBracket, endBracket + 1);
-                }
-
-                var parsed = JSON.parse(jsonStr);
+                var parsed = extractJsonArray(result);
                 if (!Array.isArray(parsed)) throw new Error('返回数据不是数组');
 
                 var items = parsed.filter(function(it) { return it.name && typeof it.name === 'string' && it.name.trim(); });
@@ -9774,7 +10084,7 @@ function applyUndyingPreset() {
                 });
                 resultEl.innerHTML = html;
 
-                statusEl.innerHTML = '✅ AI定制完成！共生成 ' + items.length + ' 件传奇装备，已填入上方文本框。可手动微调后点击"保存到变量"。';
+                statusEl.innerHTML = '✅ AI定制完成！请求 ' + legCount + ' 件，实际生成 ' + items.length + ' 件，已填入上方文本框。可手动微调后点击"保存到变量"。';
                 statusEl.style.color = '#27ae60';
             } catch(e) {
                 console.error('AI生成失败:', e);
@@ -9824,7 +10134,7 @@ function applyUndyingPreset() {
                 return;
             }
 
-            if (typeof generate === 'undefined') {
+            if (typeof generateRaw === 'undefined') {
                 alert('⚠️ 当前环境不支持AI生成，请确认酒馆助手已加载。\n\n替代方案：手动在下方文本框填写混血特征，提交时仍会附带世界观说明。');
                 return;
             }
@@ -9873,19 +10183,18 @@ function applyUndyingPreset() {
             promptText += '4. society 要结合组合里两个种族的社会地位来写';
 
             try {
-                var result = await generate({ user_input: promptText, should_silence: true });
+                var result = await generateRaw({
+                    user_input: promptText,
+                    should_silence: true,
+                    overrides: {
+                        world_info_before: '', world_info_after: '', persona_description: '',
+                        char_description: '', char_personality: '', scenario: '',
+                        dialogue_examples: '', chat_history: { prompts: [] }
+                    }
+                });
                 statusEl.innerHTML = '✅ 世界意识响应完成，正在解析…';
 
-                var jsonMatch = result.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-                var jsonStr = jsonMatch ? jsonMatch[1] : result;
-
-                var startBrace = jsonStr.indexOf('{');
-                var endBrace = jsonStr.lastIndexOf('}');
-                if (startBrace !== -1 && endBrace !== -1) {
-                    jsonStr = jsonStr.substring(startBrace, endBrace + 1);
-                }
-
-                var parsed = JSON.parse(jsonStr);
+                var parsed = extractJsonArray(result);
                 if (!parsed || !parsed.name) throw new Error('返回数据缺少 name 字段');
 
                 // 组装文本
@@ -9950,13 +10259,23 @@ function applyUndyingPreset() {
             var rangedJobs = ['猎人','斥候','猎手(乌尔坎)','寻草射手'];
             var magicJobs  = ['元素法师','符文师','塑能师','死灵法师','召唤师','圣光法师','魔导技师','炎术士','邪术师','精灵术士'];
             var divineJobs = ['神官','祭司','炎祖祭司','咩语神官'];
-            var hybridJobs = ['药剂师','德鲁伊'];
+            var hybridJobs = ['药剂师','德鲁伊','魔兽使'];
             if (meleeJobs.indexOf(jobName) !== -1) return 'melee';
             if (rangedJobs.indexOf(jobName) !== -1) return 'ranged';
             if (magicJobs.indexOf(jobName) !== -1) return 'magic';
             if (divineJobs.indexOf(jobName) !== -1) return 'divine';
             if (hybridJobs.indexOf(jobName) !== -1) return 'hybrid';
             return 'universal';
+        }
+
+        // ===== 等级 → 位阶（等阶）映射：普通/超凡/精英/史诗/传说 =====
+        function tierByLevel(lv) {
+            lv = parseInt(lv, 10) || 1;
+            if (lv >= 20) return '传说';
+            if (lv >= 15) return '史诗';
+            if (lv >= 10) return '精英';
+            if (lv >= 5) return '超凡';
+            return '普通';
         }
 
         // ===== 计算可用点数 =====
@@ -10238,6 +10557,20 @@ function applyUndyingPreset() {
         // ============================================================
         //  提交角色 (新增：包含伙伴详细数值)
         // ============================================================
+        // ===== 年龄成长系统开关（默认开启；关闭后状态栏不再自动/手动发放年龄成长点） =====
+        function initAgeGrowthToggle() {
+            try {
+                var cb = document.getElementById('cc-age-grow');
+                if (!cb) return;
+                var v = localStorage.getItem('isuria_age_growth');
+                cb.checked = v !== '0'; // 默认开；存过 '0' 则关
+                cb.addEventListener('change', function () {
+                    try { localStorage.setItem('isuria_age_growth', cb.checked ? '1' : '0'); } catch (e) {}
+                });
+            } catch (e) {}
+        }
+        initAgeGrowthToggle();
+
         function submitCC() {
             var charName = document.getElementById('cc-name').value || "无名者";
             var gender = document.getElementById('cc-gender').value;
@@ -10369,6 +10702,13 @@ var allSkillsWithDesc = skillsToOutput.map(function(sk) {
             if (found && found.d) {
                 return skillName + "：" + found.d;
             }
+        } else {
+            // 🛠 自创职业：定制技能树作为该职业主技能树（技能名不带「·变体」），从 generatedVariantSkills 兜底取描述
+            var cv = generatedVariantSkills[jobName];
+            if (cv && cv.___isCustomTree && cv.skills) {
+                var cf = cv.skills.find(function(item) { return item.n === skillName; });
+                if (cf && cf.d) return skillName + "：" + cf.d;
+            }
         }
         return skillName;
     }
@@ -10376,7 +10716,7 @@ var allSkillsWithDesc = skillsToOutput.map(function(sk) {
 });
 var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "无";
 
-            // ----- 伙伴信息（包含详细数值）-----
+            // ----- 伙伴信息（包含详细数值；编辑功能已移除，字段取自内置数据 npcDetails）-----
             var npcCards = document.querySelectorAll('.jrpg-npc-card');
             var selectedCompanions = [];
             npcCards.forEach(function(card) {
@@ -10384,14 +10724,14 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
                 if (checkbox && checkbox.checked) {
                     var npcId = checkbox.getAttribute('data-npc-id');
                     var detailData = npcDetails[npcId];
-                    var editZone = card.querySelector('.jrpg-npc-edit-zone');
-                    var npcName = editZone.querySelector('.npc-edit-name').value || '未知';
-                    var npcRace = editZone.querySelector('.npc-edit-race').value || '未知种族';
-                    var npcClass = editZone.querySelector('.npc-edit-class').value || '无职业';
-                    var npcDesc = editZone.querySelector('.npc-edit-desc').value || '无描述';
+                    if (!detailData || !detailData.name) return;
+                    var npcName = detailData.name || '未知';
+                    var npcRace = detailData.race || '未知种族';
+                    var npcClass = detailData.identity || '无职业';
+                    var npcDesc = detailData.background || detailData.desc || '无描述';
 
                     var npcInfo = '[' + npcName + '] (' + npcRace + ' / ' + npcClass + ')\n   背景：' + npcDesc;
-                    // 如果有详细数据，附加数值
+                    // 附加详细数值
                     if (detailData) {
                         npcInfo += '\n   【详细数值】';
                         npcInfo += '\n   HP:' + detailData.hp + ' 防御:' + detailData.defense + ' 速度:' + detailData.speed + ' 先攻:' + detailData.init;
@@ -10513,7 +10853,31 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
                       stat.主角.基础信息.性别 = gender;
                       stat.主角.基础信息.年龄 = parseInt(age) || 0;
                       stat.主角.基础信息.魔力回路 = stat.主角.基础信息.魔力回路 || {};
-                      stat.主角.基础信息.魔力回路.品阶 = circuitNames[circuitLevel] || '无回路';
+                      // 魔力回路品阶：仅当本页显式选择过、或存档无有效品阶时才写入，防止「再次生成」用默认值覆盖存档中的已有回路
+                      if (circuitDirty) {
+                        stat.主角.基础信息.魔力回路.品阶 = circuitNames[circuitLevel] || '无回路';
+                      } else if (!stat.主角.基础信息.魔力回路.品阶) {
+                        stat.主角.基础信息.魔力回路.品阶 = circuitNames[circuitLevel] || '无回路';
+                      }
+                      // 资质（talent 品质选择器；默认平庸；写入 等级/描述(副词段)/经验获取效率%）
+                      // 仅当本页显式选择过、或存档无资质时才写入（防覆盖存档资质）
+                      if (talentDirty) {
+                        try {
+                          stat.主角.基础信息.资质 = {
+                            等级: talentNames[talentLevel] || '平庸',
+                            描述: talentDescs[talentLevel] || '',
+                            经验获取效率: talentEffMap[talentLevel] || 100
+                          };
+                        } catch (e) { stat.主角.基础信息.资质 = { 等级: '平庸', 描述: '', 经验获取效率: 100 }; }
+                      } else if (!(stat.主角.基础信息.资质 && stat.主角.基础信息.资质.等级)) {
+                        try {
+                          stat.主角.基础信息.资质 = {
+                            等级: talentNames[talentLevel] || '平庸',
+                            描述: talentDescs[talentLevel] || '',
+                            经验获取效率: talentEffMap[talentLevel] || 100
+                          };
+                        } catch (e) { stat.主角.基础信息.资质 = { 等级: '平庸', 描述: '', 经验获取效率: 100 }; }
+                      }
                       
                       stat.主角.基础属性 = stat.主角.基础属性 || {};
                       stat.主角.基础属性.力量 = fStr;
@@ -10527,7 +10891,11 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
                       stat.主角.基础信息.信仰 = faith;
                       stat.主角.基础信息.信仰简述 = (document.getElementById('cc-faith').selectedOptions && document.getElementById('cc-faith').selectedOptions[0]) ? document.getElementById('cc-faith').selectedOptions[0].text : faith;
                       stat.主角.基础信息.魔力回路 = stat.主角.基础信息.魔力回路 || {};
-                      stat.主角.基础信息.魔力回路.描述 = (document.querySelector('.jrpg-circuit-option.selected .circuit-desc') ? document.querySelector('.jrpg-circuit-option.selected .circuit-desc').innerText : '');
+                      // 回路描述：显式选过才从 UI 重取（限定电路容器内选中项，避免误取资质选择器描述）；否则保留存档值
+                      if (circuitDirty) {
+                        var cDescEl = document.querySelector('#circuit-selector .jrpg-circuit-option.selected .circuit-desc');
+                        stat.主角.基础信息.魔力回路.描述 = (cDescEl ? cDescEl.innerText : '');
+                      }
                       stat.主角.基础信息.降临地点 = loc;
                       stat.主角.基础信息.时期 = era;
                       stat.主角.基础信息.身份背景 = identity;
@@ -10553,9 +10921,10 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
                       });
                       
                       stat.主角.资产与能力 = stat.主角.资产与能力 || {};
-                      stat.主角.资产与能力.货币 = myMoney;
+                      // 货币单位规范：stat_data.货币 = 铜盾数（1银盾=100铜盾；界面按“银盾”输入，这里换算写入）
+                      stat.主角.资产与能力.货币 = myMoney * 100;
                       stat.主角.资产与能力.装备栏 = stat.主角.资产与能力.装备栏 || { 头部: {}, 颈部: {}, 躯干: {}, 腿部: {}, 双手: {} };
-                      stat.主角.等阶 = '普通';
+                      stat.主角.等阶 = tierByLevel(lvl); // 位阶随总等级自动映射（普通/超凡/精英/史诗/传说）
                       stat.主角.资产与能力.角色技能 = {};
                       allSkillsWithDesc.forEach(function(skDesc) {
                           var parts = skDesc.split('：');
@@ -10587,13 +10956,14 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
                       for (var k in inventory) {
                           stat.主角.资产与能力.物品栏[k] = (function() {
                               var eq = findEquipByName(k) || {};
-                              var slotMap = { '主手': '双手', '副手': '双手', '双手': '双手', '头部': '头部', '颈部': '颈部', '躯干': '躯干', '腿部': '腿部' };
+                              var slotMap = { '主手': '双手', '单手': '双手', '副手': '双手', '双手': '双手', '头部': '头部', '颈部': '颈部', '躯干': '躯干', '腿部': '腿部' };
                               return {
                                   物品大类: eq.cat || '一般物品',
                                   品阶: eq.rank || '普通',
                                   装备位: slotMap[eq.slot] || '无',
                                   面板效果: eq.stats || {},
                                   附加词条: (eq.affixes && eq.affixes.词条效果) ? eq.affixes.词条效果 : (eq.affixes || {}),
+                                   特别机制: (function() { var sp = eq.affixes && eq.affixes.特殊机制; if (!sp) return ''; if (typeof sp === 'string') return String(sp).trim(); return Object.keys(sp).map(function(sk) { return sp[sk] ? sk + '：' + sp[sk] : sk; }).join('；'); })(),
                                   数量: inventory[k].count || 1,
                                   其它说明: eq.desc || ''
                               };
@@ -10613,8 +10983,10 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
                               背景故事: npc.desc || '',
                               所属势力: npc.faction || '',
                               种族: npc.race || '',
+                              出生年月日: npc.birth || '',   // 一经确定不改；年龄由状态栏/状态输出按当前日期自动计算
                               身份: npc.identity || '',
-                              等阶: npc.rank || '普通',
+                              // 等阶：手动选了非普通则用所选，否则按等级自动
+                              等阶: (npc.rank && npc.rank !== '普通') ? npc.rank : tierByLevel(parseInt(npc.level) || 1),
                               基础属性: {
                                   力量: (npc.stats && npc.stats.力量) || 10,
                                   敏捷: (npc.stats && npc.stats.敏捷) || 10,
@@ -10632,7 +11004,7 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
                                   经验值: { 当前: 0, 升级所需: 100 },
                                   职业信息: {},
                                   冒险者等级: 'F',
-                                  总等级: 1,
+                                  总等级: parseInt(npc.level) || 1,
                                   待分配职业等级: 0
                               },
                               防御值: 10,
@@ -10640,7 +11012,9 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
                               物品栏: {}
                           };
                           if (npc.className) {
-                              stat.同伴[npc.name].基础状态.职业信息[npc.className] = { 等级: 1, 技能点: 0, grantedLv: -1, grantedSp: -1 };
+                              // 职业等级与总等级对齐（等级=该伙伴等级，升级脚本据此满骰补 HP/MP/SP，避免总等级与职业等级失衡被自动拉回 1）
+                              var npcJobLv = Math.max(1, parseInt(npc.level, 10) || 1);
+                              stat.同伴[npc.name].基础状态.职业信息[npc.className] = { 等级: npcJobLv, 技能点: 0, grantedLv: -1, grantedSp: -1 };
                           }
                           if (npc.skills && npc.skills.length > 0) {
                               for (var ski2 = 0; ski2 < npc.skills.length; ski2++) {
@@ -10655,7 +11029,7 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
                                   var it = npc.items[iti2];
                                   if (it.name) {
                                       stat.同伴[npc.name].物品栏[it.name] = (function() {
-                                          var slotMap2 = { '主手': '双手', '副手': '双手', '双手': '双手', '头部': '头部', '颈部': '颈部', '躯干': '躯干', '腿部': '腿部' };
+                                          var slotMap2 = { '主手': '双手', '单手': '双手', '副手': '双手', '双手': '双手', '头部': '头部', '颈部': '颈部', '躯干': '躯干', '腿部': '腿部' };
                                           return {
                                               物品大类: it.cat || '一般物品',
                                               品阶: it.rank || '普通',
@@ -10671,7 +11045,23 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
                           }
                       }
                       
-                      mvuData.stat_data = stat;
+                                            // 英灵（签订契约写入）：stat_data.英灵 供状态栏/三合一面板/英灵技按钮读取，
+                      // 不再依赖 AI 事后从开场白文本自觉写入
+                      stat.英灵 = stat.英灵 || {};
+                      stat.英灵.残响之力 = 0;
+                      if (selectedSpirit) {
+                          var spiritDisplayName = spiritNames[selectedSpirit] || String(selectedSpirit).replace(/^英灵\//, '');
+                          stat.英灵.名称 = spiritDisplayName;
+                          stat.英灵.状态 = '苏醒';
+                          // 英灵殿档案登记（共鸣系统 v2：残响/羁绊/状态/执念完成）
+                          stat.英灵.英灵殿 = stat.英灵.英灵殿 || {};
+                          stat.英灵.英灵殿[spiritDisplayName] = { 残响: 0, 羁绊: 0, 状态: '苏醒', 执念完成: false };
+                      } else {
+                          stat.英灵.名称 = '';
+                          stat.英灵.状态 = '沉睡';
+                      }
+                      
+mvuData.stat_data = stat;
                       Mvu.replaceMvuData(mvuData, { type: 'message', message_id: 'latest' });
                       console.log('✅ 已自动将角色数据写入 MVU 变量');
                   } catch (e) {
@@ -10727,8 +11117,409 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
             } else {
                 alert('✅ 角色数据已生成！请点击“一键复制”按钮，然后粘贴到聊天输入框发送。');
             }
+
+            // 签订契约后：询问是否把这份主角数据存进角色卡（跨聊天可恢复），用美化弹窗而非系统 confirm
+            try {
+                if (typeof saveProtagonistData === 'function') {
+                    if (typeof showHomeConfirm === 'function') {
+                        showHomeConfirm('保存主角数据', '要不要把这份主角数据存进角色卡？\n\n保存后换聊天页也能随时恢复。', '保存').then(function (yes) {
+                            if (yes) saveProtagonistData();
+                        });
+                    } else if (window.confirm('要不要把这份主角数据存进角色卡？\n\n保存后换聊天页也能随时恢复。')) {
+                        saveProtagonistData();
+                    }
+                }
+            } catch (saveErr) { console.warn('[首页] 签订契约后询问存储失败:', saveErr); }
         }
         window.submitCC = submitCC;
+
+        // ============================================================
+        //  主角数据存档（存档点列表 + 弹窗查看/导入，存角色卡变量，跨聊天页面持久）
+        // ============================================================
+        // 主角数据 stat_data.主角 平时存在「消息楼层变量」，换聊天文件即丢失。
+        // 这里把一份份主角快照存到「角色卡变量」（type: 'character'）——绑定当前角色卡、跨聊天持久，
+        // 存成「存档点列表」（数组），弹窗里能清晰列出每份记录，点击即恢复到当前楼层，无需额外脚本。
+        var SAVE_KEY_LIST = '伊瑟利亚主角存档列表';   // 数组：[{ 时间, 数据 }]
+        var SAVE_KEY_LEGACY = '伊瑟利亚主角存档';      // 旧单存档（兼容读取）
+
+        function protagonistDeepClone(obj) {
+            try { if (_.isFunction(_.cloneDeep)) return _.cloneDeep(obj); } catch (e) {}
+            return JSON.parse(JSON.stringify(obj));
+        }
+
+        function readProtagonistData() {
+            // 优先读最新楼层，兜底用 getAllVariables（全局→角色卡→聊天→楼层 合并）
+            var src = null;
+            try {
+                if (typeof Mvu !== 'undefined') src = Mvu.getMvuData({ type: 'message', message_id: 'latest' });
+            } catch (e) { src = null; }
+            var p = _.get(src, 'stat_data.主角');
+            if (p && _.isPlainObject(p) && Object.keys(p).length > 0) return p;
+            var all = (typeof getAllVariables === 'function') ? getAllVariables() : {};
+            p = _.get(all, 'stat_data.主角');
+            return (p && _.isPlainObject(p) && Object.keys(p).length > 0) ? p : null;
+        }
+
+        // 从角色卡变量读取存档点列表（兼容旧单存档 → 只在列表为空时转成一条，避免重复膨胀）
+        function getSaveList() {
+            var charVars = {};
+            try { charVars = (typeof getVariables === 'function') ? (getVariables({ type: 'character' }) || {}) : {}; } catch (e) { charVars = {}; }
+            var list = _.get(charVars, SAVE_KEY_LIST, []);
+            if (!Array.isArray(list)) list = [];
+            // 兼容：旧的「伊瑟利亚主角存档」单存档 → 仅在没有任何存档时转成第一条
+            if (list.length === 0) {
+                var legacy = _.get(charVars, SAVE_KEY_LEGACY);
+                if (legacy && _.isPlainObject(legacy) && Object.keys(legacy).length > 0) {
+                    var legacyTime = _.get(charVars, '伊瑟利亚主角存档时间', '');
+                    list.push({ 时间: legacyTime, 数据: protagonistDeepClone(legacy), _legacy: true });
+                }
+            }
+            return list;
+        }
+
+        // 提取一份主角数据的「概览卡片」文本（角色名/等级/等阶/种族/主职/职业信息）
+        function protagonistSummary(data) {
+            var s = { 姓名: '未命名', 种族: '', 等级: '', 等阶: '', 职业: '', 时间: '' };
+            try {
+                s.姓名 = _.get(data, '基础信息.姓名') || _.get(data, '基础信息.昵称') || '未命名';
+                s.种族 = _.get(data, '基础信息.种族') || '';
+                s.等级 = _.get(data, '基础状态.总等级') || '';
+                s.等阶 = _.get(data, '等阶') || '';
+                var jobInfo = _.get(data, '基础状态.职业信息') || {};
+                var jobArr = [];
+                for (var k in jobInfo) {
+                    var lv = _.get(jobInfo[k], '等级');
+                    jobArr.push(k + (lv ? '(Lv.' + lv + ')' : ''));
+                }
+                if (jobArr.length) s.职业 = jobArr.join(' / ');
+            } catch (e) {}
+            return s;
+        }
+
+        // 保存一份存档（返回 true/false，供「签订契约后询问」复用）
+        function saveProtagonistData(showToast) {
+            try {
+                var protagonist = readProtagonistData();
+                if (!protagonist) {
+                    if (window.toastr && showToast !== false) toastr.error('未找到主角数据：请先创建角色，或游玩一段时间后再保存');
+                    return false;
+                }
+                if (typeof getVariables !== 'function' || typeof replaceVariables !== 'function') {
+                    if (window.toastr && showToast !== false) toastr.error('存档接口不可用');
+                    return false;
+                }
+                var now = new Date().toLocaleString('zh-CN', { hour12: false });
+                var charVars = getVariables({ type: 'character' });
+                if (!charVars || typeof charVars !== 'object') charVars = {};
+                var list = getSaveList();
+                var entry = { 时间: now, 数据: protagonistDeepClone(protagonist) };
+                list.push(entry);
+                // 上限保护：最多保留 30 份，超出丢弃最早的（保留最新 30）
+                if (list.length > 30) list = list.slice(-30);
+                _.set(charVars, SAVE_KEY_LIST, list);
+                // 不再写旧单存档字段（新版只维护列表），避免与旧档转换互相干扰
+                replaceVariables(charVars, { type: 'character' });
+                if (window.toastr && showToast !== false) toastr.success('主角数据已保存（角色卡存档，第 ' + list.length + ' 份）');
+                console.log('[首页] 主角数据已存入角色卡存档，当前共 ' + list.length + ' 份');
+                return true;
+            } catch (e) {
+                console.error('⚠ 保存主角数据失败:', e);
+                if (window.toastr && showToast !== false) toastr.error('保存主角数据失败：' + e.message);
+                return false;
+            }
+        }
+
+        // 应用一份存档到当前楼层（message 级 + chat 级双写，保证状态栏可见）
+        async function applySaveToProtagonist(snapshot) {
+            if (typeof Mvu === 'undefined') {
+                if (window.toastr) toastr.error('MVU 框架未初始化');
+                return false;
+            }
+            if (!snapshot || !_.isPlainObject(snapshot) || Object.keys(snapshot).length === 0) {
+                if (window.toastr) toastr.error('这份存档是空的，无法导入');
+                return false;
+            }
+            var mvuData = null;
+            try { mvuData = Mvu.getMvuData({ type: 'message', message_id: 'latest' }); } catch (e) { mvuData = null; }
+            if (!mvuData || !_.isPlainObject(mvuData)) mvuData = {};
+            if (!_.isPlainObject(mvuData.stat_data)) mvuData.stat_data = {};
+            mvuData.stat_data.主角 = protagonistDeepClone(snapshot);
+            await Mvu.replaceMvuData(mvuData, { type: 'message', message_id: 'latest' });
+            // 同步 chat 级：状态栏渲染（getAllVariables）读 chat 级，双写保证都可见
+            try {
+                if (typeof updateVariablesWith === 'function') {
+                    updateVariablesWith(function (variables) {
+                        if (!variables || !_.isPlainObject(variables)) variables = {};
+                        if (!_.isPlainObject(variables.stat_data)) variables.stat_data = {};
+                        variables.stat_data.主角 = protagonistDeepClone(snapshot);
+                        return variables;
+                    }, { type: 'chat' });
+                }
+            } catch (e2) { console.warn('[首页] 导入主角数据 chat 级同步失败:', e2); }
+            // 热载入：把存档回填到首页表单，用户立刻看到导入生效（不刷新页面）
+            applySaveToHomeForm(snapshot);
+            return true;
+        }
+
+        // ============================================================
+        // 导入存档 → 回填首页建卡表单（热载入）
+        // ============================================================
+        function applySaveToHomeForm(s) {
+            try {
+            if (!s || !_.isPlainObject(s)) return;
+            var info = _.get(s, '基础信息') || {};
+            var state = _.get(s, '基础状态') || {};
+            var attrs = _.get(s, '基础属性') || {};
+            var assets = _.get(s, '资产与能力') || {};
+
+            function setVal(id, v) { var el = document.getElementById(id); if (el) el.value = (v === undefined || v === null) ? '' : v; }
+
+            // ── 姓名 / 性别 / 年龄 ──
+            setVal('cc-name', info.姓名);
+            if (info.性别) setVal('cc-gender', info.性别);
+            if (info.年龄 !== undefined) setVal('cc-age', info.年龄);
+            // 种族（含混血种匹配）
+            if (info.种族) {
+                var raceSel = document.getElementById('cc-race');
+                var found = false;
+                if (raceSel) { for (var i = 0; i < raceSel.options.length; i++) { if (raceSel.options[i].value === info.种族) { raceSel.value = info.种族; found = true; break; } } }
+                if (!found && info.种族 && String(info.种族).indexOf('×') !== -1) { if (raceSel) raceSel.value = '混血种'; }
+            }
+            // 信仰 / 降临地点 / 身份背景
+            if (info.信仰) setVal('cc-faith', info.信仰);
+            if (info.降临地点) setVal('cc-location', info.降临地点);
+            if (info.身份背景) { var idEl = document.getElementById('cc-identity'); if (idEl && !idEl.value) idEl.value = info.身份背景; }
+            // 总等级
+            if (state.总等级 !== undefined) setVal('cc-level', state.总等级);
+
+            // ── 六维属性（存档为最终值，减去种族修正得购点基础值）──
+            var RACE_MODS = (typeof RACE_MODS !== 'undefined') ? RACE_MODS : {};
+            var mods = (info.种族 && RACE_MODS[info.种族]) ? RACE_MODS[info.种族] : { str:0, dex:0, con:0, int:0, wis:0, cha:0 };
+            var map = { str:'力量', dex:'敏捷', con:'体质', int:'智力', wis:'感知', cha:'魅力' };
+            var initPoints = 20;
+            var used = 0;
+            for (var k in map) {
+                var final = parseInt(attrs[map[k]], 10);
+                if (isNaN(final)) final = 8;
+                var base = Math.max(8, final - (parseInt(mods[k], 10) || 0));
+                baseAttrs[k] = base;
+                used += getCost(base);
+                var el = document.getElementById('base-' + k);
+                if (el) el.innerText = base;
+            }
+            ccPoints = Math.max(0, initPoints - used);
+            var ptsEl = document.getElementById('cc-points');
+            if (ptsEl) ptsEl.innerText = ccPoints;
+
+            // ── 职业（主职 + 兼职）──
+            var jobInfo = state.职业信息 || {};
+            var jobNames = Object.keys(jobInfo);
+            if (jobNames.length > 0) {
+                // 主职 = 等级最高的职业
+                var sorted = jobNames.slice().sort(function (a, b) { return (jobInfo[b] && jobInfo[b].等级 || 0) - (jobInfo[a] && jobInfo[a].等级 || 0); });
+                var mainName = sorted[0];
+                var setSelect = function (id, name) { var sel = document.getElementById(id); if (!sel) return; for (var i = 0; i < sel.options.length; i++) { if (sel.options[i].value === name) { sel.value = name; return; } } };
+                setSelect('cc-class', mainName);
+                if (sorted[1]) setSelect('cc-subclass1', sorted[1]);
+                if (sorted[2]) setSelect('cc-subclass2', sorted[2]);
+                allocatedJobLevels = {
+                    main: (jobInfo[mainName] && jobInfo[mainName].等级) || 1,
+                    sub1: (sorted[1] && jobInfo[sorted[1]].等级) || 0,
+                    sub2: (sorted[2] && jobInfo[sorted[2]].等级) || 0
+                };
+            }
+
+            // ── 资质 / 魔力回路（免购点回填存档值，防止再次生成时被默认值覆盖）──
+            try {
+                var svTalent = info.资质 && info.资质.等级;
+                if (svTalent) { var ti2 = talentNames.indexOf(svTalent); if (ti2 >= 0) forceSelectTalent(ti2); }
+            } catch (e) { console.warn('[首页] 资质回填失败:', e); }
+            try {
+                var svCircuit = info.魔力回路 && info.魔力回路.品阶;
+                if (svCircuit) { var ci2 = circuitNames.indexOf(svCircuit); if (ci2 >= 0) forceSelectCircuit(ci2); }
+            } catch (e) { console.warn('[首页] 魔力回路回填失败:', e); }
+
+            // ── 装备栏描述回填到自定义装备框（字段对齐 Schema：物品名/面板效果/特别机制/其它说明；仅当框为空）──
+            var gear = assets.装备栏;
+            if (gear && typeof gear === 'object') {
+                var gearTxt = [];
+                for (var slot in gear) {
+                    var it = gear[slot];
+                    if (!it || typeof it !== 'object') continue;
+                    var nm = it.物品名 || it.名称 || '';
+                    if (!nm) continue;
+                    var dsc = [];
+                    var bp2 = it.面板效果;
+                    if (bp2 && typeof bp2 === 'object') {
+                        var effArr = [];
+                        for (var kk in bp2) { if (bp2[kk] !== undefined && bp2[kk] !== null && bp2[kk] !== '') effArr.push(kk + ':' + bp2[kk]); }
+                        if (effArr.length) dsc.push('属性:' + effArr.join(','));
+                    }
+                    var af2 = it.附加词条;
+                    if (af2 && typeof af2 === 'object') {
+                        var affArr = [];
+                        for (var ak in af2) { if (af2[ak]) affArr.push(String(af2[ak])); }
+                        if (affArr.length) dsc.push('词条:' + affArr.join('；'));
+                    }
+                    if (it.特别机制) dsc.push(String(it.特别机制));
+                    if (it.其它说明) dsc.push(String(it.其它说明));
+                    gearTxt.push(nm + (dsc.length ? '（' + dsc.join('；') + '）' : ''));
+                }
+                if (gearTxt.length) { var cg = document.getElementById('cc-custom-gear'); if (cg && !cg.value) cg.value = gearTxt.join('\n'); }
+            }
+
+            // 触发 UI 重算（职业相关显示 / 属性和面板效果）
+            try { if (typeof updateClass === 'function') updateClass(); } catch (e) { console.warn('[首页] 导入回填 updateClass 失败:', e); }
+            try { if (typeof calcStats === 'function') calcStats(); } catch (e) { console.warn('[首页] 导入回填 calcStats 失败:', e); }
+            try { if (typeof updateRaceBonus === 'function') updateRaceBonus(); } catch (e) {}
+            try { if (typeof checkFaithAndRace === 'function') checkFaithAndRace(); } catch (e) {}
+            } catch (err) { console.warn('[首页] 导入回填首页表单失败（不影响导入主流程）:', err); }
+        }
+
+        // 点击某一张存档卡片 → 导入
+        async function importSaveById(saveId) {
+            var list = getSaveList();
+            var item = list[parseInt(saveId, 10)];
+            if (!item) { if (window.toastr) toastr.error('找不到这份存档'); return; }
+            if (typeof showHomeConfirm === 'function') {
+                var ok = await showHomeConfirm('导入存档', '要用这份存档覆盖当前主角数据吗？\n\n存档时间：' + (item.时间 || ''), '导入');
+                if (!ok) return;
+            } else if (!window.confirm('要用这份存档覆盖当前主角数据吗？\n\n存档时间：' + (item.时间 || ''))) return;
+            var imp = await applySaveToProtagonist(item.数据);
+            if (imp && window.toastr) toastr.success('已恢复到这份存档');
+        }
+
+        // 删除某一张存档卡片
+        async function deleteSaveById(saveId) {
+            var list = getSaveList();
+            var idx = parseInt(saveId, 10);
+            var item = list[idx];
+            if (!item) return;
+            if (typeof showHomeConfirm === 'function') {
+                var ok = await showHomeConfirm('删除存档', '要删除这份存档吗？\n\n存档时间：' + (item.时间 || ''), '删除');
+                if (!ok) return;
+            } else if (!window.confirm('要删除这份存档吗？\n\n存档时间：' + (item.时间 || ''))) return;
+            list.splice(idx, 1);
+            if (typeof getVariables === 'function' && typeof replaceVariables === 'function') {
+                var charVars = getVariables({ type: 'character' }) || {};
+                _.set(charVars, SAVE_KEY_LIST, list);
+                // 若已删到空，一并清掉旧版存留在角色卡里的单档字段，避免下次又「复活」
+                if (list.length === 0) {
+                    delete charVars[SAVE_KEY_LEGACY];
+                    delete charVars['伊瑟利亚主角存档时间'];
+                }
+                replaceVariables(charVars, { type: 'character' });
+            }
+            renderSaveList();
+            if (window.toastr) toastr.success('已删除这份存档');
+        }
+
+        // 打开存档弹窗并渲染列表
+        function openSaveListPopup() {
+            var popup = document.getElementById('protagonist-save-popup');
+            if (!popup) return;
+            popup.style.display = 'flex';
+            renderSaveList();
+        }
+
+        function closeSaveListPopup() {
+            var popup = document.getElementById('protagonist-save-popup');
+            if (popup) popup.style.display = 'none';
+        }
+
+        // ============================================================
+        //  通用确认弹窗（替代系统 confirm，用于导入/删除/签订契约后询问）
+        // ============================================================
+        var _homeConfirmResolve = null;
+        function showHomeConfirm(title, message, confirmText) {
+            return new Promise(function (resolve) {
+                _homeConfirmResolve = resolve;
+                var p = document.getElementById('home-confirm-popup');
+                var ti = document.getElementById('home-confirm-title');
+                var mi = document.getElementById('home-confirm-message');
+                var ok = document.getElementById('home-confirm-ok');
+                if (ti) ti.textContent = title || '确认';
+                if (mi) mi.textContent = message || '';
+                if (ok) ok.textContent = confirmText || '确定';
+                if (p) p.style.display = 'flex';
+            });
+        }
+        function resolveHomeConfirm(val) {
+            var p = document.getElementById('home-confirm-popup');
+            if (p) p.style.display = 'none';
+            if (typeof _homeConfirmResolve === 'function') _homeConfirmResolve(!!val);
+            _homeConfirmResolve = null;
+        }
+        window.showHomeConfirm = showHomeConfirm;
+        window.resolveHomeConfirm = resolveHomeConfirm;
+
+        function renderSaveList() {
+            var list = getSaveList();
+            var box = document.getElementById('save-popup-list');
+            var empty = document.getElementById('save-popup-empty');
+            var count = document.getElementById('save-popup-count');
+            if (count) count.textContent = list.length;
+            if (!box) return;
+            if (list.length === 0) { box.innerHTML = ''; if (empty) empty.style.display = 'block'; return; }
+            if (empty) empty.style.display = 'none';
+            var html = '';
+            for (var i = 0; i < list.length; i++) {
+                var item = list[i];
+                if (!item || !item.数据) continue;
+                var s = protagonistSummary(item.数据);
+                var badge = item._legacy ? '<span style="font-size:10px;color:#c0392b;border:1px solid #c0392b;border-radius:3px;padding:0 4px;margin-left:6px;">旧档</span>' : '';
+                var hp = _.get(item.数据, '基础状态.HP');
+                var hpTxt = (hp && hp.当前 !== undefined) ? (hp.当前 + '/' + hp.最大) : '';
+                html += '<div style="border:1px solid #d2b48c; border-radius:8px; padding:10px 14px; background:#fff; cursor:pointer; transition:box-shadow .12s;" onmouseover="this.style.boxShadow=\'0 3px 10px rgba(0,0,0,0.15)\'" onmouseout="this.style.boxShadow=\'none\'">';
+                html +=   '<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">';
+                html +=     '<div style="flex:1; min-width:0;">';
+                html +=       '<div style="font-weight:bold; color:#6b4e31; font-size:14px;">' + (s.姓名 || '未命名') + badge + '</div>';
+                html +=       '<div style="font-size:12px; color:#7f8c8d; margin-top:4px; line-height:1.6;">';
+                var meta = [];
+                if (s.种族) meta.push(s.种族);
+                if (s.等阶) meta.push(s.等阶);
+                if (s.等级) meta.push('Lv.' + s.等级);
+                if (hpTxt) meta.push('HP ' + hpTxt);
+                html += meta.join('　·　');
+                if (s.职业) html += '<div style="margin-top:2px;">职业：' + s.职业 + '</div>';
+                html +=       '</div>';
+                html +=       '<div style="font-size:11px; color:#aaa; margin-top:6px;">🕒 ' + (item.时间 || '未知时间') + '</div>';
+                html +=     '</div>';
+                html +=     '<div style="display:flex; flex-direction:column; gap:6px; flex-shrink:0;">';
+                html +=       '<button style="background:#2980b9;color:#fff;border:none;border-radius:14px;padding:5px 14px;font-size:12px;cursor:pointer;" onclick="importSaveById(' + i + ')">导入</button>';
+                html +=       '<button style="background:#e74c3c;color:#fff;border:none;border-radius:14px;padding:5px 14px;font-size:12px;cursor:pointer;" onclick="deleteSaveById(' + i + ')">删除</button>';
+                html +=     '</div>';
+                html +=   '</div>';
+                html += '</div>';
+            }
+            box.innerHTML = html;
+        }
+
+        // 保留旧名称，弹窗导入用 applySaveToProtagonist；window.loadProtagonistData 保留临时兼容
+        async function loadProtagonistData() {
+            if (typeof getVariables !== 'function') {
+                if (window.toastr) toastr.error('存档接口不可用');
+                return;
+            }
+            var list = getSaveList();
+            var latest = list[list.length - 1];
+            if (!latest || !latest.数据) {
+                if (window.toastr) toastr.error('还没有存档，请先「保存数据」');
+                return;
+            }
+            if (typeof showHomeConfirm === 'function') {
+                var okc = await showHomeConfirm('载入最新存档', '要用最新一份存档覆盖当前主角数据吗？\n\n存档时间：' + (latest.时间 || ''), '载入');
+                if (!okc) return;
+            } else if (!window.confirm('要用最新一份存档覆盖当前主角数据吗？\n\n存档时间：' + (latest.时间 || ''))) return;
+            var ok = await applySaveToProtagonist(latest.数据);
+            if (ok && window.toastr) toastr.success('已恢复到最新存档');
+        }
+        window.saveProtagonistData = saveProtagonistData;
+        window.loadProtagonistData = loadProtagonistData;
+        window.openSaveListPopup = openSaveListPopup;
+        window.closeSaveListPopup = closeSaveListPopup;
+        window.importSaveById = importSaveById;
+        window.deleteSaveById = deleteSaveById;
 
         // ============================================================
         //  复制结果 + 自动填入聊天输入框
@@ -10799,6 +11590,22 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
             }
         }
         window.toggleCustomSkillTree = toggleCustomSkillTree;
+
+        // 🛠 自创职业折叠框（默认收起，点击标题展开/收起）
+        var cjcOpen = false;
+        function toggleCustomJobCreator() {
+            cjcOpen = !cjcOpen;
+            var body = document.getElementById('cjc-body');
+            var arrow = document.getElementById('cjc-arrow');
+            if (cjcOpen) {
+                body.classList.add('open');
+                arrow.classList.add('open');
+            } else {
+                body.classList.remove('open');
+                arrow.classList.remove('open');
+            }
+        }
+        window.toggleCustomJobCreator = toggleCustomJobCreator;
 
         function initCustomSkillTreeSelect() {
             var sel = document.getElementById('cst-target-class');
@@ -10939,7 +11746,7 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
             if (!targetClass) { alert('请先选择职业！'); return; }
             if (!variantDesc) { alert('请填写变体风格描述！'); return; }
 
-            if (typeof generate === 'undefined') {
+            if (typeof generateRaw === 'undefined') {
                 alert('⚠️ 当前环境不支持AI生成，请确认酒馆助手已加载。\n\n替代方案：手动添加技能。');
                 return;
             }
@@ -10967,19 +11774,22 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
             promptText += '5. 风格必须紧密围绕上述"风格描述"';
 
             try {
-                var result = await generate({ user_input: promptText, should_silence: true });
+                // 非 RP 生成标志：跳过紧张度脚本的【世界动态】注入，避免污染"只输出 JSON"的技能树任务
+                window.__ISURIA_NON_RP__ = true;
+                try {
+                var result = await generateRaw({
+                    user_input: promptText,
+                    should_silence: true,
+                    overrides: {
+                        world_info_before: '', world_info_after: '', persona_description: '',
+                        char_description: '', char_personality: '', scenario: '',
+                        dialogue_examples: '', chat_history: { prompts: [] }
+                    }
+                });
+                } finally { window.__ISURIA_NON_RP__ = false; }
                 statusEl.innerHTML = '✅ AI响应完成，正在解析…';
 
-                var jsonMatch = result.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-                var jsonStr = jsonMatch ? jsonMatch[1] : result;
-
-                var startBracket = jsonStr.indexOf('[');
-                var endBracket = jsonStr.lastIndexOf(']');
-                if (startBracket !== -1 && endBracket !== -1) {
-                    jsonStr = jsonStr.substring(startBracket, endBracket + 1);
-                }
-
-                var parsed = JSON.parse(jsonStr);
+                var parsed = extractJsonArray(result);
                 if (!Array.isArray(parsed)) throw new Error('返回数据不是数组');
 
                 var validSkills = [];
@@ -11047,6 +11857,189 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
         window.saveCustomSkillTree = saveCustomSkillTree;
 
         // ============================================================
+        //  🛠 自创职业：AI 生成 1-20 级定制技能树（与状态栏自创职业体系联动）
+        //  玩法：输入职业名 → 选成长风格（武技/魔法/神术/混合）→ 写定位描述 → AI 生成
+        //  保存：$customSkillTrees[职业名]['定制技能树'] = { skills, level:0, grantedLv:0, grantedSp:0, 风格 }
+        //  生成后自动：注册每级成长（HP/SP/MP骰+每级技能点）+ 加入主修/兼职下拉 + 预览技能树
+        // ============================================================
+        var CJC_STYLES = {
+            '武技': { hpDice: 'd10', hpNum: 10, spDice: 'd8', mpDice: '', spPerLv: 4,
+                growth: '每级 HP d10 + SP d8（无 MP）',
+                type: '以「技能」（SP 消耗、物理战技系）为主，不产出魔法/神术技能' },
+            '魔法': { hpDice: 'd6', hpNum: 6, spDice: '', mpDice: 'd8', spPerLv: 5, mpKey: 'int',
+                growth: '每级 HP d6 + MP d8（无 SP）',
+                type: '以「魔法」（MP 消耗、法术系）为主，描述中标明 MP 消耗' },
+            '神术': { hpDice: 'd8', hpNum: 8, spDice: '', mpDice: 'd6', spPerLv: 4, mpKey: 'wis',
+                growth: '每级 HP d8 + MP d6（无 SP）',
+                type: '以「神术」（MP 消耗、神术系）为主，描述中标明 MP 消耗' },
+            '混合': { hpDice: 'd8', hpNum: 8, spDice: 'd6', mpDice: 'd4', spPerLv: 4, mpKey: 'int',
+                growth: '每级 HP d8 + SP d6 + MP d4',
+                type: '「技能」与「魔法」合理混合（约各半），SP/MP 并用' }
+        };
+        // 从技能描述解析 MP 消耗（描述未写时兜底）
+        function cjcParseMpCost(desc) {
+            var m = String(desc || '').match(/MP\s*(\d+)/i);
+            return m ? (parseInt(m[1], 10) || 0) : 0;
+        }
+        // 将自创职业注册进：每级成长表（写变量/升级脚本用）+ 主修/兼职下拉（幂等）
+        function cjcRegisterJob(jobName, style) {
+            if (!jobName) return;
+            var si = CJC_STYLES[style] || CJC_STYLES['混合'];
+            // 1. 每级成长（仅当该职业名不在官方成长表时写入，避免覆盖官方职业）
+            if (!职业每级成长[jobName]) {
+                var g = { HP: si.hpDice, sp: si.spPerLv };
+                if (si.spDice) g.SP = si.spDice;
+                if (si.mpDice) g.MP = si.mpDice;
+                职业每级成长[jobName] = g;
+            }
+            // 2. 主修/兼职下拉加入自创职业选项（已存在则跳过）
+            ['cc-class', 'cc-subclass1', 'cc-subclass2'].forEach(function (sid) {
+                var sel = document.getElementById(sid);
+                if (!sel) return;
+                for (var i = 0; i < sel.options.length; i++) {
+                    if (sel.options[i].value === jobName) return;
+                }
+                var opt = document.createElement('option');
+                opt.value = jobName;
+                opt.setAttribute('data-hp', String(si.hpNum));
+                opt.setAttribute('data-sp', String(si.spPerLv));
+                if (si.mpDice) {
+                    opt.setAttribute('data-mp', si.mpKey || 'int');
+                    opt.setAttribute('data-mpdice', String(parseInt(si.mpDice.slice(1), 10) || 4));
+                }
+                opt.textContent = (sid === 'cc-class') ? ('🛠 ' + jobName + ' (自创) · ' + si.growth) : ('🛠 ' + jobName + ' (自创)');
+                sel.appendChild(opt);
+            });
+        }
+        window.cjcRegisterJob = cjcRegisterJob;
+
+        async function generateCustomJobTree() {
+            var statusEl = document.getElementById('cjc-status');
+            var jobName = (document.getElementById('cjc-job-name').value || '').trim();
+            var styleEl = document.getElementById('cjc-style');
+            var style = (styleEl && styleEl.value) || '混合';
+            var desc = (document.getElementById('cjc-desc').value || '').trim();
+            if (!jobName) { alert('请先填写职业名！'); return; }
+            if (jobName.length > 12) { alert('职业名过长（最多 12 字）'); return; }
+            if (!desc) { alert('请填写职业定位与描述！'); return; }
+            if (typeof generateRaw === 'undefined') {
+                alert('⚠️ 当前环境不支持AI生成，请确认酒馆助手已加载。');
+                return;
+            }
+            // 与官方职业重名：仍可生成，但作为「定制技能树」变体（不覆盖官方成长/技能库）
+            var isOfficial = !!((typeof dbSkills !== 'undefined') && dbSkills[jobName] && dbSkills[jobName].length);
+            if (isOfficial) {
+                if (!confirm('「' + jobName + '」是官方职业名，生成后将作为其「定制技能树」变体（状态栏优先显示定制树，官方成长/技能库不受影响）。继续？')) return;
+            } else if (typeof Mvu !== 'undefined') {
+                try {
+                    var mvuData0 = Mvu.getMvuData({ type: 'message', message_id: 'latest' });
+                    var trees0 = _.get(mvuData0, 'stat_data.$customSkillTrees', {});
+                    if (trees0[jobName] && trees0[jobName]['定制技能树']) {
+                        if (!confirm('「' + jobName + '」已存在定制技能树，重新生成将覆盖。继续？')) return;
+                    }
+                } catch (e) { /* 忽略：变量不可读时按无覆盖处理 */ }
+            }
+            var si = CJC_STYLES[style] || CJC_STYLES['混合'];
+            statusEl.style.display = 'block';
+            statusEl.innerHTML = '🔄 正在请求AI生成定制技能树（' + jobName + ' · ' + style + ' 风格）…';
+            statusEl.style.color = '#2980b9';
+
+            // 角色上下文（种族/属性，已填写时附带，帮助技能贴合角色）
+            var race = '未知';
+            var raceEl = document.getElementById('cc-race');
+            if (raceEl && raceEl.value) race = raceEl.value;
+            var attrText = '';
+            try {
+                var extraCha = isTransmigrationLocked ? 3 : 0;
+                attrText = ['力量', '敏捷', '体质', '智力', '感知', '魅力'].map(function (a, i) {
+                    var k = ['str', 'dex', 'con', 'int', 'wis', 'cha'][i];
+                    return a + ' ' + (baseAttrs[k] + raceBonus[k] + (k === 'cha' ? extraCha : 0));
+                }).join('、');
+            } catch (e) { attrText = ''; }
+
+            var promptText = '你正在为玩家自创职业「' + jobName + '」设计一套 1-20 级定制职业技能树。\n\n';
+            promptText += '【玩家设定】\n';
+            promptText += '职业名：' + jobName + '\n';
+            promptText += '成长风格：' + style + '（' + si.growth + '）\n';
+            promptText += '职业定位描述：' + desc + '\n';
+            if (attrText) promptText += '该角色基础属性：' + attrText + '\n';
+            promptText += '种族：' + race + '\n\n';
+            promptText += '请为该自创职业生成一套完整的 1-20 级职业技能树（共约 30~40 个技能，覆盖 Lv.1、3、5、7、9、11、13、15、17、19 十个等级段，每段 3~4 个技能）。要求：\n';
+            promptText += '1. 技能必须贴合「' + jobName + '」这个职业的定位与描述，风格统一，具有专属职业特色。\n';
+            promptText += '2. 每个技能必须带等级 lvl（1~20 奇数等级段），学习时需该职业等级达到对应 lvl 才能解锁；低级技能偏向基础机制，高级技能威力递增。\n';
+            promptText += '3. 技能类型分配：' + si.type + '。\n';
+            promptText += '4. 技能消耗技能点 c（Lv.1 段为 1 点，随等级段递增，最高 10 点）；描述 d 需说明机制、数值与资源消耗（SP/MP）。\n';
+            promptText += '5. 请严格按照以下 JSON 格式输出技能数据（不要输出其他文字，只输出 JSON）：\n';
+            promptText += '```json\n[\n  { "n": "技能名称", "t": "类型（技能/魔法/神术）", "c": "学习消耗（技能点数，1~10）", "lvl": "所需职业等级（1~20）", "d": "技能效果描述，说明机制与数值" },\n  ...\n]\n```';
+
+            try {
+                // 非 RP 生成标志：跳过紧张度脚本的【世界动态】注入，避免污染"只输出 JSON"的任务
+                window.__ISURIA_NON_RP__ = true;
+                var result;
+                try {
+                    result = await generateRaw({
+                        user_input: promptText,
+                        should_silence: true,
+                        overrides: {
+                            world_info_before: '', world_info_after: '', persona_description: '',
+                            char_description: '', char_personality: '', scenario: '',
+                            dialogue_examples: '', chat_history: { prompts: [] }
+                        }
+                    });
+                } finally { window.__ISURIA_NON_RP__ = false; }
+                statusEl.innerHTML = '✅ AI响应完成，正在解析…';
+
+                var parsed = extractJsonArray(result);
+                if (!Array.isArray(parsed)) throw new Error('返回数据不是数组');
+                var validSkills = [];
+                parsed.forEach(function (sk) {
+                    if (sk.n && typeof sk.n === 'string' && sk.n.trim()) {
+                        var rawType = String(sk.t || sk.type || '').trim();
+                        var skType = rawType === '魔法' || rawType === '神术' ? rawType : '技能';
+                        var lvl = Math.min(20, Math.max(1, parseInt(sk.lvl, 10) || 1));
+                        validSkills.push({
+                            n: sk.n.trim(), type: skType,
+                            c: parseInt(sk.c, 10) || 1, lvl: lvl,
+                            mp: parseInt(sk.mp, 10) || cjcParseMpCost(sk.d),
+                            d: (sk.d || '').trim()
+                        });
+                    }
+                });
+                if (!validSkills.length) throw new Error('未解析出有效技能数据');
+
+                // 保存到变量：与状态栏自创职业同款结构（升级脚本按 风格 成长、技能树页签可学习）
+                var savedToVars = false;
+                if (typeof Mvu !== 'undefined') {
+                    try {
+                        var mvuData = Mvu.getMvuData({ type: 'message', message_id: 'latest' });
+                        var stat = mvuData.stat_data || (mvuData.stat_data = {});
+                        var trees = _.get(stat, '$customSkillTrees', {});
+                        if (!trees[jobName]) trees[jobName] = {};
+                        trees[jobName]['定制技能树'] = { skills: validSkills, level: 0, grantedLv: 0, grantedSp: 0, 风格: style };
+                        _.set(stat, '$customSkillTrees', trees);
+                        await Mvu.replaceMvuData(mvuData, { type: 'message', message_id: 'latest' });
+                        savedToVars = true;
+                    } catch (e) { console.error('自创职业保存失败:', e); }
+                }
+
+                // 首页预览 + 职业注册（___isCustomTree 标记：渲染为职业主技能树而非「变体」块）
+                generatedVariantSkills[jobName] = { variantName: '定制技能树（' + style + ' 风格）', skills: validSkills, ___isCustomTree: true };
+                if (!isOfficial) cjcRegisterJob(jobName, style);
+                if (typeof updateClass === 'function') updateClass();
+
+                statusEl.innerHTML = '✅ 已生成 ' + validSkills.length + ' 个技能' +
+                    (savedToVars ? '，已保存到变量 $customSkillTrees（状态栏「技能树」页签可查看/学习）' : '（⚠️ 当前环境无法写入变量，仅作预览）') +
+                    (isOfficial ? '。官方职业「' + jobName + '」的定制技能树已就绪。' : '。「' + jobName + '」已加入主修/兼职下拉，选择它即可在此技能树中看到该职业的完整技能树，并按分配等级勾选学习。');
+                statusEl.style.color = '#27ae60';
+            } catch (e) {
+                console.error('自创职业生成失败:', e);
+                statusEl.innerHTML = '❌ AI生成失败：' + (e && e.message ? e.message : e) + '。可在页面刷新后重试。';
+                statusEl.style.color = '#c0392b';
+            }
+        }
+        window.generateCustomJobTree = generateCustomJobTree;
+
+        // ============================================================
         //  使用 jQuery 绑定事件（替代内联 onchange/onclick）
         // ============================================================
         $(() => {
@@ -11056,6 +12049,11 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
             $('#enable-apocalypse-dlc').on('change', function () { toggleApocalypseDLC(this.checked); });
             $('#include-quest').on('change', function () { toggleMainQuestEntry(this.checked); });
             $('#include-territory').on('change', function () { toggleTerritoryFeature(this.checked); });
+            // 四传奇觉醒开关状态初始化（Mvu 可能稍后加载，自动重试）
+            (function refreshLegendBtn() {
+                if (typeof Mvu !== 'undefined') { updateLegendAwakenBtn(getLegendAwakenState()); return; }
+                setTimeout(refreshLegendBtn, 1500);
+            })();
             // 种族、等级、预设选择
             $('#cc-race').on('change', updateRaceBonus);
             $('#cc-level').on('change', onLevelChange);
@@ -11093,6 +12091,8 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
             // 提交 & 复制按钮
             $('.jrpg-submit').on('click', submitCC);
             $('.jrpg-copy-btn').on('click', copyResult);
+            // 🛠 自创职业生成按钮
+            $('#cjc-generate').on('click', function () { generateCustomJobTree(); });
         });
 
         // ============================================================
@@ -11109,10 +12109,19 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
                     Object.keys(vMap).forEach(function (vName) {
                         var vData = vMap[vName];
                         if (vData && vData.skills && vData.skills.length) {
-                            generatedVariantSkills[gClass] = { variantName: vName, skills: vData.skills };
+                            generatedVariantSkills[gClass] = { variantName: vName, skills: vData.skills, ___isCustomTree: vName === '定制技能树' };
                             loaded = true;
                         }
                     });
+                });
+                // 🛠 自创职业恢复：把已保存的定制技能树职业注册进成长表与主修/兼职下拉（幂等）
+                Object.keys(trees).forEach(function (gClass) {
+                    var vMap = trees[gClass] || {};
+                    var cstDef = vMap['定制技能树'];
+                    if (cstDef && cstDef.skills && cstDef.skills.length) {
+                        var isOff = !!((typeof dbSkills !== 'undefined') && dbSkills[gClass] && dbSkills[gClass].length);
+                        if (!isOff) cjcRegisterJob(gClass, cstDef.风格 || '混合');
+                    }
                 });
                 if (loaded && typeof updateClass === 'function') updateClass();
                 return true;
@@ -11964,7 +12973,7 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
                     var card = cb.closest('.jrpg-npc-card');
                     if (card && !card.classList.contains('apocalypse-companion')) {
                         cb.checked = false;
-                        card.classList.remove('expanded');
+                        card.classList.remove('checked');
                     }
                 });
             }
@@ -12238,6 +13247,7 @@ var skillStr = allSkillsWithDesc.length > 0 ? allSkillsWithDesc.join("\n") : "�
         window.toggleNpcEdit = toggleNpcEdit;
         window.toggleNpcDetail = toggleNpcDetail;
         window.addCustomNpc = addCustomNpc;
+        window.generateNpcWithAI = generateNpcWithAI;
         window.removeCustomNpc = removeCustomNpc;
         window.updateCustomNpcField = updateCustomNpcField;
         window.updateCustomNpcStat = updateCustomNpcStat;

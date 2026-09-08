@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小剧场</title>
+  <style>
+    /* ===== 全局重置 ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Georgia", "Noto Serif SC", "Microsoft YaHei", serif;
+      background: transparent;
+      color: #c8c8d0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 0;
+      margin: 0;
+      min-height: auto;
+      height: auto;
+    }
+
+    /* ===== 空状态 ===== */
+    .theater-empty {
+      text-align: center;
+      padding: 30px 20px;
+      color: #999;
+      font-size: 14px;
+      line-height: 2;
+    }
+    .theater-empty .icon { font-size: 36px; display: block; margin-bottom: 10px; }
+
+    /* ===== 剧场容器 ===== */
+    .theater {
+      width: 100%;
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 14px 16px 10px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      border: 2px solid #e2b96f;
+      border-radius: 10px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(226,185,111,0.15);
+      position: relative;
+      overflow: hidden;
+    }
+    .theater::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #e2b96f, transparent);
+    }
+
+    /* ===== 标题 ===== */
+    .theater__title {
+      text-align: center;
+      color: #e8c878;
+      font-size: 14px;
+      font-weight: bold;
+      letter-spacing: 6px;
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+      border-bottom: 1px dashed rgba(226,185,111,0.25);
+      user-select: none;
+    }
+    .theater__title::before { content: '✦ '; }
+    .theater__title::after { content: ' ✦'; }
+
+    /* ===== 消息信息 ===== */
+    .theater__meta {
+      text-align: center;
+      font-size: 11px;
+      color: #99a;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    /* ===== 台词行 ===== */
+    .theater__line {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 4px;
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    .theater__line:hover { background: rgba(255,255,255,0.10); }
+
+    .theater__role {
+      flex-shrink: 0;
+      color: #f5d08a;
+      font-weight: bold;
+      font-size: 14px;
+      min-width: 72px;
+      text-align: right;
+      padding-right: 10px;
+      border-right: 2px solid rgba(226,185,111,0.25);
+    }
+
+    .theater__dialogue {
+      flex: 1;
+      color: #e8e8ee;
+      font-weight: 500;
+      font-size: 13px;
+      line-height: 1.65;
+      word-break: break-word;
+    }
+
+    /* ===== 动作/括号 ===== */
+    .theater__action {
+      color: #a0b0c0;
+      font-weight: 500;
+      font-style: italic;
+      font-size: 12px;
+    }
+
+    /* ===== 旁白 ===== */
+    .theater__narration {
+      text-align: center;
+      color: #9a9;
+      font-weight: 500;
+      font-size: 12px;
+      font-style: italic;
+      padding: 6px 0 4px;
+    }
+
+    /* ===== 分隔装饰 ===== */
+    .theater__divider {
+      text-align: center;
+      color: rgba(226,185,111,0.25);
+      font-size: 10px;
+      letter-spacing: 8px;
+      padding: 2px 0;
+      user-select: none;
+    }
+
+    /* ===== 底部 ===== */
+    .theater__footer {
+      text-align: center;
+      color: #e2b96f;
+      font-size: 11px;
+      letter-spacing: 8px;
+      padding-top: 8px;
+      margin-top: 8px;
+      border-top: 1px dashed rgba(226,185,111,0.25);
+      user-select: none;
+    }
+
+    /* ===== 错误 ===== */
+    .theater__error {
+      text-align: center;
+      padding: 20px;
+      color: #c0392b;
+      font-size: 13px;
+    }
+
+    /* ===== 自动滚动按钮 ===== */
+    .theater__scroll-btn {
+      display: block;
+      margin: 8px auto 0;
+      padding: 5px 16px;
+      background: rgba(226,185,111,0.12);
+      border: 1px solid rgba(226,185,111,0.3);
+      border-radius: 6px;
+      color: #e8c878;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .theater__scroll-btn:hover {
+      background: rgba(226,185,111,0.22);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app">
+    <div class="theater-empty">
+      <span class="icon">🎭</span>
+      正在读取小剧场...
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    //  解析小剧场/元剧场内容
+    // ============================================================
+    var tagNames = '小剧场|元剧场';
+    function parseTheater(text) {
+      var re = new RegExp('<(' + tagNames + ')\\s*?>([\\s\\S]*?)<\\/(' + tagNames + ')\\s*?>', 'i');
+      var match = text.match(re);
+      if (!match) return null;
+      var tagName = match[1];
+      var inner = match[2].trim();
+      return { tag: tagName, text: inner };
+    }
+
+    function getTheaterTitle(tag) {
+      return tag === '元剧场' ? '元 剧 场' : '小 剧 场';
+    }
+
+    function escapeHtml(s) {
+      var d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function renderTheater(innerText) {
+      if (!innerText) return null;
+
+      var lines = innerText.split('\n').filter(function(l) { return l.trim(); });
+      var html = '';
+
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        if (!line) continue;
+
+        // 匹配 "[角色名]: (动作) 台词" 或 "[角色名]: 台词"
+        var roleMatch = line.match(/^\[([^\]]+)\]\s*:\s*(.*)$/);
+        if (roleMatch) {
+          var roleName = escapeHtml(roleMatch[1].trim());
+          var dialogue = roleMatch[2].trim();
+
+          // 提取动作描述（括号内的内容）
+          var actions = '';
+          dialogue = dialogue.replace(/（([^）]*)）/g, function(m, a) {
+            actions += '<span class="theater__action">（' + escapeHtml(a) + '）</span>';
+            return '';
+          }).trim();
+          dialogue = dialogue.replace(/\(([^)]*)\)/g, function(m, a) {
+            actions += '<span class="theater__action">（' + escapeHtml(a) + '）</span>';
+            return '';
+          }).trim();
+
+          html += '<div class="theater__line">';
+          html += '<span class="theater__role">' + roleName + '</span>';
+          html += '<span class="theater__dialogue">' + actions + (dialogue ? escapeHtml(dialogue) : '') + '</span>';
+          html += '</div>';
+        }
+        // 分隔线
+        else if (/^---+$/.test(line)) {
+          html += '<div class="theater__divider">· · · · ·</div>';
+        }
+        // 旁白/场景描述
+        else {
+          html += '<div class="theater__narration">' + escapeHtml(line) + '</div>';
+        }
+      }
+
+      return html;
+    }
+
+    // ============================================================
+    //  构建完整剧场HTML
+    // ============================================================
+    function buildTheater(messageId, roleName, innerText, tagName) {
+      var bodyHtml = renderTheater(innerText);
+      if (!bodyHtml) {
+        return '<div class="theater__error">⚠️ 剧场内容格式有误</div>';
+      }
+
+      var title = getTheaterTitle(tagName || '小剧场');
+      var icon = tagName === '元剧场' ? '🎬' : '🎭';
+
+      return '' +
+        '<div class="theater">' +
+          '<div class="theater__title">' + title + '</div>' +
+          '<div class="theater__meta">' + icon + ' ' + escapeHtml(roleName) + ' · 第 ' + messageId + ' 楼</div>' +
+          bodyHtml +
+          '<div class="theater__footer">✦ ✦ ✦</div>' +
+        '</div>' +
+        '<button class="theater__scroll-btn" onclick="scrollToMessage(' + messageId + ')">📜 跳转到该消息</button>';
+    }
+
+    function getParentDoc() {
+      try { return window.parent.document; } catch(e) { return document; }
+    }
+
+    function getTH() {
+      try { return window.parent.TavernHelper; } catch(e) { return null; }
+    }
+
+    function getLastMsgId(TH) {
+      if (!TH) return -1;
+      if (typeof TH.getLastMessageId === 'function') return TH.getLastMessageId();
+      return -1;
+    }
+
+    function scrollToMessage(messageId) {
+      var el = getParentDoc().querySelector('.mes[mesid="' + messageId + '"]');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // ============================================================
+    //  获取消息中的小剧场
+    // ============================================================
+    function getMessageTheater(messageId) {
+      try {
+        var TH = getTH();
+        if (!TH || !TH.getChatMessages) return null;
+
+        var messages = TH.getChatMessages(messageId, { include_swipes: true });
+        if (!messages || messages.length === 0) return null;
+
+        var msg = messages[0];
+        var text = msg.swipes ? msg.swipes[msg.swipe_id || 0] : msg.message;
+        var parsed = parseTheater(text);
+        if (!parsed) return null;
+
+        return {
+          id: msg.message_id,
+          role: msg.name || '未知角色',
+          text: parsed.text,
+          tag: parsed.tag
+        };
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // ============================================================
+    //  从最新消息往回找有小剧场的
+    // ============================================================
+    function getLatestTheaterId() {
+      try {
+        var TH = getTH();
+        if (!TH || !TH.getChatMessages) return null;
+        var lastId = getLastMsgId(TH);
+        if (lastId < 0) return null;
+        for (var mid = lastId; mid >= 0; mid--) {
+          var msgs = TH.getChatMessages(mid, { include_swipes: true });
+          if (!msgs || msgs.length === 0) continue;
+          var msg = msgs[0];
+          var texts = msg.swipes || [msg.message];
+          var cur = texts[msg.swipe_id || 0] || texts[0];
+          if (/<(小剧场|元剧场)\s*?>/i.test(cur)) return mid;
+        }
+        return null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // ============================================================
+    //  获取当前可见消息ID
+    // ============================================================
+    function getCurrentMesId() {
+      try {
+        var mes = getParentDoc().querySelector('.last_mes, .mes:last-child');
+        if (!mes) return -1;
+        var id = mes.getAttribute('mesid');
+        return id !== null ? parseInt(id) : -1;
+      } catch(e) {
+        return -1;
+      }
+    }
+
+    // ============================================================
+    //  渲染最新小剧场
+    // ============================================================
+    function renderLatestTheater() {
+      var app = document.getElementById('app');
+      if (!app) return;
+
+      try {
+        var TH = getTH();
+        if (!TH) {
+          app.innerHTML = '<div class="theater-empty"><span class="icon">⚠️</span>未检测到酒馆环境</div>';
+          return;
+        }
+
+        // 优先显示当前消息的小剧场
+        var theater = getMessageTheater(getCurrentMesId());
+
+        // 如果当前消息没有，找最新的包含小剧场的消息
+        if (!theater) {
+          var lid = getLatestTheaterId();
+          if (lid !== null) theater = getMessageTheater(lid);
+        }
+
+        if (theater) {
+          app.innerHTML = buildTheater(theater.id, theater.role, theater.text, theater.tag);
+        } else {
+          app.innerHTML = '' +
+            '<div class="theater-empty">' +
+              '<span class="icon">🎭</span>' +
+              '暂无小剧场<br>' +
+              '<span style="font-size:12px;color:#555;">AI回复中包含 &lt;小剧场&gt; 或 &lt;元剧场&gt; 标签时会在此显示</span>' +
+            '</div>';
+        }
+      } catch (e) {
+        app.innerHTML = '<div class="theater__error">❌ 读取失败: ' + escapeHtml(e.message || e) + '</div>';
+      }
+    }
+
+    // ============================================================
+    //  初始化
+    // ============================================================
+    function init() {
+      renderLatestTheater();
+      // 定时刷新兜底（不用事件，避免iframe跨域问题）
+      setInterval(renderLatestTheater, 3000);
+      console.log('[小剧场界面] 已加载');
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>

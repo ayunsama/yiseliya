@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>方案D · 玻璃拟态</title>
+<style>
+  /* ============ 方案D：玻璃拟态（科技幻境） ============ */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px;
+    font-family: "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, #6d28d9 0%, transparent 55%),
+      radial-gradient(1000px 500px at 110% 0%, #2563eb 0%, transparent 50%),
+      radial-gradient(900px 700px at 50% 120%, #0ea5e9 0%, transparent 55%),
+      linear-gradient(160deg, #0f172a 0%, #1e1b4b 100%);
+    min-height: 100vh; color: #e2e8f0;
+  }
+  .preview-note {
+    max-width: 780px; margin: 0 auto 14px; padding: 10px 16px;
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); border-radius: 14px;
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    color: #c7d2fe; font-size: 13px;
+  }
+  .panel {
+    width: 100%; max-width: 780px; margin: 0 auto;
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); border-radius: 20px;
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 20px 60px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.15);
+    padding: 24px; position: relative; overflow: hidden;
+  }
+  .panel::before {
+    content: ''; position: absolute; top: -40%; left: -20%; width: 60%; height: 80%;
+    background: radial-gradient(closest-side, rgba(129,140,248,.25), transparent);
+    pointer-events: none;
+  }
+  .world-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; position: relative; }
+  .chip {
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16); border-radius: 10px;
+    padding: 6px 12px; font-size: 12px; color: #cbd5e1;
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  }
+  .chip b { color: #a5b4fc; font-weight: 600; }
+
+  .profile { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; position: relative; }
+  .profile .avatar {
+    width: 56px; height: 56px; border-radius: 16px;
+    background: linear-gradient(135deg, #6366f1, #22d3ee);
+    display: flex; align-items: center; justify-content: center; font-size: 24px;
+    box-shadow: 0 0 24px rgba(99,102,241,.5); flex-shrink: 0;
+  }
+  .profile .who { display: flex; align-items: center; gap: 14px; }
+  .profile .name { font-size: 20px; font-weight: 700; color: #fff; text-shadow: 0 0 20px rgba(129,140,248,.6); }
+  .profile .sub { font-size: 12px; color: #94a3b8; margin-top: 3px; }
+  .profile .money {
+    background: rgba(250,204,21,.15); border: 1px solid rgba(250,204,21,.3); color: #fde68a;
+    border-radius: 12px; padding: 6px 14px; font-size: 13px; font-weight: 600;
+  }
+
+  .bars { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; position: relative; }
+  @media (max-width:520px){ .bars{ grid-template-columns:1fr; } }
+  .bar-label { display: flex; justify-content: space-between; font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+  .bar-label b { color: #e2e8f0; }
+  .bar-bg { height: 12px; background: rgba(255,255,255,.1); border-radius: 999px; overflow: hidden; border: 1px solid rgba(255,255,255,.12); }
+  .bar-fill { height: 100%; border-radius: 999px; }
+  .hp { background: linear-gradient(90deg,#fb7185,#f43f5e); box-shadow: 0 0 14px rgba(244,63,94,.55); }
+  .mp { background: linear-gradient(90deg,#60a5fa,#3b82f6); box-shadow: 0 0 14px rgba(59,130,246,.55); }
+  .sp { background: linear-gradient(90deg,#fbbf24,#f59e0b); box-shadow: 0 0 14px rgba(245,158,11,.55); }
+  .exp { background: linear-gradient(90deg,#a78bfa,#8b5cf6); box-shadow: 0 0 14px rgba(139,92,246,.55); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; position: relative; }
+  @media (max-width:520px){ .grid{ grid-template-columns:1fr; } }
+  .box { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); border-radius: 14px; padding: 16px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .box h3 { margin: 0 0 12px; font-size: 13px; color: #a5b4fc; font-weight: 700; letter-spacing: 1px; }
+  .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .stat { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 10px; text-align: center; }
+  .stat .k { font-size: 11px; color: #94a3b8; }
+  .stat b { font-size: 18px; color: #fff; display: block; text-shadow: 0 0 12px rgba(129,140,248,.5); }
+  .stat em { font-size: 10px; color: #22d3ee; font-style: normal; }
+
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; position: relative; }
+  .tab { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); border-radius: 12px; padding: 8px 16px; font-family: inherit; font-size: 13px; color: #94a3b8; cursor: pointer; }
+  .tab.active { background: rgba(99,102,241,.3); border-color: rgba(129,140,248,.6); color: #fff; box-shadow: 0 0 18px rgba(99,102,241,.4); }
+  .tab-content { display: none; padding-top: 16px; position: relative; }
+  .tab-content.active { display: block; }
+  .list-item { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 11px 14px; margin-bottom: 8px; font-size: 12px; }
+  .list-item .head { display: flex; justify-content: space-between; color: #e2e8f0; font-weight: 600; margin-bottom: 3px; }
+  .list-item .desc { color: #94a3b8; font-size: 11px; }
+  .lvl-tag { color: #c4b5fd; font-size: 10px; font-weight: 600; background: rgba(139,92,246,.2); border-radius: 999px; padding: 1px 8px; }
+  .btn-learn { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; border: none; border-radius: 10px; padding: 5px 14px; font-size: 11px; font-family: inherit; font-weight: 600; cursor: pointer; box-shadow: 0 0 14px rgba(99,102,241,.4); }
+  .btn-learn:disabled { background: rgba(255,255,255,.15); color: #64748b; box-shadow: none; cursor: not-allowed; }
+  .learned-tag { color: #4ade80; font-size: 11px; font-weight: 600; }
+  .vs-title { font-size: 13px; color: #c4b5fd; font-weight: 700; margin: 12px 0 8px; }
+  .sp-hint { background: rgba(250,204,21,.12); border: 1px solid rgba(250,204,21,.25); border-radius: 12px; padding: 8px 14px; font-size: 12px; color: #fde68a; margin-bottom: 10px; }
+  .sp-hint b { color: #fbbf24; }
+</style>
+</head>
+<body>
+  <div class="preview-note">🛸 <b>方案D · 玻璃拟态</b> —— 科技幻境风：半透明玻璃卡片 + 发光渐变 + 模糊背景，现代、未来感强</div>
+  <div class="panel">
+    <div class="world-bar">
+      <span class="chip">📅 <b>1497.03.14</b></span><span class="chip">⏱ <b>清晨</b></span><span class="chip">🌤 <b>晴</b></span>
+      <span class="chip">📍 <b>白崖镇</b></span><span class="chip">⚡ 紧张度 <b>暗流期 35</b></span>
+    </div>
+    <div class="profile">
+      <div class="who">
+        <div class="avatar">艾</div>
+        <div>
+          <div class="name">艾尔文·柯莱特</div>
+          <div class="sub">人类 · 男 · 20岁 · 位阶 普通 · 公会 F</div>
+        </div>
+      </div>
+      <div class="money">💰 12 金盾</div>
+    </div>
+    <div class="bars">
+      <div><div class="bar-label"><span>❤ HP</span><b>56 / 56</b></div><div class="bar-bg"><div class="bar-fill hp" style="width:100%"></div></div></div>
+      <div><div class="bar-label"><span>◆ MP</span><b>20 / 20</b></div><div class="bar-bg"><div class="bar-fill mp" style="width:100%"></div></div></div>
+      <div><div class="bar-label"><span>▲ SP</span><b>30 / 50</b></div><div class="bar-bg"><div class="bar-fill sp" style="width:60%"></div></div></div>
+      <div><div class="bar-label"><span>★ EXP</span><b>320 / 1000</b></div><div class="bar-bg"><div class="bar-fill exp" style="width:32%"></div></div></div>
+    </div>
+    <div class="grid">
+      <div class="box"><h3>◆ 基础属性</h3>
+        <div class="stats">
+          <div class="stat"><span class="k">力量</span><b>14</b><em>+2</em></div>
+          <div class="stat"><span class="k">敏捷</span><b>10</b><em>+0</em></div>
+          <div class="stat"><span class="k">体质</span><b>13</b><em>+1</em></div>
+          <div class="stat"><span class="k">智力</span><b>10</b><em>+0</em></div>
+          <div class="stat"><span class="k">感知</span><b>10</b><em>+0</em></div>
+          <div class="stat"><span class="k">魅力</span><b>13</b><em>+1</em></div>
+        </div>
+      </div>
+      <div class="box"><h3>◆ 职业信息</h3>
+        <div class="list-item"><div class="head"><span>⚔️ 骑士</span><span>Lv.3</span></div><div class="desc">技能点 7</div></div>
+        <div class="list-item"><div class="head"><span>自身状态</span></div><div class="desc">无异常状态</div></div>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-t="t1">状态</button><button class="tab" data-t="t2">能力</button>
+      <button class="tab" data-t="t3">任务</button><button class="tab" data-t="t4">见闻</button>
+      <button class="tab" data-t="t5">同伴</button><button class="tab" data-t="t6">超凡</button>
+      <button class="tab" data-t="t7">🎨 变体技能</button>
+    </div>
+    <div id="t1" class="tab-content active">
+      <div class="grid">
+        <div class="box"><h3>自身状态</h3><div class="list-item"><div class="head"><span>⚠️ 轻微疲劳</span></div><div class="desc">长途跋涉后未充分休息</div></div></div>
+        <div class="box"><h3>种族</h3><div class="list-item"><div class="head"><span>人类</span></div><div class="desc">适应力强</div></div></div>
+      </div>
+    </div>
+    <div id="t2" class="tab-content">
+      <div class="grid">
+        <div class="box"><h3>⚔️ 角色技能</h3>
+          <div class="list-item"><div class="head"><span>盾牌专精</span><span>Lv.1</span></div><div class="desc">持盾防御额外+1</div></div>
+        </div>
+        <div class="box"><h3>✦ 魔法栏</h3><div class="list-item"><div class="desc" style="font-style:normal">未掌握魔法</div></div></div>
+        <div class="box"><h3>✧ 神术栏</h3><div class="list-item"><div class="desc" style="font-style:normal">未信仰神明</div></div></div>
+        <div class="box"><h3>🎒 物品栏</h3>
+          <div class="list-item"><div class="head"><span>生锈短剑</span><span>×1</span></div><div class="desc">攻击力 1d6</div></div>
+          <div class="list-item"><div class="head"><span>治疗药水</span><span>×3</span></div><div class="desc">恢复 2d4+2 HP</div></div>
+        </div>
+      </div>
+    </div>
+    <div id="t3" class="tab-content"><div class="box"><h3>📜 任务日志</h3>
+      <div class="list-item"><div class="head"><span>边境的狼患</span><span class="lvl-tag">讨伐</span></div><div class="desc">清剿白崖镇外三头灰狼 · 进行中</div></div>
+    </div></div>
+    <div id="t4" class="tab-content"><div class="box"><h3>🌍 世界概况</h3><div class="list-item"><div class="desc" style="font-style:normal">圣光教廷与北方诸国和谈进入第三轮，边境局势缓和。</div></div></div></div>
+    <div id="t5" class="tab-content"><div class="box"><h3>✨ 契约英灵</h3><div class="list-item"><div class="head"><span>伊利亚</span><span class="lvl-tag" style="color:#4ade80;background:rgba(74,222,128,.15)">苏醒</span></div><div class="desc">残响之力 62%</div></div></div></div>
+    <div id="t6" class="tab-content"><div class="box"><h3>🌟 加护</h3><div class="list-item"><div class="head"><span>勇者命格</span></div><div class="desc">物理攻击检定+3</div></div></div></div>
+    <div id="t7" class="tab-content">
+      <div class="sp-hint">📌 可用技能点：<b>7</b> 点 · 学习消耗「技能点」</div>
+      <div class="vs-title">🎨 骑士 · 狂怒骑士</div>
+      <div class="list-item"><div class="head"><span>⚔️ 狂怒斩 <span class="lvl-tag">技能</span></span><button class="btn-learn">学习 (-2点)</button></div><div class="desc">双持巨剑发动毁灭性斩击 · 需骑士 Lv.1</div></div>
+      <div class="list-item"><div class="head"><span>✧ 圣光审判 <span class="lvl-tag">神术</span></span><button class="btn-learn">学习 (-3点)</button></div><div class="desc">圣光惩罚敌人 · 需骑士 Lv.2</div></div>
+      <div class="list-item"><div class="head"><span>✦ 奥术冲击 <span class="lvl-tag">魔法</span></span><button class="btn-learn" disabled>技能点不足</button></div><div class="desc">释放魔力冲击 · 需骑士 Lv.2</div></div>
+      <div class="list-item"><div class="head"><span>⚔️ 狂怒连斩 <span class="lvl-tag">技能</span></span><span class="learned-tag">✅ 已学习</span></div><div class="desc">连续斩击，每命中一次叠加伤害</div></div>
+    </div>
+  </div>
+  <script>
+    document.querySelectorAll('.tab').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('active'); });
+        document.querySelectorAll('.tab-content').forEach(function(c){ c.classList.remove('active'); });
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.t).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>第五代英灵 · 残响状态栏</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+            background: transparent;
+            padding: 10px;
+        }
+
+        .spirit-wrapper {
+            max-width: 720px;
+            margin: 5px auto;
+            background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+            border: 1px solid #4a3f6b;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(80, 60, 140, 0.3);
+            overflow: hidden;
+            animation: fadeInSpirit 0.5s ease-in-out;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .spirit-wrapper:hover {
+            box-shadow: 0 6px 28px rgba(100, 80, 180, 0.25);
+        }
+        @keyframes fadeInSpirit {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== 英灵头部 ===== */
+        .spirit-header {
+            display: flex;
+            align-items: center;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.04);
+            border-bottom: 1px solid rgba(74, 63, 107, 0.6);
+            gap: 14px;
+        }
+        .spirit-icon {
+            width: 48px; height: 48px; flex-shrink: 0;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+            border: 2px solid;
+        }
+        .spirit-icon.erika   { border-color: #c0392b; background: rgba(192,57,43,0.12); }
+        .spirit-icon.ilya    { border-color: #2980b9; background: rgba(41,128,185,0.12); }
+        .spirit-icon.kori    { border-color: #3498db; background: rgba(52,152,219,0.12); }
+        .spirit-icon.lilith  { border-color: #8e44ad; background: rgba(142,68,173,0.12); }
+
+        .spirit-name-area { flex: 1; min-width: 0; }
+        .spirit-name {
+            font-size: 17px; font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .spirit-name.erika   { color: #e74c3c; }
+        .spirit-name.ilya    { color: #3498db; }
+        .spirit-name.kori    { color: #5dade2; }
+        .spirit-name.lilith  { color: #af7ac5; }
+
+        .spirit-title {
+            font-size: 11px; color: #7f8c8d; margin-top: 2px;
+        }
+
+        .spirit-moods {
+            display: flex; flex-wrap: wrap; gap: 4px 6px;
+            justify-content: flex-end;
+        }
+        .spirit-mood-tag {
+            display: inline-block;
+            padding: 2px 10px; border-radius: 12px;
+            font-size: 11px; font-weight: 500;
+            border: 1px solid;
+        }
+        .spirit-mood-tag.erika   { background: rgba(192,57,43,0.1); border-color: #c0392b; color: #e74c3c; }
+        .spirit-mood-tag.ilya    { background: rgba(41,128,185,0.1); border-color: #2980b9; color: #3498db; }
+        .spirit-mood-tag.kori    { background: rgba(52,152,219,0.1); border-color: #3498db; color: #5dade2; }
+        .spirit-mood-tag.lilith  { background: rgba(142,68,173,0.1); border-color: #8e44ad; color: #af7ac5; }
+
+        /* ===== 残响之力条 ===== */
+        .spirit-resonance {
+            padding: 10px 18px;
+            border-bottom: 1px solid rgba(74, 63, 107, 0.4);
+        }
+        .resonance-label {
+            display: flex; justify-content: space-between;
+            font-size: 11px; color: #95a5a6; margin-bottom: 4px;
+        }
+        .resonance-bar-bg {
+            background: #2c2c4a; height: 12px; border-radius: 6px;
+            border: 1px solid #4a3f6b; overflow: hidden;
+        }
+        .resonance-fill {
+            height: 100%; border-radius: 6px;
+            transition: width 0.6s ease;
+        }
+        .resonance-fill.erika   { background: linear-gradient(90deg, #c0392b, #e74c3c); }
+        .resonance-fill.ilya    { background: linear-gradient(90deg, #2471a3, #3498db); }
+        .resonance-fill.kori    { background: linear-gradient(90deg, #2e86c1, #5dade2); }
+        .resonance-fill.lilith  { background: linear-gradient(90deg, #76448a, #af7ac5); }
+        .resonance-status {
+            font-size: 10px; color: #7f8c8d; margin-top: 4px; text-align: right;
+        }
+
+        /* ===== 英灵属性面板 ===== */
+        .spirit-stats {
+            padding: 12px 18px;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            border-bottom: 1px solid rgba(74, 63, 107, 0.4);
+        }
+        .spirit-stat-cell {
+            text-align: center; padding: 6px 4px;
+            border: 1px dashed rgba(74, 63, 107, 0.5); border-radius: 6px;
+            background: rgba(255,255,255,0.03);
+        }
+        .spirit-stat-label { font-size: 9px; color: #7f8c8d; }
+        .spirit-stat-val   { font-size: 14px; font-weight: 700; margin-top: 1px; }
+        .spirit-stat-val.erika   { color: #e74c3c; }
+        .spirit-stat-val.ilya    { color: #3498db; }
+        .spirit-stat-val.kori    { color: #5dade2; }
+        .spirit-stat-val.lilith  { color: #af7ac5; }
+
+        /* ===== 英灵能力列表 ===== */
+        .spirit-abilities {
+            padding: 12px 18px;
+        }
+        .spirit-ability {
+            padding: 8px 10px; margin-bottom: 6px;
+            border-left: 3px solid;
+            background: rgba(255,255,255,0.03);
+            border-radius: 0 6px 6px 0;
+        }
+        .spirit-ability:last-child { margin-bottom: 0; }
+        .spirit-ability.erika   { border-color: #e74c3c; }
+        .spirit-ability.ilya    { border-color: #3498db; }
+        .spirit-ability.kori    { border-color: #5dade2; }
+        .spirit-ability.lilith  { border-color: #af7ac5; }
+
+        .ability-name {
+            font-size: 12px; font-weight: 700;
+        }
+        .ability-name.erika   { color: #e74c3c; }
+        .ability-name.ilya    { color: #3498db; }
+        .ability-name.kori    { color: #5dade2; }
+        .ability-name.lilith  { color: #af7ac5; }
+        .ability-desc {
+            font-size: 11px; color: #b0b0c0; line-height: 1.5; margin-top: 3px;
+        }
+
+        /* ===== 对话气泡 ===== */
+        .spirit-dialogue {
+            padding: 0 18px 16px;
+        }
+        .spirit-bubble {
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px; line-height: 1.7;
+            position: relative;
+        }
+        .spirit-bubble.erika {
+            background: rgba(192,57,43,0.08);
+            border: 1px solid rgba(192,57,43,0.25);
+            color: #e8c0b0;
+        }
+        .spirit-bubble.ilya {
+            background: rgba(41,128,185,0.08);
+            border: 1px solid rgba(41,128,185,0.25);
+            color: #b0c8e0;
+        }
+        .spirit-bubble.kori {
+            background: rgba(52,152,219,0.08);
+            border: 1px solid rgba(52,152,219,0.25);
+            color: #b0d0e8;
+        }
+        .spirit-bubble.lilith {
+            background: rgba(142,68,173,0.08);
+            border: 1px solid rgba(142,68,173,0.25);
+            color: #c8b0d8;
+        }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 500px) {
+            .spirit-stats { grid-template-columns: repeat(3, 1fr); }
+            .spirit-header { flex-wrap: wrap; }
+            .spirit-moods { width: 100%; justify-content: flex-start; margin-top: 4px; }
+        }
+        @media (max-width: 380px) {
+            .spirit-icon { width: 36px; height: 36px; font-size: 18px; }
+            .spirit-name { font-size: 14px; }
+            .spirit-stats { grid-template-columns: repeat(2, 1fr); gap: 4px; }
+            .spirit-bubble { font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="main-container"></div>
+
+    <script>
+        /* ============================================================
+         *  英灵数据库
+         * ============================================================ */
+        var SPIRIT_DB = {
+            '英灵艾莉卡': {
+                key: 'erika',
+                icon: '⚔',
+                name: '断钢的勇者·艾莉卡',
+                title: '第五代勇者 / 帝国魔导兵团第一师团长',
+                resonance: 72,
+                stats: { 力量: 22, 敏捷: 16, 体质: 18, 智力: 10, 感知: 14, 魅力: 14 },
+                abilities: [
+                    { n: '兵刃共鸣', d: '接触任何武器即可瞬间掌握其最高阶武技，所有物理攻击检定自动获得优势。' },
+                    { n: '绝境斩杀·残响', d: '消耗满额残响短暂实体化，挥出无视任何物理护甲与魔法屏障的终结一击。使用后陷入沉睡。' },
+                    { n: '钢铁执念', d: '低残响时修正御主发力轨迹，预警背后致命物理攻击。' }
+                ]
+            },
+            '英灵伊利亚': {
+                key: 'ilya',
+                icon: '🔮',
+                name: '燃尽的贤者·伊利亚',
+                title: '第五代贤者 / 时钟塔特级学徒',
+                resonance: 65,
+                stats: { 力量: 8, 敏捷: 16, 体质: 12, 智力: 24, 感知: 16, 魅力: 16 },
+                abilities: [
+                    { n: '元素重构', d: '施法无需咏唱，可强行将敌方释放的魔法拆解为基础魔力粒子。' },
+                    { n: '万象真理·残响', d: '消耗满额残响展开半径50尺真理领域，强制拆解所有敌方法术并暴露法则弱点。使用后陷入沉睡。' },
+                    { n: '真理之眼', d: '低残响时高亮标出魔法阵节点弱点，强制中断一次即将失败的施法避免反噬。' }
+                ]
+            },
+            '英灵科里维坦': {
+                key: 'kori',
+                icon: '🐉',
+                name: '末代的神龙·科里维坦',
+                title: '第五代神龙 / 尼弗海姆王族直系',
+                resonance: 88,
+                stats: { 力量: 24, 敏捷: 10, 体质: 26, 智力: 10, 感知: 13, 魅力: 12 },
+                abilities: [
+                    { n: '极寒领域', d: '降低周围温度迟缓敌人动作，释放微弱龙威瘫痪低阶魔兽。' },
+                    { n: '半龙化·零度龙息', d: '消耗满额残响赋予御主三轮半龙化——力量与体质暴增，获得一次绝对零度龙息。使用后陷入沉睡。' },
+                    { n: '冰霜龙骨', d: '沉默如冰川，周围环境温度随情绪下降。为御主提供极寒抗性与魔兽弱点直觉。' }
+                ]
+            },
+            '英灵莉莉丝': {
+                key: 'lilith',
+                icon: '🌑',
+                name: '被夺的魔女·莉莉丝',
+                title: '第五代魔女 / 教会头号通缉犯',
+                resonance: 43,
+                stats: { 力量: 8, 敏捷: 18, 体质: 12, 智力: 28, 感知: 14, 魅力: 22 },
+                abilities: [
+                    { n: '混沌魔力腐蚀', d: '低残响时将混沌魔力混入御主攻击中，造成持续腐蚀效果。' },
+                    { n: '湮灭法则·残响', d: '消耗满额残响释放一次无视属性相克的法则打击，强行剥离目标当前HP上限的一成。使用后陷入沉睡。' },
+                    { n: '深渊洞察', d: '在御主脑海中灌输深渊教廷神术的底层结构漏洞，对渊神信仰相关法术有绝对侦测能力。' }
+                ]
+            }
+        };
+
+        /* 标签 → 英灵键名 */
+        var TAG_MAP = {
+            '英灵艾莉卡': '英灵艾莉卡',
+            '英灵伊利亚': '英灵伊利亚',
+            '英灵科里维坦': '英灵科里维坦',
+            '英灵莉莉丝': '英灵莉莉丝'
+        };
+
+        /* 表情 → 颜色主题 */
+        function getMoodClass(emotion) {
+            if (['冷酷','严肃','杀意','死寂','威严','悲怆','冷漠','残酷'].indexOf(emotion) !== -1) return 'erika';
+            if (['傲慢','毒舌','狂热','诱惑','癫狂'].indexOf(emotion) !== -1) return 'lilith';
+            if (['面瘫','沉默'].indexOf(emotion) !== -1) return 'kori';
+            return 'ilya'; // 默认
+        }
+
+        /* ============================================================
+         *  主渲染逻辑 — 用 $1 标签匹配
+         * ============================================================ */
+        function init() {
+            try {
+                var rawTag = '$1';      // 标签名：英灵艾莉卡|冷酷
+                var rawText = '$2';     // 对话内容
+
+                var text = (rawText || '').trim();
+                if (!text || text === '$2') return;
+
+                // 解析标签：格式 "英灵XXX|表情"
+                var tagParts = (rawTag || '').split('|');
+                var spiritKey = tagParts[0] || '';
+                var emotion = tagParts[1] || '';
+
+                // 查找英灵数据
+                var dbKey = TAG_MAP[spiritKey];
+                var data = SPIRIT_DB[dbKey];
+                if (!data) {
+                    // 未匹配到已知英灵时输出纯文本
+                    document.getElementById('main-container').innerHTML =
+                        '<div style="color:#7f8c8d;padding:12px;">' + text + '</div>';
+                    return;
+                }
+
+                var k = data.key;
+                var moodClass = emotion ? getMoodClass(emotion) : k;
+
+                // 残响状态文本
+                var resPercent = data.resonance;
+                var resText = resPercent >= 80 ? '充盈 · 可实质干涉' :
+                              resPercent >= 50 ? '充足 · 可微弱干涉' :
+                              resPercent >= 20 ? '低耗 · 仅基础感知' : '枯竭 · 沉睡中';
+
+                /* 构建属性面板 */
+                var statsHtml = '';
+                var statNames = ['力量','敏捷','体质','智力','感知','魅力'];
+                for (var s = 0; s < statNames.length; s++) {
+                    var sn = statNames[s];
+                    var sv = data.stats[sn] || 10;
+                    statsHtml += '<div class="spirit-stat-cell">';
+                    statsHtml += '  <div class="spirit-stat-label">' + sn + '</div>';
+                    statsHtml += '  <div class="spirit-stat-val ' + k + '">' + sv + '</div>';
+                    statsHtml += '</div>';
+                }
+
+                /* 构建能力列表 */
+                var abilHtml = '';
+                for (var a = 0; a < data.abilities.length; a++) {
+                    var ab = data.abilities[a];
+                    abilHtml += '<div class="spirit-ability ' + k + '">';
+                    abilHtml += '  <div class="ability-name ' + k + '">✦ ' + ab.n + '</div>';
+                    abilHtml += '  <div class="ability-desc">' + ab.d + '</div>';
+                    abilHtml += '</div>';
+                }
+
+                var html = '';
+                html += '<div class="spirit-wrapper">';
+
+                /* 头部 */
+                html += '  <div class="spirit-header">';
+                html += '    <div class="spirit-icon ' + k + '">' + data.icon + '</div>';
+                html += '    <div class="spirit-name-area">';
+                html += '      <div class="spirit-name ' + k + '">' + data.name + '</div>';
+                html += '      <div class="spirit-title">' + data.title + '</div>';
+                html += '    </div>';
+                html += '    <div class="spirit-moods">';
+                if (emotion) {
+                    html += '      <span class="spirit-mood-tag ' + moodClass + '">' + emotion + '</span>';
+                }
+                html += '    </div>';
+                html += '  </div>';
+
+                /* 残响条 */
+                html += '  <div class="spirit-resonance">';
+                html += '    <div class="resonance-label">';
+                html += '      <span>✦ 残响之力</span>';
+                html += '      <span>' + resPercent + '%</span>';
+                html += '    </div>';
+                html += '    <div class="resonance-bar-bg">';
+                html += '      <div class="resonance-fill ' + k + '" style="width:' + resPercent + '%;"></div>';
+                html += '    </div>';
+                html += '    <div class="resonance-status">' + resText + '</div>';
+                html += '  </div>';
+
+                /* 属性 */
+                html += '  <div class="spirit-stats">' + statsHtml + '</div>';
+
+                /* 能力 */
+                html += '  <div class="spirit-abilities">' + abilHtml + '</div>';
+
+                /* 对话气泡 */
+                html += '  <div class="spirit-dialogue">';
+                html += '    <div class="spirit-bubble ' + k + '">' + text + '</div>';
+                html += '  </div>';
+
+                html += '</div>';
+
+                document.getElementById('main-container').innerHTML = html;
+
+            } catch (error) {
+                console.error('[第五代英灵] 渲染错误:', error);
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>

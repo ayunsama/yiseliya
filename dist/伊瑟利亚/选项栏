@@ -1,0 +1,521 @@
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>羊皮卷 · 动态选项栏 (万能提取)</title>
+    <style>
+        :root {
+            --parchment: #faf2e0;
+            --ink: #3e2a1b;
+            --gold: #8b6914;
+            --gold-bright: #b8963c;
+            --border-soft: rgba(160, 120, 64, 0.4);
+            --shadow-outer: rgba(0, 0, 0, 0.25);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Noto Serif SC", "楷体", KaiTi, serif;
+            background: transparent;
+            padding: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .scroll-container {
+            width: 100%;
+            max-width: 580px;
+            background-color: var(--parchment);
+            background-image:
+                repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(140,100,50,0.035) 28px, rgba(140,100,50,0.035) 29px),
+                radial-gradient(ellipse at 20% 10%, rgba(200,170,110,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 90%, rgba(180,140,80,0.08) 0%, transparent 55%);
+            color: var(--ink);
+            border: 1px solid rgba(140,100,50,0.55);
+            border-radius: 5px;
+            box-shadow: 0 8px 28px var(--shadow-outer), inset 0 0 60px rgba(120,80,30,0.05);
+            padding: 24px 26px 22px;
+            position: relative;
+            border-top: 4px double #5a3a1a;
+            border-bottom: 4px double #5a3a1a;
+        }
+        .mode-switcher {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 18px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        .mode-btn {
+            padding: 5px 11px;
+            font-size: 0.72em;
+            font-family: inherit;
+            border: 1px solid var(--border-soft);
+            border-radius: 4px;
+            background: rgba(250,242,224,0.7);
+            color: var(--gold);
+            cursor: pointer;
+            transition: all 0.22s;
+            white-space: nowrap;
+        }
+        .mode-btn:hover {
+            background: rgba(255,248,225,0.92);
+            border-color: #c4a050;
+            color: #6b4e0a;
+            box-shadow: 0 0 6px rgba(180,150,60,0.25);
+        }
+        .mode-btn.active {
+            background: var(--gold);
+            color: #faf2e0;
+            border-color: #5a3a1a;
+            font-weight: 700;
+            cursor: default;
+        }
+        .scroll-title {
+            text-align: center;
+            color: var(--gold);
+            font-weight: 700;
+            letter-spacing: 2.5px;
+            margin-bottom: 18px;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed rgba(184,150,60,0.45);
+            font-size: 1.05em;
+        }
+        .debug-panel {
+            background: #2e1e0a;
+            color: #f0e4cc;
+            padding: 10px 14px;
+            font-size: 0.7em;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none; /* 默认隐藏，需要时通过参数显示 */
+        }
+        .debug-panel.visible { display: block; }
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 13px;
+            width: 100%;
+        }
+        .option-btn {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            background: rgba(250,242,224,0.55);
+            border: 1px solid var(--border-soft);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.24s;
+            text-align: left;
+            width: 100%;
+            min-height: 50px;
+            font-family: inherit;
+            color: #5a3a1a;
+        }
+        .option-btn:hover {
+            background: rgba(255,248,225,0.82);
+            border-color: #c4a050;
+            box-shadow: 0 0 12px rgba(180,150,60,0.2), inset 0 0 28px rgba(180,150,60,0.07);
+            transform: translateX(4px);
+        }
+        .option-btn.readonly-mode {
+            cursor: default;
+            pointer-events: none;
+        }
+        .option-btn.disabled-option {
+            cursor: not-allowed;
+            opacity: 0.55;
+            filter: grayscale(0.35);
+            pointer-events: none;
+        }
+        .opt-marker {
+            flex-shrink: 0;
+            width: 7px;
+            height: 7px;
+            border-radius: 1.5px;
+            background: #8b7330;
+            opacity: 0.75;
+            margin-top: 5px;
+            transform: rotate(45deg);
+        }
+        .opt-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            word-break: break-word;
+        }
+        .opt-tag {
+            display: inline-block;
+            font-size: 0.7em;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            color: #8b6914;
+            background: rgba(139,105,20,0.1);
+            border: 1px solid rgba(160,120,64,0.5);
+            border-radius: 3px;
+            padding: 2px 8px;
+            align-self: flex-start;
+        }
+        .opt-desc {
+            font-size: 0.93em;
+            line-height: 1.55;
+            color: #3e2a1b;
+        }
+        .error-msg {
+            text-align: center;
+            padding: 20px;
+            color: #8b2222;
+            font-weight: bold;
+        }
+        @media (max-width: 520px) {
+            .scroll-container { padding: 16px 12px; }
+            .option-btn { padding: 12px 10px; gap: 8px; }
+        }
+    </style>
+</head>
+<body>
+<div class="scroll-container" id="scrollRoot">
+    <div class="mode-switcher" id="modeSwitcher">
+        <button class="mode-btn active" data-mode="send">📨 发送</button>
+        <button class="mode-btn" data-mode="input">📝 输入框</button>
+        <button class="mode-btn" data-mode="readonly">🔒 只读</button>
+    </div>
+    <div class="scroll-title">─ 命运的抉择 ─</div>
+    <!-- 调试面板，可通过在 HTML 上添加 ?debug=1 启用 -->
+    <div class="debug-panel" id="debugPanel"></div>
+    <div class="options-list" id="optionsList"></div>
+</div>
+
+<script>
+(function() {
+    // ========== 调试日志 ==========
+    const debugLines = [];
+    function debug(msg) {
+        debugLines.push(msg);
+        console.log('[选项栏调试]', msg);
+    }
+
+    // 检查 URL 参数是否要求显示调试面板
+    const urlParams = new URLSearchParams(window.location.search);
+    const showDebug = urlParams.get('debug') === '1';
+    if (showDebug) {
+        const panel = document.getElementById('debugPanel');
+        panel.classList.add('visible');
+    }
+
+    // ========== 万能消息提取器（覆盖所有已知酒馆API） ==========
+    function getMessageText() {
+        debug('开始尝试获取消息...');
+        
+        // 尝试1：直接查找全局函数 getMessageData
+        if (typeof getMessageData === 'function') {
+            try {
+                if (typeof getCurrentMessageId === 'function') {
+                    const msgs = getMessageData(getCurrentMessageId());
+                    if (msgs && msgs.length > 0) {
+                        const text = msgs[0].message || msgs[0].content || '';
+                        debug('成功通过 getMessageData + getCurrentMessageId 获取消息');
+                        return text;
+                    }
+                }
+            } catch(e) {
+                debug('getMessageData 调用失败: ' + e.message);
+            }
+        }
+
+        // 尝试2：getChatMessages
+        if (typeof getChatMessages === 'function') {
+            try {
+                if (typeof getCurrentMessageId === 'function') {
+                    const msgs = getChatMessages(getCurrentMessageId());
+                    if (msgs && msgs.length > 0) {
+                        const text = msgs[0].message || msgs[0].content || '';
+                        debug('成功通过 getChatMessages + getCurrentMessageId 获取消息');
+                        return text;
+                    }
+                }
+            } catch(e) {
+                debug('getChatMessages 调用失败: ' + e.message);
+            }
+        }
+
+        // 尝试3：getMessageById + getCurrentChatId
+        if (typeof getMessageById === 'function' && typeof getCurrentChatId === 'function') {
+            try {
+                const msg = getMessageById(getCurrentChatId());
+                if (msg) {
+                    const text = msg.message || msg.content || '';
+                    debug('成功通过 getMessageById + getCurrentChatId 获取消息');
+                    return text;
+                }
+            } catch(e) {
+                debug('getMessageById 调用失败: ' + e.message);
+            }
+        }
+
+        // 尝试4：tavernGetMessage (某些定制版本)
+        if (typeof tavernGetMessage === 'function') {
+            try {
+                const msg = tavernGetMessage();
+                if (msg) {
+                    const text = (typeof msg === 'string') ? msg : (msg.message || msg.content || '');
+                    if (text) {
+                        debug('成功通过 tavernGetMessage 获取消息');
+                        return text;
+                    }
+                }
+            } catch(e) {
+                debug('tavernGetMessage 调用失败: ' + e.message);
+            }
+        }
+
+        // 尝试5：getCurrentMessage (返回消息对象)
+        if (typeof getCurrentMessage === 'function') {
+            try {
+                const msg = getCurrentMessage();
+                if (msg) {
+                    const text = (typeof msg === 'string') ? msg : (msg.message || msg.content || '');
+                    if (text) {
+                        debug('成功通过 getCurrentMessage 获取消息');
+                        return text;
+                    }
+                }
+            } catch(e) {
+                debug('getCurrentMessage 调用失败: ' + e.message);
+            }
+        }
+
+        // 尝试6：window.currentMessage 全局变量
+        if (window.currentMessage) {
+            const msg = window.currentMessage;
+            const text = (typeof msg === 'string') ? msg : (msg.message || msg.content || '');
+            if (text) {
+                debug('成功通过 window.currentMessage 获取消息');
+                return text;
+            }
+        }
+
+        debug('所有尝试均失败，未获取到消息');
+        return null;
+    }
+
+    // ========== 模糊匹配解析选项 ==========
+    function parseOptionsFuzzy(rawText) {
+        const options = [];
+        const tagMatch = rawText.match(/<选项栏\s*?>([\s\S]*?)<\/选项栏\s*?>/i);
+        if (!tagMatch) {
+            debug('未找到 <选项栏> 标签');
+            return options;
+        }
+        debug('找到 <选项栏> 标签，开始解析选项...');
+
+        const content = tagMatch[1];
+        const lines = content.split(/\r?\n/);
+        
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+
+            const startBracket = trimmed.indexOf('[');
+            const endBracket = trimmed.indexOf(']');
+            if (startBracket === -1 || endBracket === -1 || startBracket > endBracket) continue;
+
+            const tag = trimmed.substring(startBracket + 1, endBracket).trim();
+            if (!tag) continue;
+
+            let descPart = trimmed.substring(endBracket + 1).trim();
+            const sepMatch = descPart.match(/^[|：:\-]\s*/);
+            if (sepMatch) {
+                descPart = descPart.substring(sepMatch[0].length).trim();
+            }
+            if (!descPart) continue;
+
+            const disabled = (descPart === '无');
+            debug(`解析到选项: [${tag}] → ${disabled ? '(禁用)' : descPart}`);
+
+            options.push({
+                tag: tag,
+                desc: disabled ? '（此分支暂不可用）' : descPart,
+                rawDesc: descPart,
+                disabled: disabled
+            });
+        }
+        return options;
+    }
+
+    // ========== 全局状态 ==========
+    let currentMode = 'send';
+    const optionsListEl = document.getElementById('optionsList');
+    const debugPanelEl = document.getElementById('debugPanel');
+    const modeBtns = document.querySelectorAll('.mode-btn');
+
+    // ========== 渲染选项 ==========
+    function renderOptions(options) {
+        optionsListEl.innerHTML = '';
+        if (options.length === 0) {
+            optionsListEl.innerHTML = '<div class="error-msg">※ 羊皮卷上未记载任何选项 ※</div>';
+            return;
+        }
+
+        options.forEach((opt, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            if (opt.disabled) btn.classList.add('disabled-option');
+            if (currentMode === 'readonly') btn.classList.add('readonly-mode');
+            btn.setAttribute('data-index', index);
+            btn.setAttribute('data-raw-desc', opt.rawDesc);
+
+            const marker = document.createElement('span');
+            marker.className = 'opt-marker';
+            btn.appendChild(marker);
+
+            const content = document.createElement('span');
+            content.className = 'opt-content';
+
+            const tagSpan = document.createElement('span');
+            tagSpan.className = 'opt-tag';
+            tagSpan.textContent = '[' + opt.tag + ']';
+            content.appendChild(tagSpan);
+
+            const descSpan = document.createElement('span');
+            descSpan.className = 'opt-desc';
+            descSpan.textContent = opt.desc;
+            content.appendChild(descSpan);
+
+            btn.appendChild(content);
+
+            btn.addEventListener('click', () => {
+                if (opt.disabled || currentMode === 'readonly') return;
+                handleOptionClick(opt.rawDesc, btn);
+            });
+
+            optionsListEl.appendChild(btn);
+        });
+    }
+
+    // ========== 操作处理 ==========
+    function handleOptionClick(descText, btnElement) {
+        if (!descText) return;
+        if (currentMode === 'send') {
+            if (typeof triggerSlash === 'function') {
+                const safeDesc = descText.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+                triggerSlash('/send ' + safeDesc + '|/trigger');
+            } else {
+                copyToClipboard(descText);
+                showToast(btnElement, '已复制到剪贴板（发送模式）');
+            }
+        } else if (currentMode === 'input') {
+            if (typeof triggerSlash === 'function') {
+                const safeDesc = descText.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+                triggerSlash('/setinput ' + safeDesc);
+            } else {
+                copyToClipboard(descText);
+                showToast(btnElement, '已复制到剪贴板（输入模式）');
+            }
+        }
+    }
+
+    function copyToClipboard(text) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+        } else {
+            fallbackCopy(text);
+        }
+    }
+
+    function fallbackCopy(text) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+    }
+
+    function showToast(btn, msg) {
+        const existing = btn.querySelector('.opt-toast');
+        if (existing) existing.remove();
+        const toast = document.createElement('span');
+        toast.className = 'opt-toast';
+        toast.textContent = msg;
+        toast.style.cssText = 'position:absolute;top:-28px;left:50%;transform:translateX(-50%);background:#3e2a1b;color:#faf2e0;font-size:0.7em;padding:4px 10px;border-radius:3px;white-space:nowrap;z-index:20;pointer-events:none;animation:toastFade 1.8s ease forwards;';
+        btn.style.position = 'relative';
+        btn.appendChild(toast);
+        setTimeout(() => toast.remove(), 1900);
+    }
+
+    const styleEl = document.createElement('style');
+    styleEl.textContent = '@keyframes toastFade{0%{opacity:0;transform:translateX(-50%) translateY(6px);}15%{opacity:1;transform:translateX(-50%) translateY(0);}75%{opacity:1;}100%{opacity:0;transform:translateX(-50%) translateY(-8px);}}';
+    document.head.appendChild(styleEl);
+
+    // ========== 模式切换 ==========
+    function switchMode(mode) {
+        currentMode = mode;
+        modeBtns.forEach(b => b.classList.remove('active'));
+        const targetBtn = document.querySelector(`.mode-btn[data-mode="${mode}"]`);
+        if (targetBtn) targetBtn.classList.add('active');
+        document.querySelectorAll('.option-btn').forEach(btn => {
+            btn.classList.toggle('readonly-mode', mode === 'readonly');
+        });
+    }
+
+    modeBtns.forEach(btn => {
+        btn.addEventListener('click', () => switchMode(btn.dataset.mode));
+    });
+
+    // 快捷键
+    document.addEventListener('keydown', (e) => {
+        if (e.key >= '1' && e.key <= '4' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            const idx = parseInt(e.key) - 1;
+            const btns = optionsListEl.querySelectorAll('.option-btn');
+            if (btns[idx] && !btns[idx].classList.contains('disabled-option') && currentMode !== 'readonly') {
+                btns[idx].click();
+            }
+        }
+        if (e.key === 'r' && e.ctrlKey) {
+            e.preventDefault();
+            switchMode(currentMode === 'readonly' ? 'send' : 'readonly');
+        }
+    });
+
+    // ========== 初始化 ==========
+    function init() {
+        debugLines.length = 0; // 清空日志
+        const rawText = getMessageText();
+
+        // 更新调试面板
+        if (showDebug) {
+            debugPanelEl.textContent = debugLines.join('\n');
+        }
+
+        if (!rawText) {
+            optionsListEl.innerHTML = '<div class="error-msg">⚠️ 未读取到剧情消息<br><small style="font-weight:normal;">请尝试在URL后添加 ?debug=1 查看诊断信息</small></div>';
+            return;
+        }
+
+        const options = parseOptionsFuzzy(rawText);
+        renderOptions(options);
+        switchMode('send');
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+</body>
+</html>
+```

@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>方案B · 暗夜精工</title>
+<style>
+  /* ============ 方案B：暗夜精工（史诗暗黑 / 博德之门风） ============ */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px;
+    font-family: "Georgia","Palatino","Microsoft YaHei",serif;
+    background: radial-gradient(ellipse at 50% -20%, #2a2a3a 0%, #16161f 55%, #0c0c12 100%);
+    min-height: 100vh;
+  }
+  .preview-note {
+    max-width: 780px; margin: 0 auto 14px; padding: 10px 16px;
+    background: rgba(20,20,28,.85); border: 1px solid #3d3d52; border-radius: 4px;
+    color: #c9a55c; font-size: 13px;
+  }
+  .panel {
+    width: 100%; max-width: 780px; margin: 0 auto;
+    background: linear-gradient(180deg, #1e1e2a 0%, #171722 60%, #12121c 100%);
+    border: 1px solid #3d3d52; border-radius: 6px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,.6), 0 12px 40px rgba(0,0,0,.5), inset 0 0 80px rgba(0,0,0,.35);
+    padding: 22px; position: relative; color: #d8d3c0;
+  }
+  .panel::before {
+    content: ''; position: absolute; top: -1px; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, #c9a55c, transparent);
+  }
+  .world-bar {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(130px,1fr));
+    gap: 8px 14px; border-bottom: 1px solid #3d3d52; padding: 0 4px 12px; margin-bottom: 16px;
+    font-size: 12px; color: #9a93b8; letter-spacing: .3px;
+  }
+  .world-bar b { color: #c9a55c; font-weight: normal; }
+  .tension { color: #c9a55c; }
+
+  .profile { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+  .profile .name { font-size: 22px; color: #e8d9a8; letter-spacing: 2px; text-shadow: 0 0 18px rgba(201,165,92,.35); }
+  .profile .sub { font-size: 12px; color: #8f88ad; margin-top: 4px; letter-spacing: .5px; }
+  .profile .rank-badge {
+    font-size: 11px; color: #c9a55c; border: 1px solid #c9a55c; border-radius: 2px; padding: 2px 8px; letter-spacing: 1px;
+  }
+  .profile .money { font-size: 14px; color: #e0b25c; }
+
+  .bars { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 18px; margin-bottom: 18px; }
+  @media (max-width:520px){ .bars{ grid-template-columns:1fr; } }
+  .bar-label { display: flex; justify-content: space-between; font-size: 11px; color: #9a93b8; margin-bottom: 4px; letter-spacing: .5px; }
+  .bar-label b { color: #e8d9a8; }
+  .bar-bg { height: 10px; background: #0f0f16; border: 1px solid #2c2c3e; border-radius: 5px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,.6); }
+  .bar-fill { height: 100%; border-radius: 5px; }
+  .hp { background: linear-gradient(90deg,#7a1f1f,#c0392b); box-shadow: 0 0 8px rgba(192,57,43,.5); }
+  .mp { background: linear-gradient(90deg,#1f4e7a,#2980b9); box-shadow: 0 0 8px rgba(41,128,185,.5); }
+  .sp { background: linear-gradient(90deg,#7a4a1f,#d35400); box-shadow: 0 0 8px rgba(211,84,0,.5); }
+  .exp { background: linear-gradient(90deg,#1f6a3a,#27ae60); box-shadow: 0 0 8px rgba(39,174,96,.5); }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+  @media (max-width:520px){ .grid{ grid-template-columns:1fr; } }
+  .box { background: rgba(255,255,255,.02); border: 1px solid #2c2c3e; border-radius: 4px; padding: 14px; }
+  .box h3 {
+    margin: 0 0 10px; font-size: 12px; color: #c9a55c; letter-spacing: 2px; font-weight: normal;
+    border-bottom: 1px solid #2c2c3e; padding-bottom: 6px; text-transform: uppercase;
+  }
+  .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; }
+  .stat { background: rgba(201,165,92,.04); border: 1px solid #2c2c3e; border-radius: 3px; padding: 6px 8px; font-size: 12px; color: #b7b0cf; }
+  .stat b { color: #e8d9a8; font-size: 14px; }
+  .stat em { font-size: 10px; color: #8f88ad; }
+
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid #3d3d52; flex-wrap: wrap; }
+  .tab { background: transparent; border: none; border-bottom: 2px solid transparent; padding: 9px 14px; font-family: inherit; font-size: 13px; color: #8f88ad; cursor: pointer; letter-spacing: 1px; }
+  .tab:hover { color: #c9a55c; }
+  .tab.active { color: #e8d9a8; border-bottom-color: #c9a55c; text-shadow: 0 0 12px rgba(201,165,92,.4); }
+  .tab-content { display: none; padding-top: 14px; }
+  .tab-content.active { display: block; }
+  .list-item { border-bottom: 1px solid #23232f; padding: 9px 0; font-size: 12px; color: #b7b0cf; }
+  .list-item:last-child { border-bottom: none; }
+  .list-item .head { display: flex; justify-content: space-between; color: #d8d3c0; margin-bottom: 3px; }
+  .lvl-tag { color: #8a7fd8; font-size: 10px; }
+  .list-item .desc { color: #7c7698; font-size: 11px; font-style: italic; }
+  .btn-learn { background: #2c5d8f; color: #e8d9a8; border: 1px solid #3f7ab8; border-radius: 2px; padding: 2px 12px; font-size: 11px; font-family: inherit; cursor: pointer; letter-spacing: 1px; }
+  .btn-learn:hover { background: #3a74b0; }
+  .btn-learn:disabled { background: #2a2a35; border-color: #3d3d52; color: #5c5774; cursor: not-allowed; }
+  .learned-tag { color: #6fbf8a; font-size: 11px; letter-spacing: 1px; }
+  .vs-title { color: #c9a55c; font-size: 13px; letter-spacing: 2px; margin: 10px 0 4px; padding: 6px 10px; border-left: 3px solid #c9a55c; background: rgba(201,165,92,.05); }
+  .sp-hint { font-size: 12px; color: #9a93b8; padding: 8px 12px; border: 1px dashed #3d3d52; margin-bottom: 10px; }
+  .sp-hint b { color: #e0b25c; }
+</style>
+</head>
+<body>
+  <div class="preview-note">🗡️ <b>方案B · 暗夜精工</b> —— 史诗暗黑 / 博德之门风：深色羊皮卷 + 鎏金纹饰 + 低饱和高对比，适合长篇沉浸式剧情</div>
+  <div class="panel">
+    <div class="world-bar">
+      <span>📅 <b>圣光历1497年3月14日</b></span><span>⏱ <b>清晨</b></span><span>🌤 <b>晴</b></span>
+      <span>📍 <b>阿尔比恩·白崖镇</b></span><span>⚡ 紧张度 <span class="tension">暗流期 (35)</span></span>
+    </div>
+    <div class="profile">
+      <div>
+        <div class="name">艾尔文·柯莱特</div>
+        <div class="sub">人类 · 男 · 20 岁 · 公会等级 F <span class="rank-badge">位阶 · 普通</span></div>
+      </div>
+      <div class="money">💰 12 金盾 5 银盾</div>
+    </div>
+    <div class="bars">
+      <div><div class="bar-label"><span>❤ HP</span><b>56 / 56</b></div><div class="bar-bg"><div class="bar-fill hp" style="width:100%"></div></div></div>
+      <div><div class="bar-label"><span>◆ MP</span><b>20 / 20</b></div><div class="bar-bg"><div class="bar-fill mp" style="width:100%"></div></div></div>
+      <div><div class="bar-label"><span>▲ SP</span><b>30 / 50</b></div><div class="bar-bg"><div class="bar-fill sp" style="width:60%"></div></div></div>
+      <div><div class="bar-label"><span>★ EXP</span><b>320 / 1000</b></div><div class="bar-bg"><div class="bar-fill exp" style="width:32%"></div></div></div>
+    </div>
+    <div class="grid">
+      <div class="box"><h3>基础属性</h3>
+        <div class="stats">
+          <div class="stat">力量 <b>14</b> <em>(+2)</em></div><div class="stat">敏捷 <b>10</b> <em>(+0)</em></div>
+          <div class="stat">体质 <b>13</b> <em>(+1)</em></div><div class="stat">智力 <b>10</b> <em>(+0)</em></div>
+          <div class="stat">感知 <b>10</b> <em>(+0)</em></div><div class="stat">魅力 <b>13</b> <em>(+1)</em></div>
+        </div>
+      </div>
+      <div class="box"><h3>职业信息</h3>
+        <div class="list-item"><div class="head"><span>⚔️ 骑士</span><span>Lv.3</span></div><div class="desc">剩余技能点：7</div></div>
+        <div class="list-item"><div class="head"><span>自身状态</span></div><div class="desc">无异常状态</div></div>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-t="t1">状态</button><button class="tab" data-t="t2">能力</button>
+      <button class="tab" data-t="t3">任务</button><button class="tab" data-t="t4">见闻</button>
+      <button class="tab" data-t="t5">同伴</button><button class="tab" data-t="t6">超凡</button>
+      <button class="tab" data-t="t7">变体技能</button>
+    </div>
+    <div id="t1" class="tab-content active">
+      <div class="grid">
+        <div class="box"><h3>自身状态</h3><div class="list-item"><div class="head"><span>⚠ 轻微疲劳</span></div><div class="desc">长途跋涉后未充分休息</div></div></div>
+        <div class="box"><h3>种族</h3><div class="list-item"><div class="head"><span>人类</span></div><div class="desc">适应力强，无特别加成</div></div></div>
+      </div>
+    </div>
+    <div id="t2" class="tab-content">
+      <div class="grid">
+        <div class="box"><h3>⚔ 角色技能</h3>
+          <div class="list-item"><div class="head"><span>盾牌专精</span><span class="lvl-tag">Lv.1</span></div><div class="desc">持盾防御额外+1</div></div>
+        </div>
+        <div class="box"><h3>✦ 魔法栏</h3><div class="list-item"><div class="desc" style="font-style:normal">未掌握魔法</div></div></div>
+        <div class="box"><h3>✧ 神术栏</h3><div class="list-item"><div class="desc" style="font-style:normal">未信仰神明</div></div></div>
+        <div class="box"><h3>🎒 物品栏</h3>
+          <div class="list-item"><div class="head"><span>生锈短剑</span><span>×1</span></div><div class="desc">攻击力 1d6</div></div>
+          <div class="list-item"><div class="head"><span>治疗药水</span><span>×3</span></div><div class="desc">恢复 2d4+2 HP</div></div>
+        </div>
+      </div>
+    </div>
+    <div id="t3" class="tab-content"><div class="box"><h3>任务日志</h3>
+      <div class="list-item"><div class="head"><span>边境的狼患</span><span class="lvl-tag">[讨伐]</span></div><div class="desc">清剿白崖镇外三头灰狼 · 进行中</div></div>
+    </div></div>
+    <div id="t4" class="tab-content"><div class="box"><h3>世界概况</h3><div class="list-item"><div class="desc" style="font-style:normal">圣光教廷与北方诸国的和谈进入第三轮，边境局势缓和。</div></div></div></div>
+    <div id="t5" class="tab-content"><div class="box"><h3>契约英灵</h3><div class="list-item"><div class="head"><span>伊利亚</span><span class="lvl-tag" style="color:#6fbf8a">苏醒</span></div><div class="desc">残响之力 62%</div></div></div></div>
+    <div id="t6" class="tab-content"><div class="box"><h3>加护</h3><div class="list-item"><div class="head"><span>勇者命格</span></div><div class="desc">物理攻击检定+3</div></div></div></div>
+    <div id="t7" class="tab-content">
+      <div class="sp-hint">📌 可用技能点：<b>7</b> 点 · 学习消耗「技能点」</div>
+      <div class="vs-title">🎨 骑士 · 狂怒骑士</div>
+      <div class="list-item"><div class="head"><span>⚔ 狂怒斩 <span class="lvl-tag">[技能]</span></span><button class="btn-learn">学习 (-2点)</button></div><div class="desc">双持巨剑发动毁灭性斩击 · 需骑士 Lv.1</div></div>
+      <div class="list-item"><div class="head"><span>✧ 圣光审判 <span class="lvl-tag">[神术]</span></span><button class="btn-learn">学习 (-3点)</button></div><div class="desc">圣光惩罚敌人 · 需骑士 Lv.2</div></div>
+      <div class="list-item"><div class="head"><span>✦ 奥术冲击 <span class="lvl-tag">[魔法]</span></span><button class="btn-learn" disabled>技能点不足</button></div><div class="desc">释放魔力冲击 · 需骑士 Lv.2</div></div>
+      <div class="list-item"><div class="head"><span>⚔ 狂怒连斩 <span class="lvl-tag">[技能]</span></span><span class="learned-tag">✅ 已学习</span></div><div class="desc">连续斩击，每命中一次叠加伤害</div></div>
+    </div>
+  </div>
+  <script>
+    document.querySelectorAll('.tab').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.querySelectorAll('.tab').forEach(function(b){ b.classList.remove('active'); });
+        document.querySelectorAll('.tab-content').forEach(function(c){ c.classList.remove('active'); });
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.t).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

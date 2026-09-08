@@ -1,0 +1,445 @@
+<%
+// ============================================================
+//  伊瑟利亚·状态变量输出（对齐「变量结构脚本」Schema）
+//  物品条字段：物品大类/品阶/装备位/面板效果/附加词条/数量/其它说明
+//  ★ 更新记录：
+//    - 主角段新增「防御值」行（与状态栏 UI / 战斗轮结算同源：主角.防御值）
+//    - 主角·装备栏输出面板效果（属性:防御值:2），AI 可看懂防御值构成
+//    - 同伴段新增「装备栏」输出（含面板效果）
+//    - 对齐 Schema 补全：四传奇觉醒 / 主角姓名 / 魔法栏 / 神术栏 / 权能 /
+//      NPC 关系字段（身份/关系分类/关系描述/关键事件/关系时间线）/
+//      召唤物 / 契约兽 / 领地（含建筑位与科技进度）
+// ============================================================
+
+// ---- 精简物品输出（主角/同伴通用，新格式）----
+function formatInventory(inv) {
+  if (!inv || Object.keys(inv).length === 0) return '    空\n';
+  let result = '';
+  for (const [name, item] of Object.entries(inv)) {
+    let line = `    - ${name}`;
+    let details = [];
+    if (item.物品大类 && item.物品大类 !== '一般物品') details.push(`大类:${item.物品大类}`);
+    if (item.品阶 && item.品阶 !== '普通') details.push(`品阶:${item.品阶}`);
+    if (item.数量 != null && item.数量 !== 1) details.push(`×${item.数量}`);
+    if (item.装备位 && item.装备位 !== '无') details.push(`装备位:${item.装备位}`);
+    const bp = item.面板效果;
+    if (bp) {
+      const arr = Object.entries(bp).filter(([k, v]) => v != null && v !== '');
+      if (arr.length) details.push(`属性:${arr.map(([k, v]) => `${k}:${v}`).join(', ')}`);
+    }
+    const aff = item.附加词条;
+    if (aff) {
+      const arr = Object.entries(aff).filter(([k, v]) => v != null && v !== '');
+      if (arr.length) details.push(`词条:${arr.map(([k, v]) => `${k}:${v}`).join('; ')}`);
+    }
+    if (item.其它说明) details.push(`说明:${item.其它说明}`);
+    if (details.length) line += `（${details.join(' | ')}）`;
+    result += line + '\n';
+  }
+  return result;
+}
+
+// ---- 精简 Record 输出：{k:v, k2:v2} → "k:v, k2:v2" ----
+function fmtRec(rec, sep) {
+  if (!rec) return '-';
+  const arr = Object.entries(rec).filter(([k, v]) => v != null && v !== '' && v !== 0);
+  if (!arr.length) return '-';
+  return arr.map(([k, v]) => `${k}:${v}`).join(sep || ', ');
+}
+
+// ---- 出生年月日 → 当前年龄（按 世界.日期 自动计算；解析 "圣光历1467年3月1日" / "1467-03-01"）----
+function _eraDate(s) {
+  if (!s) return null;
+  s = String(s).trim();
+  let m = s.match(/(\d{3,4})年?\s*(\d{1,2})?月?\s*(\d{1,2})?日?/);
+  if (!m) m = s.match(/(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})/);
+  if (!m) return null;
+  return { y: parseInt(m[1], 10), mo: parseInt(m[2] || 1, 10), d: parseInt(m[3] || 1, 10) };
+}
+function eraAge(birthStr, nowStr) {
+  const b = _eraDate(birthStr), n = _eraDate(nowStr);
+  if (!b || !n) return null;
+  let age = n.y - b.y;
+  if (n.mo < b.mo || (n.mo === b.mo && n.d < b.d)) age -= 1;
+  return Math.max(0, age);
+}
+
+// ---- 读取变量 ----
+const V = {
+  世界: getvar('stat_data.世界', { defaults: {} }),
+  主角: getvar('stat_data.主角', { defaults: {} }),
+  同伴: getvar('stat_data.同伴', { defaults: {} }),
+  主要NPC: getvar('stat_data.主要NPC', { defaults: {} }),
+  英灵: getvar('stat_data.英灵', { defaults: {} }),
+  召唤物: getvar('stat_data.召唤物', { defaults: {} }),
+  契约兽: getvar('stat_data.契约兽', { defaults: {} }),
+  领地: getvar('stat_data.领地', { defaults: {} }),
+  紧张度等级: getvar('stat_data.$flags.紧张度.等级', { defaults: '暗流期' }),
+  $flags: getvar('stat_data.$flags', { defaults: {} })
+};
+
+// ---- 世界氛围（不暴露紧张度数值，$flags AI 不可见）----
+const ATMO = { '平静期':'世界风平浪静，表面祥和','暗流期':'世界暗流涌动，各方势力蠢蠢欲动','动荡期':'世界动荡不安，冲突四起，战火渐起','危机期':'世界危机四伏，魔王降世前兆已现，人心惶惶','决战期':'世界命运悬于一线，终焉之战一触即发' };
+const 氛围 = ATMO[V.紧张度等级] || '世界暗流涌动';
+%>
+<status_current_variable>
+世界:
+  日期: <%= V.世界.日期 || '圣光历1497年1月1日' %>
+  时间: <%= V.世界.时间 || '清晨' %>
+  天气: <%= V.世界.天气 || '晴' %>
+  当前位置: <%= V.世界.当前位置 || '-' %>
+  当前地点: <%= V.世界.当前地点 || '-' %>
+  世界氛围: <%= 氛围 %>（紧张度由系统托管，你无需也无法修改它）
+  四传奇觉醒:
+<%
+const legends = V.世界.四传奇觉醒 || {};
+const legendNames = ['艾莉卡', '莉莉丝', '科里维坦', '伊利亚'];
+print('    ' + legendNames.map(n => `${n}: ${legends[n] ? '已觉醒' : '未觉醒'}`).join(' | ') + '\n');
+%>
+  世界概况: <%= V.世界.世界见闻?.世界概况 || '暂无' %>
+  追踪记录（经济/物品/经验流水<%= V.$flags?.追踪记录全量 ? '·全量' : '·最近5条' %>）:
+<%
+const tlog = V.世界.追踪记录 || {};
+const _fullFlag = V.$flags?.追踪记录全量 === true;
+const tkeys = Object.keys(tlog).sort().reverse();
+const _show = _fullFlag ? tkeys : tkeys.slice(0, 5);
+if (_show.length === 0) { print('    暂无\n'); }
+else {
+  for (const tk of _show) {
+    const te = tlog[tk] || {};
+    let tl = '    - ' + (te.时间 || tk) + ' [' + (te.类型 || '其他') + ']';
+    if (te.金额) tl += ' ' + (te.金额 > 0 ? '+' : '') + te.金额 + (te.类型 === '经验获取' ? 'EXP' : '铜盾');
+    if (te.物品) tl += ' ' + te.物品 + (te.数量 ? '×' + te.数量 : '');
+    if (te.说明) tl += '（' + te.说明 + '）';
+    if (te.余额 != null && te.余额 >= 0) tl += ' → 余额 ' + te.余额 + '铜盾';
+    print(tl + '\n');
+  }
+}
+%>
+  动态新闻:
+<%
+const news = V.世界.世界见闻?.动态新闻 || {};
+// 仅输出 最近5条 + 屏蔽逾期（是否过期==='是' 不进入上下文；数据保留，输出去重省 token）
+const newsKeys = Object.keys(news)
+  .filter(k => !(news[k] && String(news[k].是否过期) === '是'))
+  .slice(-5);   // Object.keys 按插入顺序（后插入=最新）
+if (newsKeys.length === 0) { print('    暂无\n'); }
+else {
+  for (const nt of newsKeys) {
+    const nd = news[nt];
+    print(`    - ${nt}${nd?.日期 ? ` (${nd.日期})` : ''}${nd?.重要性 ? ` [重要性:${nd.重要性}]` : ''}\n`);
+    if (nd?.内容) print(`      内容: ${nd.内容}\n`);
+    if (nd?.相关地点) print(`      相关地点: ${nd.相关地点}\n`);
+    if (nd?.相关势力) print(`      相关势力: ${nd.相关势力}\n`);
+  }
+}
+%>
+
+主角:
+  基础信息:
+    姓名: <%= V.主角.基础信息?.姓名 || '未知' %>
+    种族: <%= V.主角.基础信息?.种族 || '未知' %>
+    种族修正: <%= V.主角.基础信息?.种族修正 || '无' %>
+    信仰: <%= V.主角.基础信息?.信仰 || '无信仰' %><% if (V.主角.基础信息?.信仰简述) { %>（<%= V.主角.基础信息.信仰简述 %>）<% } %>
+    性别: <%= V.主角.基础信息?.性别 || '不明' %>
+    年龄: <%= V.主角.基础信息?.年龄 ?? 0 %>
+    魔力回路: <%= V.主角.基础信息?.魔力回路?.品阶 || '无回路' %><% if (V.主角.基础信息?.魔力回路?.描述) { %>（<%= V.主角.基础信息.魔力回路.描述 %>）<% } %>
+    资质: <%= V.主角.基础信息?.资质?.等级 || '平庸' %><% if (V.主角.基础信息?.资质?.描述) { %>（<%= V.主角.基础信息.资质.描述 %>）<% } %> | 经验获取效率: <%= V.主角.基础信息?.资质?.经验获取效率 ?? 100 %>%
+  等阶: <%= V.主角.等阶 || '普通' %>
+  防御值: <%= V.主角.防御值 ?? 10 %>
+  基础属性:
+    力量: <%= V.主角.基础属性?.力量 ?? 10 %> | 敏捷: <%= V.主角.基础属性?.敏捷 ?? 10 %> | 体质: <%= V.主角.基础属性?.体质 ?? 10 %> | 智力: <%= V.主角.基础属性?.智力 ?? 10 %> | 感知: <%= V.主角.基础属性?.感知 ?? 10 %> | 魅力: <%= V.主角.基础属性?.魅力 ?? 10 %>
+    未分配点数: <%= V.主角.基础属性?.未分配点数 ?? 0 %>
+  基础状态:
+    HP: <%= V.主角.基础状态?.HP?.当前 ?? 0 %>/<%= V.主角.基础状态?.HP?.最大 ?? 0 %>
+    MP: <%= V.主角.基础状态?.MP?.当前 ?? 0 %>/<%= V.主角.基础状态?.MP?.最大 ?? 0 %>
+    SP: <%= V.主角.基础状态?.SP?.当前 ?? 0 %>/<%= V.主角.基础状态?.SP?.最大 ?? 0 %>
+    经验值: <%= V.主角.基础状态?.经验值?.当前 ?? 0 %>/<%= V.主角.基础状态?.经验值?.升级所需 ?? 100 %>
+    总等级: <%= V.主角.基础状态?.总等级 ?? 1 %>
+    冒险者等级: <%= V.主角.基础状态?.冒险者等级 || 'F' %>
+    待分配职业等级: <%= V.主角.基础状态?.待分配职业等级 ?? 0 %>
+    自身状态:
+<%
+const statuses = V.主角.基础状态?.自身状态 || {};
+if (Object.keys(statuses).length === 0) { print('      无\n'); }
+else { for (const [sn, sd] of Object.entries(statuses)) print(`      - ${sn}${sd.描述 ? `：${sd.描述}` : ''}\n`); }
+%>
+  职业信息:
+<%
+const jobs = V.主角.基础状态?.职业信息 || {};
+if (Object.keys(jobs).length === 0) { print('    无职业\n'); }
+else { for (const [jn, jd] of Object.entries(jobs)) print(`    - ${jn}（Lv.${jd.等级 ?? 1}${jd.技能点 ? `，剩余技能点 ${jd.技能点}` : ''}）\n`); }
+%>
+  资产与能力:
+    货币: <%= V.主角.资产与能力?.货币 ?? 0 %>铜盾
+    装备栏:
+<%
+const equip = V.主角.资产与能力?.装备栏 || {};
+const slotNames = ['头部','颈部','躯干','腿部','双手'];
+for (const slot of slotNames) {
+  const eq = equip[slot];
+  if (eq && eq.物品名) {
+    let line = `      ${slot}: ${eq.物品名}${eq.品阶 && eq.品阶 !== '普通' ? ` [${eq.品阶}]` : ''}`;
+    const bp = eq.面板效果;
+    if (bp) {
+      const arr = Object.entries(bp).filter(([k, v]) => v != null && v !== '');
+      if (arr.length) line += `（属性:${arr.map(([k, v]) => `${k}:${v}`).join(', ')}）`;
+    }
+    const tc = eq.附加词条 && typeof eq.附加词条 === 'object' ? Object.values(eq.附加词条).filter(v => v).join('；') : '';
+    if (tc) line += ` 词条:${tc}`;
+    if (eq.特别机制) line += ` 特别机制:${eq.特别机制}`;
+    print(line + '\n');
+  } else {
+    print(`      ${slot}: — 空 —\n`);
+  }
+}
+%>
+    物品栏:
+<%= formatInventory(V.主角.资产与能力?.物品栏) %>
+    角色技能:
+<%
+const skills = V.主角.资产与能力?.角色技能 || {};
+if (Object.keys(skills).length === 0) { print('      无\n'); }
+else { for (const [sn2, sd2] of Object.entries(skills)) print(`      - ${sn2}（Lv.${sd2.等级 ?? 0}）${sd2.描述 ? `：${sd2.描述}` : ''}\n`); }
+%>
+    魔法栏:
+<%
+const magics = V.主角.资产与能力?.魔法栏 || {};
+if (Object.keys(magics).length === 0) { print('      无\n'); }
+else { for (const [mn, md] of Object.entries(magics)) print(`      - ${mn}（Lv.${md.等级 ?? 0}${md.消耗MP ? `，消耗MP ${md.消耗MP}` : ''}）${md.描述 ? `：${md.描述}` : ''}\n`); }
+%>
+    神术栏:
+<%
+const divines = V.主角.资产与能力?.神术栏 || {};
+if (Object.keys(divines).length === 0) { print('      无\n'); }
+else { for (const [dn, dd] of Object.entries(divines)) print(`      - ${dn}（Lv.${dd.等级 ?? 0}${dd.消耗MP ? `，消耗MP ${dd.消耗MP}` : ''}）${dd.描述 ? `：${dd.描述}` : ''}\n`); }
+%>
+    权能:
+<%
+const powers = V.主角.资产与能力?.权能 || {};
+if (Object.keys(powers).length === 0) { print('      无\n'); }
+else { for (const [pn, pd] of Object.entries(powers)) print(`      - ${pn}${pd.描述 ? `：${pd.描述}` : ''}\n`); }
+%>
+    奥义:
+<%
+const ougis = V.主角.资产与能力?.奥义 || {};
+if (Object.keys(ougis).length === 0) { print('      无\n'); }
+else { for (const [on, od] of Object.entries(ougis)) print(`      - ${on}${od.消耗SP ? `（消耗SP ${od.消耗SP}）` : ''}${od.消耗MP ? `（消耗MP ${od.消耗MP}）` : ''}${od.描述 ? `：${od.描述}` : ''}\n`); }
+%>
+  加护:
+<%
+const bless = V.主角.资产与能力?.加护 || {};
+if (Object.keys(bless).length === 0) { print('    无加护\n'); }
+else { for (const [bn, bd] of Object.entries(bless)) print(`    - ${bn}${bd.描述 ? `：${bd.描述}` : ''}\n`); }
+%>
+  任务:
+<%
+const quests = V.主角.任务 || {};
+// 已完成/已交付的任务直接清除（不进入上下文）；数据保留，仅输出去重省 token
+const activeQuests = Object.entries(quests).filter(([, qd]) => {
+  const st = String(qd?.状态 || '');
+  return !/(已完成|已结束|完成|成功|已交付|已结清)/.test(st);
+});
+if (activeQuests.length === 0) { print('    无\n'); }
+else {
+  for (const [qn, qd] of activeQuests) {
+    let qline = `    - ${qn}`;
+    if (qd.状态) qline += ` [${qd.状态}]`;
+    const qmeta = [];
+    if (qd.等级) qmeta.push(qd.等级);
+    if (qd.类型) qmeta.push(qd.类型);
+    if (qmeta.length) qline += `（${qmeta.join('·')}）`;
+    if (qd.来源) qline += ` 来源:${qd.来源}`;
+    if (qd.内容) qline += `：${qd.内容}`;
+    if (qd.预估报酬) qline += ` | 报酬:${qd.预估报酬}`;
+    print(qline + '\n');
+  }
+}
+%>
+
+同伴:
+<%
+const comps = V.同伴 || {};
+if (Object.keys(comps).length === 0) { print('  无\n'); }
+for (const [name, comp] of Object.entries(comps)) {
+  print(`  ${name}:\n`);
+  // 出生年月日固定；年龄按当前日期自动计算（不经 AI 改写）
+  const _ageNow = comp.出生年月日 ? eraAge(comp.出生年月日, V.世界?.日期) : null;
+  if (comp.出生年月日) print(`    出生年月日: ${comp.出生年月日} | 年龄: ${_ageNow !== null && _ageNow !== undefined ? _ageNow + '岁' : '（日期未知，无法计算）'}（按当前日期自动计算，禁止手动改写）\n`);
+  else if (comp.年龄) print(`    年龄: ${comp.年龄}岁\n`);
+  print(`    种族: ${comp.种族 || '-'} | 所属势力: ${comp.所属势力 || '-'} | 身份: ${comp.身份 || '-'} | 当前位置: ${comp.当前位置 || '-'}\n`);
+  print(`    等阶: ${comp.等阶 || '普通'} | 好感度: ${comp.好感度 ?? 0} | 防御值: ${comp.防御值 ?? 10}\n`);
+  print(`    基础属性: 力${_.get(comp, '基础属性.力量', 10)} 敏${_.get(comp, '基础属性.敏捷', 10)} 体${_.get(comp, '基础属性.体质', 10)} 智${_.get(comp, '基础属性.智力', 10)} 感${_.get(comp, '基础属性.感知', 10)} 魅${_.get(comp, '基础属性.魅力', 10)}${_.get(comp, '基础属性.未分配点数', 0) ? `（未分配${_.get(comp, '基础属性.未分配点数', 0)}）` : ''}\n`);
+  print(`    基础状态: HP ${_.get(comp, '基础状态.HP.当前', 0)}/${_.get(comp, '基础状态.HP.最大', 0)} | MP ${_.get(comp, '基础状态.MP.当前', 0)}/${_.get(comp, '基础状态.MP.最大', 0)} | SP ${_.get(comp, '基础状态.SP.当前', 0)}/${_.get(comp, '基础状态.SP.最大', 0)}\n`);
+  print(`    总等级: ${_.get(comp, '基础状态.总等级', 1)} | 冒险者等级: ${_.get(comp, '基础状态.冒险者等级', 'F')} | 待分配职业等级: ${_.get(comp, '基础状态.待分配职业等级', 0)} | 经验: ${_.get(comp, '基础状态.经验值.当前', 0)}/${_.get(comp, '基础状态.经验值.升级所需', 100)}\n`);
+  // ★ 同伴装备栏（含面板效果，AI 可见同伴装备加成）
+  const cequip = comp.装备栏 || {};
+  const cslots = ['头部','颈部','躯干','腿部','双手'];
+  print(`    装备栏:\n`);
+  for (const cs of cslots) {
+    const ce = cequip[cs];
+    if (ce && ce.物品名) {
+      let cline = `      ${cs}: ${ce.物品名}${ce.品阶 && ce.品阶 !== '普通' ? ` [${ce.品阶}]` : ''}`;
+      const cbp = ce.面板效果;
+      if (cbp) {
+        const carr = Object.entries(cbp).filter(([k, v]) => v != null && v !== '');
+        if (carr.length) cline += `（属性:${carr.map(([k, v]) => `${k}:${v}`).join(', ')}）`;
+      }
+      const ctc = ce.附加词条 && typeof ce.附加词条 === 'object' ? Object.values(ce.附加词条).filter(v => v).join('；') : '';
+      if (ctc) cline += ` 词条:${ctc}`;
+      if (ce.特别机制) cline += ` 特别机制:${ce.特别机制}`;
+      print(cline + '\n');
+    } else {
+      print(`      ${cs}: — 空 —\n`);
+    }
+  }
+  const cjobs = _.get(comp, '基础状态.职业信息', {});
+  if (Object.keys(cjobs).length) print(`    职业信息: ${Object.entries(cjobs).map(([j, d]) => `${j}（Lv.${d.等级 ?? 1}${d.技能点 ? `，技能点${d.技能点}` : ''}）`).join('; ')}\n`);
+  const cskills = comp.技能 || {};
+  if (Object.keys(cskills).length) {
+    print(`    技能:\n`);
+    for (const [s, d] of Object.entries(cskills)) print(`      - ${s}${d.描述 ? `：${d.描述}` : ''}\n`);
+  }
+  const cbuffs = _.get(comp, '基础状态.自身状态', {});
+  if (Object.keys(cbuffs).length) {
+    print(`    自身状态:\n`);
+    for (const [b, d] of Object.entries(cbuffs)) print(`      - ${b}${d.描述 ? `：${d.描述}` : ''}\n`);
+  }
+  if (comp.外貌) print(`    外貌: ${comp.外貌}\n`);
+  if (comp.性格) print(`    性格: ${comp.性格}\n`);
+  if (comp.背景故事) print(`    背景故事: ${comp.背景故事}\n`);
+  if (comp.心里话) print(`    心里话: ${comp.心里话}\n`);
+  print(`    物品栏:\n`);
+  print(formatInventory(comp.物品栏));
+  const _cpowers = _.get(comp, '权能', {});
+  if (_cpowers && Object.keys(_cpowers).length) {
+    print(`    权能:\n`);
+    for (const [pn, pd] of Object.entries(_cpowers)) print(`      - ${pn}${pd?.描述 ? `：${pd.描述}` : ''}\n`);
+  }
+  const _cougis = _.get(comp, '奥义', {});
+  if (_cougis && Object.keys(_cougis).length) {
+    print(`    奥义:\n`);
+    for (const [on, od] of Object.entries(_cougis)) print(`      - ${on}${od?.消耗SP ? `（消耗SP ${od.消耗SP}）` : ''}${od?.消耗MP ? `（消耗MP ${od.消耗MP}）` : ''}${od?.描述 ? `：${od.描述}` : ''}\n`);
+  }
+  print('\n');
+}
+%>
+
+召唤物:
+<%
+const summons = V.召唤物 || {};
+if (Object.keys(summons).length === 0) { print('  无\n'); }
+else {
+  for (const [sname, s] of Object.entries(summons)) {
+    print(`  ${sname}:\n`);
+    print(`    种族: ${s.种族 || '-'} | 等阶: ${s.等阶 || '普通'} | 等级: ${s.等级 ?? 1} | 防御值: ${s.防御值 ?? 10} | 移动速度: ${s.移动速度 ?? 0} | 先攻修正: ${s.先攻修正 ?? 0}\n`);
+    print(`    基础属性: 力${_.get(s, '基础属性.力量', 10)} 敏${_.get(s, '基础属性.敏捷', 10)} 体${_.get(s, '基础属性.体质', 10)} 智${_.get(s, '基础属性.智力', 10)} 感${_.get(s, '基础属性.感知', 10)} 魅${_.get(s, '基础属性.魅力', 10)}\n`);
+    print(`    基础状态: HP ${_.get(s, '基础状态.HP.当前', 0)}/${_.get(s, '基础状态.HP.最大', 0)} | MP ${_.get(s, '基础状态.MP.当前', 0)}/${_.get(s, '基础状态.MP.最大', 0)} | SP ${_.get(s, '基础状态.SP.当前', 0)}/${_.get(s, '基础状态.SP.最大', 0)}\n`);
+    if ((s.攻击 || []).length) print(`    攻击: ${s.攻击.map(a => `${a.名称 || a.n || '-'}(${a.类型 || '-'} | 命中${a.命中 ?? 0} | ${a.伤害 || '-'}${a.特效 ? ` | ${a.特效}` : ''})`).join('; ')}\n`);
+    if ((s.能力 || []).length) print(`    能力: ${s.能力.map(c => `${c.名称 || c.n || '-'}(${c.描述 || '-'})`).join('; ')}\n`);
+    print(`    弱点: ${s.弱点 || '无'} | 抗性: ${s.抗性 || '无'} | 免疫: ${s.免疫 || '无'}\n`);
+    print(`    召唤者: ${s.召唤者 || '主角'} | 持续时间: ${s.持续时间 || '-'} | 状态: ${s.状态 || '-'}\n`);
+    if (s.外貌) print(`    外貌: ${s.外貌}\n`);
+    print('\n');
+  }
+}
+%>
+契约兽:
+<%
+const beasts = V.契约兽 || {};
+if (Object.keys(beasts).length === 0) { print('  无\n'); }
+else {
+  for (const [bname, b] of Object.entries(beasts)) {
+    print(`  ${bname}:\n`);
+    print(`    种族: ${b.种族 || '-'} | 职业: ${b.职业 || '-'} | 契约主: ${b.契约主 || '-'} | 当前位置: ${b.当前位置 || '-'} | 等阶: ${b.等阶 || '普通'} | 等级: ${b.等级 ?? 1}\n`);
+    print(`    体型: ${b.体型 || '中型'} | 元素属性: ${b.元素属性 || '无'} | 羁绊: ${b.羁绊 ?? 0} | 防御值: ${b.防御值 ?? 10} | 移动速度: ${b.移动速度 ?? 0} | 先攻修正: ${b.先攻修正 ?? 0} | 状态: ${b.状态 || '-'}\n`);
+    print(`    基础属性: 力${_.get(b, '基础属性.力量', 10)} 敏${_.get(b, '基础属性.敏捷', 10)} 体${_.get(b, '基础属性.体质', 10)} 智${_.get(b, '基础属性.智力', 10)} 感${_.get(b, '基础属性.感知', 10)} 魅${_.get(b, '基础属性.魅力', 10)}\n`);
+    print(`    基础状态: HP ${_.get(b, '基础状态.HP.当前', 0)}/${_.get(b, '基础状态.HP.最大', 0)} | MP ${_.get(b, '基础状态.MP.当前', 0)}/${_.get(b, '基础状态.MP.最大', 0)} | SP ${_.get(b, '基础状态.SP.当前', 0)}/${_.get(b, '基础状态.SP.最大', 0)} | 经验: ${_.get(b, '基础状态.经验值.当前', 0)}/${_.get(b, '基础状态.经验值.升级所需', 100)}\n`);
+    if ((b.攻击 || []).length) print(`    攻击: ${b.攻击.map(a => `${a.名称 || a.n || '-'}(${a.类型 || '-'} | 命中${a.命中 ?? 0} | ${a.伤害 || '-'}${a.特效 ? ` | ${a.特效}` : ''})`).join('; ')}\n`);
+    if ((b.能力 || []).length) print(`    能力: ${b.能力.map(c => `${c.名称 || c.n || '-'}(${c.描述 || '-'})`).join('; ')}\n`);
+    if (b.吐息) print(`    吐息: ${b.吐息.名称 || '-'}（元素:${b.吐息.元素 || '-'} | ${b.吐息.伤害骰 || '-'} | 范围:${b.吐息.范围 || '-'} | 冷却:${b.吐息.冷却 || '-'}）\n`);
+    print(`    弱点: ${b.弱点 || '无'} | 抗性: ${b.抗性 || '无'} | 免疫: ${b.免疫 || '无'}\n`);
+    if (b.外貌) print(`    外貌: ${b.外貌}\n`);
+    if (b.性格) print(`    性格: ${b.性格}\n`);
+    if (b.背景故事) print(`    背景故事: ${b.背景故事}\n`);
+    print('\n');
+  }
+}
+%>
+领地:
+<%
+const terrs = V.领地 || {};
+if (Object.keys(terrs).length === 0) { print('  无（玩家暂未拥有领地）\n'); }
+else {
+  for (const [tname, t] of Object.entries(terrs)) {
+    print(`  ${tname}:\n`);
+    print(`    规模等级: ${t.规模等级 || '村庄'} | 变种: ${t.变种 || '-'}\n`);
+    const pop = t.人口 || {};
+    print(`    人口: 总人口 ${pop.总人口 ?? 0} | 劳动人口 ${pop.劳动人口 ?? 0} | 满意度 ${pop.满意度 ?? 50} | 增长趋势: ${pop.增长趋势 || '平稳'}${pop.描述 ? ` | ${pop.描述}` : ''}\n`);
+    const mil = t.军队 || {};
+    print(`    军队: 总兵力 ${mil.总兵力 ?? 0} | 士气 ${mil.士气 ?? 50} | 装备: ${mil.装备水平 || '-'} | 指挥官: ${mil.指挥官 || '-'}${Object.keys(mil.军种构成 || {}).length ? ` | 军种: ${fmtRec(mil.军种构成)}` : ''}${mil.描述 ? ` | ${mil.描述}` : ''}\n`);
+    const tech = t.科技水平 || {};
+    print(`    科技水平: ${tech.等级 || '-'}${Object.keys(tech.领域 || {}).length ? ` | 领域: ${fmtRec(tech.领域)}` : ''}${(tech.待研发 || []).length ? ` | 待研发: ${tech.待研发.join('、')}` : ''}\n`);
+    const pol = t.政治派系 || {};
+    print(`    政治派系: 执政 ${pol.执政派系 || '-'} | 民心 ${pol.民心 ?? 50} | 局势: ${pol.局势 || '-'}${Object.keys(pol.派系格局 || {}).length ? ` | 派系: ${fmtRec(pol.派系格局)}` : ''}\n`);
+    const res = t.资源 || {};
+    print(`    资源: 储备 ${Object.keys(res.储备 || {}).length ? fmtRec(res.储备) : '-'}${res.特殊资源 ? ` | 特殊资源: ${res.特殊资源}` : ''}${Object.keys(res.物产 || {}).length ? ` | 物产: ${fmtRec(res.物产)}` : ''}\n`);
+    const dip = t.外交 || {};
+    print(`    外交: 关系 ${Object.keys(dip.关系 || {}).length ? fmtRec(dip.关系) : '-'}${Object.keys(dip.盟约 || {}).length ? ` | 盟约: ${Object.keys(dip.盟约).join('、')}` : ''}${Object.keys(dip.敌对 || {}).length ? ` | 敌对: ${Object.keys(dip.敌对).join('、')}` : ''}${Object.keys(dip.贸易协定 || {}).length ? ` | 贸易: ${Object.keys(dip.贸易协定).join('、')}` : ''}\n`);
+    const eco = t.经济 || {};
+    print(`    经济: 收入 ${eco.财政收入 ?? 0}/季 | 支出 ${eco.财政支出 ?? 0}/季 | 国库 ${eco.国库 ?? 0}${eco.商业发展 ? ` | 商业: ${eco.商业发展}` : ''}${Object.keys(eco.产业 || {}).length ? ` | 产业: ${fmtRec(eco.产业)}` : ''}\n`);
+    const bld = t.建筑 || {};
+    const built = bld.已建造 || {};
+    if (Object.keys(built).length) {
+      print(`    建筑位（种族:${bld.种族 || '人类'}）:\n`);
+      for (const [bn, bd] of Object.entries(built)) {
+        let bline = `      - ${bn} Lv.${bd.等级 ?? 1}`;
+        const bns = bd.加成 || {};
+        const bnArr = Object.entries(bns).filter(([k, v]) => v != null && v !== '');
+        if (bnArr.length) bline += `（${bnArr.map(([k, v]) => `${k}:${v}`).join(', ')}）`;
+        if (bd.描述) bline += ` ${bd.描述}`;
+        if (bd.建造日期) bline += `（${bd.建造日期}）`;
+        print(bline + '\n');
+      }
+    } else {
+      print(`    建筑位: 无（种族:${bld.种族 || '人类'}）\n`);
+    }
+    const ttech = t.科技 || {};
+    const tp = ttech.时代进度 || {};
+    const eraList = ['原始', '封建', '工业化', '信息'];
+    const curEraIdx = eraList.indexOf(ttech.当前时代 || '原始');
+    print(`    科技: 初始时代 ${ttech.初始时代 || ttech.当前时代 || '原始'} | 当前时代 ${ttech.当前时代 || '原始'} | 科技点 ${ttech.科技点 ?? 0} | 进度: ${eraList.map((e, ei) => { const ed = tp[e] || {}; let lit = Object.values(ed.已点亮 || {}).filter(Boolean).length; if (ei < curEraIdx) lit = 6; return `${e}:${lit}/6${ed.已晋升 || ei < curEraIdx ? '✓' : ''}`; }).join(' ')}\n`);
+    if (ttech.描述) print(`    ${ttech.描述}\n`);
+    if (t.描述) print(`    ${t.描述}\n`);
+    print('\n');
+  }
+}
+%>
+主要NPC:
+<%
+const npcs = V.主要NPC || {};
+if (Object.keys(npcs).length === 0) { print('  无\n'); }
+else {
+  for (const [n, d] of Object.entries(npcs)) {
+    let line = `  - ${n}（好感度: ${d.好感度 ?? 50}`;
+    if (d.关系分类) line += ` | 关系: ${d.关系分类}`;
+    if (d.身份) line += ` | 身份: ${d.身份}`;
+    // 出生年月日固定；年龄按当前日期自动计算（禁止手动改写）
+    const _nAge = d.出生年月日 ? eraAge(d.出生年月日, V.世界?.日期) : null;
+    if (d.出生年月日) line += ` | 年龄: ${_nAge !== null && _nAge !== undefined ? _nAge + '岁' : '（日期未知）'}（出生:${d.出生年月日}）`;
+    else if (d.年龄) line += ` | 年龄: ${d.年龄}`;
+    if (d.当前位置) line += ` | 当前位置: ${d.当前位置}`;
+    line += '）';
+    print(line + '\n');
+    if (d.关系描述) print(`    关系描述: ${d.关系描述}\n`);
+    if (d.关键事件) print(`    关键事件: ${d.关键事件}\n`);
+    if (d.关系时间线 && d.关系时间线.length) print(`    时间线: ${d.关系时间线.map(e => `${e.时间}:${e.事件}`).join('; ')}\n`);
+    if (d.心里话) print(`    心里话: ${d.心里话}\n`);
+  }
+}
+%>
+英灵:
+  名称: <%= V.英灵?.名称 || '无' %>
+  残响之力: <%= V.英灵?.残响之力 ?? 0 %>
+  状态: <%= V.英灵?.状态 || '沉睡' %>
+</status_current_variable>

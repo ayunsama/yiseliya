@@ -56,7 +56,36 @@ const 宽松效果条 = z.preprocess(
 // --- 六维属性 ---
 const 六维 = { 力量: 10, 敏捷: 10, 体质: 10, 智力: 10, 感知: 10, 魅力: 10 };
 
-// --- HP/MP/SP 资源条 ---
+// --- 资质条（主角/同伴共用；兼容旧档字符串 → 归一化为对象） ---
+// 字段：等级（默认平庸；低劣/普通/优秀/卓越/天才，由高到低影响 经验获取效率）、
+//       描述（副词段，说明该资质的成长倾向）、经验获取效率（百分比，100=基准）
+const 资质条 = z.preprocess(
+  (v) => {
+    if (v === undefined || v === null) return v;
+    if ('string' === typeof v) return { 等级: v, 描述: '', 经验获取效率: 100 };
+    if (isPlainObject(v)) return v;
+    return v;
+  },
+  z.object({
+    等级: str('平庸').transform(v => ['低劣', '平庸', '普通', '优秀', '卓越', '天才'].includes(v) ? v : '平庸'),
+    描述: str(''),
+    经验获取效率: safeNum(100)
+  }).prefault({})
+).prefault({});
+
+// --- 追踪记录条目（世界.追踪记录 容器；AI 按「变量更新规则」用 insert 写入，状态栏只读显示流水账） ---
+// 类型=「经验获取」：金额=经验增量（正整数，非金盾）；物品/数量 填 0/''；余额 恒填 -1（与货币无关）
+const 追踪记录条 = z.object({
+  时间: str(''),
+  类型: str('其他').transform(v => ['金盾入账', '金盾支出', '购买物品', '出售物品', '更换物品', '物品获得', '物品失去', '经验获取', '货币变动', '其他'].includes(v) ? v : '其他'),
+  金额: safeNum(0),    // 货币金额（入账+，支出-）；类型=经验获取 时=经验增量（非金盾）
+  物品: str(''),
+  数量: safeNum(0),    // 物品数量（获得+，失去-）
+  余额: safeNum(-1),   // 货币变动后的当前值（-1=未知/与货币无关，如经验获取条），状态栏货币一键修正用（自动跳过 -1 与经验获取条）
+  说明: str('')
+}).prefault({});
+
+
 const 资源条 = () => z.object({
   当前: safeNum(0),
   最大: safeNum(0)
@@ -99,6 +128,7 @@ const 物品条定义 = z.object({
   装备位: str('无').transform(v => ['无', '头部', '颈部', '躯干', '腿部', '双手'].includes(v) ? v : '无'),
   面板效果: z.record(z.string(), z.string()).prefault({}),
   附加词条: 宽松效果条,
+  特别机制: str(''),   // 装备独有机制/特殊效果（纯文本记录；战斗轮"力量清单"强制引用，如「每击杀+1怒气」「豁免一次致盲」）
   数量: clampNum(1, 0, 99999),
   其它说明: str(''),
   // 锁定标记（状态栏 UI 写入；AI 命令以 _ 开头会被 zod 拒绝更新。显式声明防嵌套 strip 剥掉导致锁定丢失）
@@ -150,7 +180,6 @@ const Schema = z.object({
     // 四传奇觉醒（AI 可见可写：由剧情决定 true/false；true=已获得命格。
     // EJS 切换规则：紧张度 >85 或 四传奇觉醒.角色名 = true → 输出「获得命格后」，否则「获得命格前」）
     四传奇觉醒: z.record(z.string().describe('传奇名'), z.boolean()).prefault({}),
-    // 紧张度已迁入 $flags.紧张度（$前缀：AI 不可见不可写，脚本托管，详见 $flags 段）
     // 世界见闻：世界整体概况 + 各地动态新闻
     世界见闻: z.object({
       世界概况: str(''),
@@ -163,7 +192,9 @@ const Schema = z.object({
         相关地点: str(''),
         相关势力: str('')
       }).prefault({})).prefault({})
-    }).prefault({})
+    }).prefault({}),
+    // 追踪记录（AI 可见可写，按「变量更新规则·追踪记录」insert 流水账；状态栏只读显示）
+    追踪记录: z.record(z.string().describe('记录ID（如 20260827-1432-01）'), 追踪记录条).prefault({})
   }).prefault({}),
 
   主角: z.object({
@@ -175,6 +206,7 @@ const Schema = z.object({
       信仰简述: str(''),
       性别: str(''),
       年龄: safeNum(0),
+      资质: 资质条,  // 资质系统：等级（默认平庸；低劣/普通/优秀/卓越/天才，由高到低影响经验获取效率）+描述(副词段)+效率%
       魔力回路: z.object({
         品阶: str('无回路').transform(v => ['无回路', '低劣', '普通', '优良', '稀有', '完美'].includes(v) ? v : '无回路'),
         描述: str('')
@@ -200,7 +232,8 @@ const Schema = z.object({
       魔法栏: z.record(z.string().describe('魔法名'), 魔法神术条).prefault({}),
       神术栏: z.record(z.string().describe('神术名'), 魔法神术条).prefault({}),
       加护: z.record(z.string().describe('加护名'), 描述等级条).prefault({}),
-      权能: z.record(z.string().describe('权能名'), z.object({ 描述: str('') }).prefault({})).prefault({})
+      权能: z.record(z.string().describe('权能名'), z.object({ 描述: str('') }).prefault({})).prefault({}),
+      奥义: z.record(z.string().describe('奥义名'), z.object({ 描述: str(''), 消耗SP: safeNum(0), 消耗MP: safeNum(0) }).prefault({})).prefault({})
     }).prefault({}),
     任务: z.record(z.string().describe('任务名'), z.object({
       等级: str('普通'), 类型: str('讨伐'), 来源: str(''),
@@ -211,14 +244,41 @@ const Schema = z.object({
   英灵: z.object({
     名称: str(''),
     残响之力: clampNum(0, 0, 100),
-    状态: str('苏醒')
+    状态: str('苏醒'),
+    // ── 英灵共鸣系统 v2（AI 可见可写，规则见「变量更新规则·英灵」）──
+    // 羁绊值：与当前契主英灵的羁绊（互动/共斗/完成其执念累积，0~100）
+    羁绊值: clampNum(0, 0, 100),
+    // 被动效果：随羁绊解锁的常驻加成 { 被动名: 效果描述 }（规则见「英灵被动与执念表」）
+    被动效果: z.record(z.string().describe('被动名'), str('')).prefault({}),
+    // 执念：当前契主英灵未竟的执念与进度（AI 按剧情推进，完成时写 是否完成+完成奖励）
+    执念: z.object({
+      内容: str(''),
+      进度: clampNum(0, 0, 100),
+      是否完成: z.boolean().prefault(false),
+      完成奖励: str('')
+    }).prefault({}),
+    // 英灵技：当前契主英灵的大招记录（释放条件=残响之力100 且 状态=苏醒 且 冷却=0）
+    英灵技: z.object({
+      名称: str(''),
+      冷却: safeNum(0),       // 剩余冷却（场次/天数，按规则递减；0=可用）
+      已释放: safeNum(0)      // 累计释放次数（用于莉莉丝式"每多一次沉睡翻倍"的负担结算）
+    }).prefault({}),
+    // 英灵殿：所有已结识英灵的档案（面板/状态栏读取；AI 只读维护残响/羁绊/状态）
+    英灵殿: z.record(z.string().describe('英灵名'), z.object({
+      残响: clampNum(0, 0, 100),
+      羁绊: clampNum(0, 0, 100),
+      状态: str('苏醒'),
+      执念完成: z.boolean().prefault(false)
+    }).prefault({})).prefault({})
   }).prefault({}),
 
   主要NPC: z.record(z.string().describe('NPC名'), z.object({
     好感度: clampNum(50, -100, 100),   // -100=血海深仇 → 0=陌生 → 100=生死之交/挚爱
     心里话: str(''),
-    年龄: clampNum(0, 0, 999),
+    出生年月日: str(''),   // 一经确定不再更改（如"圣光历1467年3月1日"）；年龄由状态栏/状态输出按当前日期自动计算
+    年龄: clampNum(0, 0, 999),   // 兼容旧数据（脚本派生：有出生年月日时忽略此字段，按日期自动计算）
     身份: str(''),
+    当前位置: str(''),    // 所在地（地区/城镇/场所），随剧情移动由 AI 用 replace 更新
     关键事件: str(''),
     关系描述: str(''),
     关系时间线: z.array(z.object({
@@ -232,20 +292,37 @@ const Schema = z.object({
   同伴: z.record(z.string().describe('同伴名'), z.object({
     好感度: clampNum(50, 0, 100),
     心里话: str(''),
+    出生年月日: str(''),   // 一经确定不再更改（如"圣光历1467年3月1日"）；年龄由状态栏/状态输出按当前日期自动计算
+    年龄: safeNum(0),      // 兼容旧数据（脚本派生：有出生年月日时忽略此字段，按日期自动计算）
     外貌: str(''),
     性格: str(''),
     背景故事: str(''),
     所属势力: str(''),
     种族: str(''),
     身份: str(''),
+    当前位置: str(''),    // 所在地（地区/城镇/场所），随剧情移动由 AI 用 replace 更新
     等阶: str('普通'),
     基础属性: 基础属性块,
     基础状态: 基础状态块,
     防御值: safeNum(10),
     技能: z.record(z.string().describe('技能名'), z.object({ 描述: str(''), 等级: safeNum(0) }).prefault({})).prefault({}),
     物品栏: z.record(z.string().describe('物品名'), 物品条).prefault({}),
+     // 权能/奥义：同伴为顶层扁平字段（非嵌套 资产与能力），与 主角.资产与能力 内写法对齐但层级不同
+     // 权能 = 传说级自悟之力 { 权能名: { 描述 } }；奥义 = 史诗级自悟大招 { 奥义名: { 描述, 消耗SP, 消耗MP } }
+     权能: z.record(z.string().describe('权能名'), z.object({ 描述: str('') }).prefault({})).prefault({}),
+     奥义: z.record(z.string().describe('奥义名'), z.object({ 描述: str(''), 消耗SP: safeNum(0), 消耗MP: safeNum(0) }).prefault({})).prefault({}),
      // 属性锁定（状态栏 UI 写入，禁止 AI 修改 基础属性/待分配职业等级/职业信息；显式声明防嵌套 strip）
-     _属性锁定: z.boolean().prefault(false)
+     
+     // 装备栏：与主角一致的 5 槽（头部/颈部/躯干/腿部/双手），必须显式声明，同伴块装备栏已声明：防止嵌套 z.object strip 剥掉导致装备写入即消失/跨楼层丢失
+     装备栏: z.object({
+       头部: 装备槽位条,
+       颈部: 装备槽位条,
+       躯干: 装备槽位条,
+       腿部: 装备槽位条,
+       双手: 装备槽位条
+     }).prefault({}),
+     资质: 资质条,  // 资质系统：等级（默认平庸；低劣/普通/优秀/卓越/天才，由高到低影响经验获取效率）+描述+效率%
+          _属性锁定: z.boolean().prefault(false)
   }).prefault({})).prefault({}),
 
   // 召唤物为动态成员（独立路径 stat_data.召唤物.{名字}）：由召唤法术/规则文档写入。
@@ -259,6 +336,7 @@ const Schema = z.object({
     种族: str(''),
     职业: str(''),
     契约主: str(''),
+    当前位置: str(''),    // 所在地（随主人移动，AI 用 replace 更新）
     等阶: str('普通'),
     等级: clampNum(1, 0, 9999),
     体型: str('中型'),
@@ -438,7 +516,9 @@ const Schema = z.object({
     }).prefault({})).prefault([]),
     // 年龄成长累计已发放购点（1-18 岁共 20；$前缀：AI 不可见，状态栏托管；只认发放记录，不干扰升级所得属性点）
     年龄成长: safeNum(0),
-    领地建设: z.boolean().prefault(false)
+    领地建设: z.boolean().prefault(false),
+    // 追踪记录全量开关（$前缀：AI 不可见；状态栏切换。true=状态变量输出全量流水，false=仅最近 5 条省 token）
+    追踪记录全量: z.boolean().prefault(false)
   }).prefault({}),
 
   // 变体技能树（$前缀：首页创建器保存，状态栏识别并供学习）
