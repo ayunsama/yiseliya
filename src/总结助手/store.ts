@@ -441,6 +441,51 @@ export const useSummaryStore = defineStore('summary', () => {
   }
 
   // === 生成总结（核心逻辑）：双轨增量总结，按批次推进 ===
+  /** 非 RP 标志 + generateRaw 的公共封装 */
+  function buildLlmPayload(userInput: string, ordered_prompts: any[]) {
+    return {
+      user_input: userInput,
+      // 内部工具生成必须静默：不把总结内容当正文写入聊天楼层
+      should_silence: true,
+      ordered_prompts,
+      ...(settings.value.apiUrl
+        ? {
+            custom_api: {
+              apiurl: settings.value.apiUrl,
+              key: settings.value.apiKey || '',
+              ...(settings.value.model ? { model: settings.value.model } : {}),
+            } as any,
+          }
+        : {}),
+    };
+  }
+
+  /**
+   * 带自动重试的 LLM 调用：调用失败或输出校验不通过时自动重试（默认 3 次，间隔 1 秒），
+   * 中间失败弹黄色警告，全部失败才抛错（由上层弹红色报错）。
+   */
+  async function callLlmWithRetry(payload: any, label: string, validate?: (content: string) => void, maxAttempts = 3): Promise<string> {
+    let lastErr: any;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        window.__ISURIA_NON_RP__ = true;
+        const r = await generateRaw(payload);
+        const content = typeof r === 'string' ? r : String(r);
+        validate?.(content);
+        return content;
+      } catch (e: any) {
+        lastErr = e;
+        if (attempt < maxAttempts) {
+          toastr.warning(`${label}第 ${attempt}/${maxAttempts} 次失败：${String(e?.message || e).slice(0, 60)}，1 秒后自动重试`, '总结助手');
+          await new Promise(r2 => setTimeout(r2, 1000));
+        }
+      } finally {
+        window.__ISURIA_NON_RP__ = false;
+      }
+    }
+    throw lastErr;
+  }
+
   async function generateSummary(silent = false, range?: { from: number; to: number }, overwrite = false): Promise<string | null> {
     if (loading.value) return null;
     loading.value = true;
@@ -523,37 +568,19 @@ export const useSummaryStore = defineStore('summary', () => {
         let sysPrompt = buildSummarySystemPrompt();
         sysPrompt = sysPrompt.replace(/\{\{\s*BRANCH_NAMES\s*\}\}/g, branchNames || '（暂无）');
 
-        // 调用 AI 生成：使用 generateRaw 完全隔离酒馆当前预设
+        // 调用 AI 生成：使用 generateRaw 完全隔离酒馆当前预设；失败自动重试 3 次
         const ordered_prompts: any[] = [
           { role: 'system', content: sysPrompt },
           { role: 'user', content: userInput },
         ];
-
-        // 非 RP 工具生成：打标志跳过所有 RP 注入（紧张度世界动态/三合一总结/英灵注入/剧情规划），
-        // 避免"档案员只输出 <Memory>"任务被"请按世界动态写正文"等指令污染
-        window.__ISURIA_NON_RP__ = true;
-        let result: any;
-        try {
-          result = await generateRaw({
-            user_input: userInput,
-            // 内部工具生成必须静默：否则总结内容会被当作正文消息写入聊天楼层
-            should_silence: true,
-            ordered_prompts,
-            ...(settings.value.apiUrl
-              ? {
-                  custom_api: {
-                    apiurl: settings.value.apiUrl,
-                    key: settings.value.apiKey || '',
-                    ...(settings.value.model ? { model: settings.value.model } : {}),
-                  } as any,
-                }
-              : {}),
-          });
-        } finally {
-          window.__ISURIA_NON_RP__ = false;
-        }
-
-        const content = typeof result === 'string' ? result : String(result);
+        const content = await callLlmWithRetry(
+          buildLlmPayload(userInput, ordered_prompts),
+          '总结',
+          (c) => {
+            const p = parseSummaryBlocks(c);
+            if (!p.blocks.length) throw new Error('AI 未返回有效的总结内容（缺少【主线总结】/【支线总结】分块）');
+          },
+        );
 
         // ---- 解析双轨分块 ----
         const parsed = parseSummaryBlocks(content);
@@ -646,34 +673,15 @@ export const useSummaryStore = defineStore('summary', () => {
         { role: 'user', content: userInput },
       ];
 
-      // 非 RP 工具生成：跳过所有 RP 注入（同小总结）
-      window.__ISURIA_NON_RP__ = true;
-      let result: any;
-      try {
-        result = await generateRaw({
-          user_input: userInput,
-          // 内部工具生成必须静默：不写入正文消息楼层
-          should_silence: true,
-          ordered_prompts,
-          ...(settings.value.apiUrl
-            ? {
-                custom_api: {
-                  apiurl: settings.value.apiUrl,
-                  key: settings.value.apiKey || '',
-                  ...(settings.value.model ? { model: settings.value.model } : {}),
-                } as any,
-              }
-            : {}),
-        });
-      } finally {
-        window.__ISURIA_NON_RP__ = false;
-      }
-
-      const content = typeof result === 'string' ? result : String(result);
+      const content = await callLlmWithRetry(
+        buildLlmPayload(userInput, ordered_prompts),
+        '大总结',
+        (c) => {
+          const p = parseSummaryBlocks(c);
+          if (!p.blocks.length) throw new Error('AI 未返回有效的总结分块');
+        },
+      );
       const parsed = parseSummaryBlocks(content);
-      if (!parsed.blocks.length) {
-        throw new Error('大总结生成失败（缺少有效分块），请重试');
-      }
 
       const big: BigSummary = {
         id: uid(),
