@@ -102,7 +102,8 @@ const activeTab = ref<TabId>('plot');
 
 const currentTab = computed(() => tabs.find(t => t.id === activeTab.value) || tabs[0]);
 
-// 右下角手柄拖拽缩放：实时改壳尺寸，松手时上报持久化
+// 右下角手柄拖拽缩放：实时改壳尺寸，松手时上报持久化。
+// 用 buttons 位与 pointerId 双重校验，防止拖拽中断后监听泄漏导致窗口跟鼠标漂移。
 function onResizeStart(e: PointerEvent) {
   const target = e.currentTarget as HTMLElement;
   const host = target.closest('.hub-shell') as HTMLElement | null;
@@ -111,22 +112,31 @@ function onResizeStart(e: PointerEvent) {
   const startH = host.offsetHeight;
   const startX = e.clientX;
   const startY = e.clientY;
+  const pid = e.pointerId;
   let lastW = startW;
   let lastH = startH;
-  target.setPointerCapture(e.pointerId);
+  let done = false;
+  try { target.setPointerCapture(pid); } catch { /* 已释放则自然结束 */ }
   const onMove = (ev: PointerEvent) => {
+    if (done || ev.pointerId !== pid || !(ev.buttons & 1)) { finish(); return; }
     lastW = Math.max(380, startW + (ev.clientX - startX));
     lastH = Math.max(460, startH + (ev.clientY - startY));
     host.style.width = `${lastW}px`;
     host.style.height = `${lastH}px`;
   };
-  const onUp = () => {
+  const finish = () => {
+    if (done) return;
+    done = true;
     target.removeEventListener('pointermove', onMove);
-    target.removeEventListener('pointerup', onUp);
-    props.requestResize(lastW, lastH);
+    target.removeEventListener('pointerup', finish);
+    target.removeEventListener('pointercancel', finish);
+    target.removeEventListener('lostpointercapture', finish);
+    if (lastW !== startW || lastH !== startH) props.requestResize(lastW, lastH);
   };
   target.addEventListener('pointermove', onMove);
-  target.addEventListener('pointerup', onUp);
+  target.addEventListener('pointerup', finish);
+  target.addEventListener('pointercancel', finish);
+  target.addEventListener('lostpointercapture', finish);
 }
 </script>
 

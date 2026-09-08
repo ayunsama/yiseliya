@@ -76,17 +76,36 @@ function applySizeToHost() {
   hostEl.style.width = `${s.w}px`;
   hostEl.style.height = `${s.h}px`;
 }
+/** 将宿主元素钳回视口内（用目标尺寸计算，规避 width 过渡动画中 offsetWidth 读旧值的坑） */
+function clampHostPosition() {
+  if (!hostEl) return;
+  const vp = getViewport();
+  const s = appliedSize();
+  const curLeft = parseFloat(hostEl.style.left) || 0;
+  const curTop = parseFloat(hostEl.style.top) || 0;
+  hostEl.style.left = `${clamp(curLeft, 0, Math.max(0, vp.w - s.w))}px`;
+  hostEl.style.top = `${clamp(curTop, 0, Math.max(0, vp.h - s.h))}px`;
+}
 function requestResize(w: number, h: number) {
   layout.maximized = false;
   layout.w = Math.round(w);
   layout.h = Math.round(h);
   saveLayout({});
   applySizeToHost();
+  clampHostPosition();
 }
 function requestToggleMaximize() {
   layout.maximized = !layout.maximized;
   saveLayout({});
   applySizeToHost();
+  if (hostEl && panelState.expanded) {
+    if (layout.maximized) {
+      hostEl.style.left = '8px';
+      hostEl.style.top = '8px';
+    } else {
+      clampHostPosition();
+    }
+  }
 }
 
 const FLOATING_WINDOW_SINGLETON_KEY = '__WXHL_INTEGRATED_FLOATING_WINDOW_SINGLETON__';
@@ -188,12 +207,8 @@ function togglePanel() {
   if (!hostEl) return;
   if (panelState.expanded) {
     applySizeToHost();
-    // 展开时贴边内收，避免超出视口
-    const vp = getViewport();
-    const curLeft = parseFloat(hostEl.style.left) || 0;
-    const curTop = parseFloat(hostEl.style.top) || 0;
-    hostEl.style.left = `${clamp(curLeft, 0, Math.max(0, vp.w - hostEl.offsetWidth))}px`;
-    hostEl.style.top = `${clamp(curTop, 0, Math.max(0, vp.h - hostEl.offsetHeight))}px`;
+    // 展开时贴边内收，避免超出视口（按目标尺寸钳制，不受过渡动画影响）
+    clampHostPosition();
   } else {
     hostEl.style.width = '56px';
     hostEl.style.height = '56px';
