@@ -10,11 +10,15 @@
         <span v-if="currentMood" class="hero-mood">{{ currentMood }}</span>
       </div>
       <button class="recall-btn" @click="onRecall" title="撤回上一条" :disabled="store.messages.length === 0">↩</button>
+      <button v-if="!store.selectedHero?.isCompanion" class="recall-btn anecdote-btn" @click="store.openAnecdotes(store.selectedHero)" title="回忆碎片">📖</button>
       <button class="clear-btn" @click="store.clearChat()" title="清空对话">🗑</button>
     </div>
 
+    <!-- 沉睡横幅 -->
+    <div v-if="sleeping" class="sleep-banner">💤 {{ store.selectedHero?.displayName }} 正沉睡于英灵殿深处，只有模糊的梦呓……</div>
+
     <!-- 共鸣状态条（英灵共鸣系统 v2：残响/羁绊/执念/被动/英灵技） -->
-    <div v-if="!store.selectedHero?.isCompanion" class="resonance-panel">
+    <div v-if="!store.selectedHero?.isCompanion && !sleeping" class="resonance-panel">
       <div class="resonance-head">
         <span class="resonance-title">✦ 残响之力</span>
         <span class="resonance-val">{{ resonance }}<em>/100</em></span>
@@ -44,6 +48,24 @@
         </button>
         <span v-if="releaseMsg" class="release-msg">{{ releaseMsg }}</span>
         <span v-else-if="!canRelease" class="release-hint">{{ skillBtnTitle }}</span>
+      </div>
+    </div>
+
+    <!-- 同伴状态条（好感度/位置/状态） -->
+    <div v-else-if="store.selectedHero?.isCompanion" class="companion-panel">
+      <div class="companion-head">
+        <span class="companion-title">♥ 好感度</span>
+        <span class="companion-val">{{ compBond }}<em>/100</em></span>
+        <span class="companion-tier">{{ bondTierText }}</span>
+      </div>
+      <div class="companion-bar-bg">
+        <div class="companion-bar-fill" :style="{ width: Math.min(100, compBond) + '%' }"></div>
+      </div>
+      <div class="companion-sub">
+        <span class="csub-item" v-if="compLoc">📍 {{ compLoc }}</span>
+        <span class="csub-item" v-if="compHpMax > 0">❤️ {{ compHpNow }}/{{ compHpMax }}</span>
+        <span class="csub-item" v-if="compBuffs.length" title="异常状态">⚠️ {{ compBuffs.join('、') }}</span>
+        <span class="csub-item" v-if="compTier">⚔ {{ compTier }}</span>
       </div>
     </div>
 
@@ -108,12 +130,12 @@
       <textarea
         v-model="inputText"
         class="chat-input"
-        placeholder="输入你的话语…"
+        :placeholder="sleeping ? '她正沉睡……' : '输入你的话语…'"
         @keydown.enter.prevent="onSend"
-        :disabled="store.loading"
+        :disabled="store.loading || sleeping"
         rows="2"
       ></textarea>
-      <button class="send-btn" @click="onSend" :disabled="store.loading || !inputText.trim()">
+      <button class="send-btn" @click="onSend" :disabled="store.loading || !inputText.trim() || sleeping">
         {{ store.loading ? '…' : '✉' }}
       </button>
     </div>
@@ -134,6 +156,24 @@ const editTextareaRef = ref<HTMLElement | null>(null);
 const releaseMsg = ref('');
 
 const onlineClass = 'is-online';
+
+// ---- 沉睡门控（方案D） ----
+const sleeping = computed(() => (store.selectedHero ? store.isHeroSleeping(store.selectedHero) : false));
+
+// ---- 同伴状态（方案A：好感度/位置/HP/异常） ----
+const compInfo = computed(() => store.selectedHero?.companionInfo || null);
+const compBond = computed(() => Number(compInfo.value?.好感度 ?? 0));
+const compLoc = computed(() => String(compInfo.value?.当前位置 || ''));
+const compHpNow = computed(() => Number(compInfo.value?.hpNow ?? 0));
+const compHpMax = computed(() => Number(compInfo.value?.hpMax ?? 0));
+const compBuffs = computed(() => compInfo.value?.异常状态 || []);
+const compTier = computed(() => String(compInfo.value?.等阶 || ''));
+const bondTierText = computed(() => {
+  const b = compBond.value;
+  if (b >= 70) return '亲密';
+  if (b >= 30) return '友善';
+  return '疏远';
+});
 
 // ---- 英灵共鸣数据（stat_data.英灵） ----
 const runtime = computed(() => store.spiritRuntime);
@@ -307,6 +347,89 @@ function onRegenerate(idx: number) {
   white-space: nowrap;
   letter-spacing: 0.5px;
   flex-shrink: 0;
+}
+
+/* ---- 沉睡横幅 ---- */
+.sleep-banner {
+  margin: 6px 10px 2px;
+  padding: 8px 10px;
+  background: linear-gradient(160deg, rgba(90, 70, 110, 0.85), rgba(70, 55, 95, 0.9));
+  border: 1px solid rgba(170, 150, 210, 0.4);
+  border-radius: 8px;
+  color: #d8ccf0;
+  font-size: 11px;
+  line-height: 1.5;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+/* ---- 同伴状态条（好感度/位置/HP） ---- */
+.companion-panel {
+  flex-shrink: 0;
+  margin: 6px 10px 2px;
+  padding: 8px 10px 10px;
+  background: linear-gradient(160deg, rgba(60, 36, 21, 0.9), rgba(90, 58, 30, 0.92));
+  border: 1px solid rgba(201, 169, 110, 0.5);
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(60, 36, 21, 0.25), inset 0 0 18px rgba(245, 222, 179, 0.06);
+}
+.companion-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.companion-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f0d48a;
+  letter-spacing: 1px;
+}
+.companion-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffe9b0;
+  margin-left: auto;
+}
+.companion-val em {
+  font-size: 10px;
+  font-style: normal;
+  opacity: 0.6;
+}
+.companion-tier {
+  font-size: 10px;
+  padding: 1px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(201, 169, 110, 0.4);
+  color: #f0d48a;
+  background: rgba(201, 169, 110, 0.12);
+}
+.companion-bar-bg {
+  height: 9px;
+  border-radius: 5px;
+  background: rgba(20, 12, 6, 0.6);
+  border: 1px solid rgba(201, 169, 110, 0.3);
+  overflow: hidden;
+}
+.companion-bar-fill {
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #a06050, #d89070, #f0a890);
+  transition: width 0.6s ease;
+}
+.companion-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 6px;
+  font-size: 10px;
+  color: #c8b08a;
+}
+.csub-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
 }
 
 /* ---- 共鸣状态条（英灵共鸣系统 v2） ---- */

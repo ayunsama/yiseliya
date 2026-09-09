@@ -52,6 +52,10 @@
           <span class="btn-icon">⟳</span>
           <span class="btn-text">刷新列表</span>
         </button>
+        <button v-if="store.activeTab === 'heroes'" class="parchment-btn roundtable-btn" @click="store.viewMode = 'roundtable'">
+          <span class="btn-icon">⚔</span>
+          <span class="btn-text">圆桌夜谈</span>
+        </button>
       </div>
 
       <!-- 英灵殿列表 -->
@@ -62,7 +66,7 @@
             :key="hero.uid"
             class="hero-card"
             :class="{ 'hero-card--disabled': !hero.enabled }"
-            @click="store.selectHero(hero)"
+            @click="store.openDetail(hero)"
           >
             <div class="hero-card-icon">
               <span class="hero-log">{{ hero.log }}</span>
@@ -74,6 +78,9 @@
                   {{ hero.enabled ? '现界' : '沉寂' }}
                 </span>
                 <span v-if="hallOf(hero)?.状态 === '沉睡'" class="status-badge status-sleep">沉睡</span>
+                <span class="status-badge status-frag">
+                  碎片 {{ store.anecdoteCountOf(hero) }}/8
+                </span>
               </div>
               <div class="hero-card-stats">
                 <span class="mini-stat" :class="{ 'mini-stat--full': hallOf(hero)?.残响 >= 100 }">
@@ -88,7 +95,7 @@
         <div v-if="store.heroes.length === 0" class="empty-state">
           <div class="empty-rune">✙</div>
           <p class="empty-desc">未检测到伊瑟利亚世界书中的英灵条目</p>
-          <p class="empty-hint">请确保世界书「伊瑟利亚」已启用并包含英灵条目</p>
+          <p class="empty-hint">请确保世界书「伊瑟利亚3.4」已启用并包含英灵条目</p>
         </div>
       </div>
 
@@ -111,6 +118,17 @@
               </div>
               <div class="hero-card-status">
                 <span class="status-badge status-on">同行</span>
+                <span class="status-badge status-info">{{ hero.companionInfo?.当前位置 || '位置未知' }}</span>
+                <span v-if="hero.companionInfo?.hpMax" class="status-badge" :class="hpClass(hero)">
+                  HP {{ hero.companionInfo.hpNow }}/{{ hero.companionInfo.hpMax }}
+                </span>
+                <span v-if="hero.companionInfo?.异常状态?.length" class="status-badge status-hurt">
+                  {{ hero.companionInfo.异常状态.join('、') }}
+                </span>
+              </div>
+              <div class="hero-card-stats">
+                <span class="mini-stat">好感度 {{ hero.companionInfo?.好感度 ?? '—' }}</span>
+                <span class="mini-stat">等阶 {{ hero.companionInfo?.等阶 || '普通' }}</span>
               </div>
             </div>
             <div class="hero-card-arrow">→</div>
@@ -128,6 +146,17 @@
       <HeroChat />
     </div>
 
+    <div v-else-if="store.viewMode === 'detail' && store.selectedHero" class="panel-content panel-content--full">
+      <HeroDetail :hero="store.selectedHero" />
+    </div>
+
+    <div v-else-if="store.viewMode === 'roundtable'" class="panel-content panel-content--full">
+      <Roundtable />
+    </div>
+
+    <!-- 回忆碎片收集墙（覆盖层） -->
+    <AnecdoteGallery v-if="store.anecdoteViewHero" :hero="store.anecdoteViewHero" />
+
     <div class="panel-footer">
       <span class="footer-text">✦ 英灵殿 · 永世长存 ✦</span>
     </div>
@@ -137,7 +166,10 @@
 
 <script setup lang="ts">
 import HeroChat from './HeroChat.vue';
-import { useHeroSpiritStore } from './store';
+import HeroDetail from './HeroDetail.vue';
+import AnecdoteGallery from './AnecdoteGallery.vue';
+import Roundtable from './Roundtable.vue';
+import { useHeroSpiritStore, type HeroEntry } from './store';
 
 defineProps<{
   panelState: { expanded: boolean; collapsed: boolean };
@@ -148,6 +180,16 @@ const store = useHeroSpiritStore();
 /** 查询英灵的英灵殿档案（残响/羁绊/状态） */
 function hallOf(hero: { displayName?: string }) {
   return store.hallInfo(hero.displayName || '');
+}
+
+/** 同伴 HP 徽章配色 */
+function hpClass(hero: HeroEntry): string {
+  const info = hero.companionInfo;
+  if (!info || !info.hpMax) return '';
+  const ratio = info.hpNow / info.hpMax;
+  if (ratio < 0.3) return 'status-hurt';
+  if (ratio < 0.7) return 'status-mid';
+  return 'status-health';
 }
 
 async function onRefresh() {
@@ -417,7 +459,11 @@ async function onRefresh() {
 .refresh-bar {
   display: flex;
   justify-content: center;
+  gap: 6px;
   margin-bottom: 8px;
+}
+.roundtable-btn {
+  background: linear-gradient(180deg, rgba(220, 190, 150, 0.8), rgba(200, 170, 120, 0.6));
 }
 
 .parchment-btn {
@@ -545,6 +591,31 @@ async function onRefresh() {
   background: rgba(120, 100, 160, 0.15);
   color: #7a6a9a;
   border: 1px solid rgba(120, 100, 160, 0.25);
+}
+.status-frag {
+  background: rgba(200, 160, 100, 0.12);
+  color: #8a6a10;
+  border: 1px solid rgba(201, 169, 110, 0.3);
+}
+.status-info {
+  background: rgba(100, 130, 180, 0.12);
+  color: #5a7a9a;
+  border: 1px solid rgba(100, 130, 180, 0.22);
+}
+.status-health {
+  background: rgba(74, 124, 63, 0.12);
+  color: #4a7c3f;
+  border: 1px solid rgba(74, 124, 63, 0.2);
+}
+.status-mid {
+  background: rgba(200, 160, 60, 0.15);
+  color: #8a6a10;
+  border: 1px solid rgba(200, 160, 60, 0.3);
+}
+.status-hurt {
+  background: rgba(180, 80, 80, 0.15);
+  color: #8a3030;
+  border: 1px solid rgba(180, 80, 80, 0.3);
 }
 
 /* 英灵殿档案迷你数值（英灵共鸣系统 v2） */
