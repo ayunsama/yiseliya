@@ -435,6 +435,7 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
     autoCounter.value = 0;
     advanceCounter.value = 0;
     error.value = null;
+    generationBusy.value = false; // 聊天切换意味着旧生成已中断，解除忙碌锁
     saveToStorage();
   }
 
@@ -694,12 +695,14 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
     return Array.from(names).map(n => stateOf.get(n) ? `${n}（${stateOf.get(n)}）` : n);
   }
 
-  // ---- 解析阶段检测返回的 JSON ----
+  // ---- 解析阶段检测返回的 JSON（宽容：剥代码块围栏、去尾逗号） ----
   function parseStoryState(raw: string): Omit<StoryState, 'planId' | 'updatedAt'> | null {
     try {
-      const m = raw.match(/\{[\s\S]*\}/);
+      const text = raw.replace(/```(?:json)?/gi, '');
+      const m = text.match(/\{[\s\S]*\}/);
       if (!m) return null;
-      const obj = JSON.parse(m[0]);
+      const body = m[0].replace(/,\s*([}\]])/g, '$1');
+      const obj = JSON.parse(body);
       const stage = ['起', '承', '转', '合'].includes(obj.stage) ? obj.stage as StoryState['stage'] : null;
       if (!stage) return null;
       const seq = [1, 2, 3].includes(Number(obj.sequence)) ? Number(obj.sequence) as 1 | 2 | 3 : 1;
@@ -1024,6 +1027,11 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
     if (result.plan) {
       planStep.value = '检测中';
       result.stage = await detectStage(true);
+      // 真实模型偶尔输出不规范 JSON 导致解析失败，自动重试一次
+      if (!result.stage) {
+        await new Promise(r => setTimeout(r, 600));
+        result.stage = await detectStage(true);
+      }
       if (settings.value.npcEnabled) {
         planStep.value = '推演中';
         result.npc = await generateNpcPlan(true);
@@ -1050,8 +1058,8 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
       advanceCounter.value = 0;
       try {
         autoListener = eventOn(tavern_events.MESSAGE_RECEIVED, async () => {
-          // 酒馆主生成进行中则跳过本轮计数（防与主生成抢接口）
-          if (generationBusy.value) return;
+          // 新消息到达即代表主生成已结束；若 busy 标志因事件丢失卡住，此处自愈
+          if (generationBusy.value) setGenerationBusy(false);
 
           // 规划计数器（每 autoInterval 楼触发一次）
           if (settings.value.autoGenerate) {

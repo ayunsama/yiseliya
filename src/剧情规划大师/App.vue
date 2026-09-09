@@ -254,9 +254,14 @@ async function onRunFullPlan() {
   const r = await store.runFullPlan();
   if (r.plan) {
     const bits: string[] = ['底稿已生成'];
-    if (r.stage) bits.push(`阶段 ${r.stage.stage}·序列${r.stage.sequence}`);
-    if (r.npc) bits.push(`${r.npc.npcs.length} 个NPC动向`);
-    toastr.success(bits.join('，'), '一键规划');
+    if (r.stage) {
+      bits.push(`阶段 ${r.stage.stage}·序列${r.stage.sequence}`);
+      if (r.npc) bits.push(`${r.npc.npcs.length} 个NPC动向`);
+      toastr.success(bits.join('，'), '一键规划');
+    } else {
+      // 底稿成功但节拍检测失败：明确告知原因与补救路径，不静默
+      toastr.warning(`底稿已生成，但节拍检测失败：${store.error || '未知原因'}。可稍后点「🧭 重新检测阶段」重试。`, '一键规划');
+    }
   } else if (store.error) {
     toastr.error(store.error, '一键规划失败');
   }
