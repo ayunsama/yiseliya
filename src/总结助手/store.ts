@@ -91,6 +91,8 @@ const SettingsSchema = z.object({
   autoRunMode: z.enum(['silent', 'confirm']).default('silent'),
   /** 总结后是否隐藏已总结楼层 */
   hideFloors: z.boolean().default(false),
+  /** 隐藏延迟楼层：隐藏指针落后总结指针 N 楼，最近 N 楼原文对 AI 保持可见（0=总结即隐藏） */
+  hideDelay: z.number().default(0),
   /** 是否联动剧情规划（当前节拍 + NPC 名单进入总结/注入） */
   plannerLink: z.boolean().default(true),
   /** 聊天文件名后缀（保留字段） */
@@ -610,7 +612,9 @@ export const useSummaryStore = defineStore('summary', () => {
 
         // ---- 可选隐藏已总结楼层 ----
         if (settings.value.hideFloors) {
-          await hideFloorsRange(effectiveStart, effectiveEnd);
+          // 隐藏延迟：只隐藏到 (本批末楼 - hideDelay)，最近 N 楼原文保留给 AI 读
+          const hideEnd = Math.max(effectiveStart - 1, effectiveEnd - Math.max(0, settings.value.hideDelay));
+          if (hideEnd >= effectiveStart) await hideFloorsRange(effectiveStart, hideEnd);
           // ★ 隐藏后立即保存：防止后续批次失败（AI 未返回有效分块等）导致已隐藏楼层的总结数据未落盘
           saveToVariables();
         }

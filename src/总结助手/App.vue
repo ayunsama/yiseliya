@@ -77,6 +77,11 @@
             <input type="checkbox" :checked="store.settings.hideFloors" @change="onHideFloorsToggle" />
             <span>总结后隐藏楼层</span>
           </label>
+          <div v-if="store.settings.hideFloors" class="inline-form">
+            <label class="field-label">隐藏延迟</label>
+            <input v-model.number="store.settings.hideDelay" @change="onSettingsChange" type="number" min="0" max="50" class="field-input field-input--short" />
+            <span style="font-size:11px;color:rgba(109,88,54,.9)">楼（最近 N 楼原文保留可见）</span>
+          </div>
           <label class="toggle-row">
             <input type="checkbox" :checked="store.settings.plannerLink" @change="onPlannerLinkToggle" />
             <span>联动剧情规划</span>
