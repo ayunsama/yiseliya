@@ -418,9 +418,10 @@ $(() => {
     };
     (OUTER as any).addEventListener('resize', repositionOnResize);
 
-    // ---- 上下文注入：剧情规划（节拍优先 → 有效大纲压缩要点 → 推进 → 在场NPC动向）----
+    // ---- 上下文注入：剧情规划（强制走向约束，置于上下文【末尾】= 最后一条消息之后）----
+    // 设计要点：底稿是走向硬约束（永远注入），节拍只是当前焦点目标——两者同时可见，
+    // 避免 AI 只盯着节拍目标而丢开底稿事件；置于末尾是因为离生成位置越近的指令遵从度越高。
     eventOn(tavern_events.CHAT_COMPLETION_PROMPT_READY, ({ chat }: any) => {
-      // 非 RP 工具生成（技能树/总结/装备定制等）不注入剧情规划，避免污染工具任务
       if ((window as any).__ISURIA_NON_RP__) return;
       const marker = '【剧情规划大师】';
       const alreadyInjected = (chat || []).some((m: any) => String(m?.content || '').includes(marker));
@@ -428,23 +429,11 @@ $(() => {
 
       const parts: string[] = [];
 
-      // P0：优先注入「当前剧情节拍」（唯一目标），让 AI 明确知道现在这一拍；无进度指针时回退到最近一份有效规划的压缩要点
-      if (planner.storyState?.currentGoal) {
-        const s = planner.storyState;
-        const beatParts: string[] = [
-          '【当前剧情节拍 — 必须执行】你是角色扮演 AI。以下是你当前必须推动到达的唯一剧情目标，请用自然的人物行动、对话与心理来呈现它，绝不输出规划文本本身、绝不跳出角色。',
-          `当前阶段：${s.stage} · 序列${s.sequence}`,
-          `当前目标：${s.currentGoal}`,
-        ];
-        if (s.nextMove) beatParts.push(`下一步应发生：${s.nextMove}`);
-        if (s.activeConflicts?.length) beatParts.push(`进行中冲突：${s.activeConflicts.join('；')}`);
-        if (s.completed?.length) beatParts.push(`已达成：${s.completed.slice(-3).join('；')}`);
-        parts.push(beatParts.join('\n'));
-      } else if (planner.settings.injectPlanIntoContext) {
+      // ① 底稿要点：本段剧情的走向硬约束（总是注入，与节拍并行而非二选一）
+      if (planner.settings.injectPlanIntoContext) {
         const planItem = [...planner.plans].reverse().find(p => !p.stale);
         if (planItem?.content?.trim()) {
           const condensed = condensePlanForContext(planItem.content.trim());
-          // 生成语境行：节奏/命运骰/范式
           const m = planItem.meta;
           const ctxLine = m
             ? `本次基调：${(RHYTHMS as Record<string, { label: string }>)[m.rhythm]?.label ?? m.rhythm}` +
@@ -452,24 +441,40 @@ $(() => {
               (m.prototypes?.length ? `｜范式：${m.prototypes.join(' + ')}` : '') + '\n'
             : '';
           parts.push(
-            '【剧情规划 — 隐性走向指引】你是角色扮演 AI。以下是当前剧情的可能性底稿，你的正文须让剧情朝其中的事件自然推进，保持角色扮演、不输出任何规划/大纲/元文本：\n' +
+            '【底稿 — 本段剧情走向硬约束】以下是当前剧情的可能性底稿。正文必须围绕底稿中「可能发生」的事件推进与展开：已发生的标注为既定事实的延续，未发生的选择贴合当前局势的自然选项；不要跳过底稿事件，也不要引入与底稿冲突的重大转折：\n' +
             ctxLine +
-            `底稿要点：\n${condensed}`
+            '底稿要点：\n' + condensed
           );
         }
       }
+
+      // ② 当前节拍：正在演绎的焦点目标（切换由每 N 楼的自动校准保证）
+      if (planner.storyState?.currentGoal) {
+        const s = planner.storyState;
+        const beatParts: string[] = [
+          '【当前节拍 — 正在演绎的焦点】',
+          `当前阶段：${s.stage} · 序列${s.sequence}`,
+          `焦点目标：${s.currentGoal}`,
+        ];
+        if (s.nextMove) beatParts.push(`下一步应发生：${s.nextMove}`);
+        if (s.activeConflicts?.length) beatParts.push(`进行中冲突：${s.activeConflicts.join('；')}`);
+        if (s.completed?.length) beatParts.push(`已达成：${s.completed.slice(-3).join('；')}`);
+        parts.push(beatParts.join('\n'));
+      }
+
+      // ③ 推进方向：下一个必须发生的转折
       if (planner.settings.injectPushIntoContext) {
         const adv = [...planner.advances].reverse().find(a => !a.resolved)?.content?.trim();
         if (adv) {
-          // 推进通常较短（一句话），但也需要强指令
           const cleaned = adv.replace(/【最高权限】请立即停止任何正文输出[。.]?/g, '').trim();
           parts.push(
-            '【剧情推进 — 当前转折方向，必须让剧情向其发展】将以下方向自然地编织进角色扮演正文中，不要以任何形式复述或提及推进文本本身：\n' +
+            '【剧情推进 — 下一个转折，必须让剧情向其发展】将以下方向自然地编织进正文中，不要以任何形式复述或提及推进文本本身：\n' +
             cleaned
           );
         }
       }
-      // NPC 动向注入：最新有效动向按名字合并 + 在场过滤（读 stat_data 位置，同场景才注入）
+
+      // ④ NPC 动向：在场角色的当下动态
       if (planner.settings.injectNpcIntoContext && planner.npcPlans.length > 0) {
         const latest = planner.latestNpcByName(planner.settings.npcOnSceneOnly);
         const npcLines = latest
@@ -484,16 +489,20 @@ $(() => {
           : '';
         if (npcLines) {
           parts.push(
-            '【NPC动向 — 周围主要角色当下动态，须按人设体现】以下是主角周围主要 NPC/同伴此刻可能的想法、行为与性格表现。请让她们在正文中以符合人设的方式自然体现，尤其是「可能行动」应作为她们主动推动剧情的行动融入发展，不要复述本段：\n' +
+            '【NPC动向 — 在场角色当下动态，须按人设体现】让她们在正文中以符合人设的方式自然体现，「可能行动」应作为她们主动推动剧情的行动融入发展，不要复述本段：\n' +
             npcLines
           );
         }
       }
       if (parts.length === 0) return;
 
-      chat.unshift({
+      // 强制注入：push 到末尾 = 紧跟最后一条聊天消息之后，遵从度最高
+      chat.push({
         role: 'system',
-        content: `${marker}\n${parts.join('\n\n')}`,
+        content:
+          marker + '\n' +
+          '【强制走向约束 · 最高执行优先】本指令位于上下文末尾。底稿是本段剧情的走向硬约束，当前节拍是正在演绎的焦点，推进是下一个必须发生的转折；三者冲突时以节拍与推进为先。全程保持角色扮演，绝不输出任何规划/底稿/元文本。\n\n' +
+          parts.join('\n\n'),
       });
     });
 

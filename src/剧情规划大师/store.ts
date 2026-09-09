@@ -184,6 +184,9 @@ export interface PlannerSettings {
   npcList: string;
   /** NPC 动向规划提示词 */
   npcPrompt: string;
+  /** 节拍自动校准：每 beatInterval 楼静默重检起承转合（阶段切换的机制保障） */
+  autoBeat: boolean;
+  beatInterval: number;
   /** NPC 动向注入时只注入与主角同场景的角色（读取 stat_data 位置字段过滤） */
   npcOnSceneOnly: boolean;
   /** 提示词版本号（内部迁移用） */
@@ -289,8 +292,10 @@ const CONSOLIDATE_PROMPT = `【最高权限】请立即停止任何正文输出�
 function defaultSettings(): PlannerSettings {
   return {
     analysisDepth: 10,
-    advanceDepth: 5,
     rhythm: 'balanced',
+    autoBeat: true,
+    beatInterval: 6,
+    advanceDepth: 5,
     apiUrl: '',
     apiKey: '',
     model: '',
@@ -333,6 +338,8 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
   const fetchingModels = ref(false);
   const autoCounter = ref(0);
   const advanceCounter = ref(0);
+  /** 节拍校准计数器：每收到 N 条消息静默重检一次起承转合 */
+  const beatCounter = ref(0);
   /** 剧情进度指针（当前节拍） */
   const storyState = ref<StoryState | null>(null);
   /** NPC 动向规划历史 */
@@ -396,6 +403,7 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
         if (stored.npcPlans && !chatChanged) npcPlans.value = stored.npcPlans;
         if (typeof stored.autoCounter === 'number' && !chatChanged) autoCounter.value = stored.autoCounter;
         if (typeof stored.advanceCounter === 'number' && !chatChanged) advanceCounter.value = stored.advanceCounter;
+        if (typeof stored.beatCounter === 'number' && !chatChanged) beatCounter.value = stored.beatCounter;
 
         if (chatChanged) {
           console.log('[剧情规划大师] 初始化时检测到聊天已变更，已清空旧规划数据');
@@ -416,6 +424,7 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
         npcPlans: Array.isArray(npcPlans.value) ? npcPlans.value : [],
         autoCounter: typeof autoCounter.value === 'number' ? autoCounter.value : 0,
         advanceCounter: typeof advanceCounter.value === 'number' ? advanceCounter.value : 0,
+        beatCounter: typeof beatCounter.value === 'number' ? beatCounter.value : 0,
       };
       insertOrAssignVariables({ [SCRIPT_VAR_KEY]: payload }, { type: 'script' });
     } catch (e: any) {
@@ -434,6 +443,7 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
     npcPlans.value = [];
     autoCounter.value = 0;
     advanceCounter.value = 0;
+    beatCounter.value = 0;
     error.value = null;
     generationBusy.value = false; // 聊天切换意味着旧生成已中断，解除忙碌锁
     saveToStorage();
@@ -583,6 +593,7 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
         stale: false,
         meta: { rhythm: rhythmKey, fate: { roll: fate.roll, range: fate.range, label: fate.label }, prototypes: protos },
       };
+      beatCounter.value = 0; // 刚检测/刚生成，校准计数清零
       plans.value.push(newPlan);
       if (plans.value.length > 20) plans.value = plans.value.slice(-20);
 
@@ -1041,6 +1052,43 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
     return result;
   }
 
+  // ---- 节拍自动校准：独立于规划/推进自动化，只要开启就始终工作 ----
+  // 每收到 beatInterval 条消息静默重检一次起承转合——阶段切换由此机制保证透明：
+  // AI 只需自然推进剧情，校准器判断已进入下一幕后自动切换指针并同步 $flags。
+  let beatListener: { stop: () => void } | null = null;
+
+  function refreshBeatListener() {
+    const should = settings.value.autoBeat !== false;
+    if (beatListener && !should) {
+      beatListener.stop();
+      beatListener = null;
+      beatCounter.value = 0;
+    }
+    if (!beatListener && should) {
+      try {
+        beatListener = eventOn(tavern_events.MESSAGE_RECEIVED, async () => {
+          if (generationBusy.value) setGenerationBusy(false); // 自愈忙碌锁
+          if (!settings.value.autoBeat || !storyState.value?.currentGoal) return;
+          if (loading.value || detecting.value || npcLoading.value) return;
+          beatCounter.value++;
+          if (beatCounter.value >= Math.max(1, settings.value.beatInterval || 6)) {
+            beatCounter.value = 0;
+            const prev = storyState.value;
+            await detectStage(true);
+            if (storyState.value && (storyState.value.stage !== prev?.stage || storyState.value.sequence !== prev?.sequence)) {
+              console.info('[剧情规划大师] 节拍自动切换:', prev?.stage + '·' + prev?.sequence, '→', storyState.value.stage + '·' + storyState.value.sequence);
+              toastr.info('剧情进入新阶段：' + storyState.value.stage + '·序列' + storyState.value.sequence, '剧情规划大师');
+            }
+          }
+          saveToStorage();
+        });
+      } catch (e: any) {
+        console.warn('[剧情规划大师] 节拍校准监听失败:', e?.message || e);
+        settings.value.autoBeat = false;
+      }
+    }
+  }
+
   // ---- 自动生成 ----
   let autoListener: { stop: () => void } | null = null;
 
@@ -1111,6 +1159,9 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
     if ('autoGenerate' in patch || 'autoAdvance' in patch || 'autoInterval' in patch || 'advanceInterval' in patch) {
       refreshAutoListener();
     }
+    if ('autoBeat' in patch || 'beatInterval' in patch) {
+      refreshBeatListener();
+    }
   }
 
   function resetSystemPrompt() {
@@ -1133,6 +1184,7 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
     loadFromStorage();
     if (settings.value.autoGenerate) setAutoGenerate(true);
     if (settings.value.autoAdvance) setAutoAdvance(true);
+    refreshBeatListener();
   } catch (e: any) {
     console.warn('[剧情规划大师] 初始化失败:', e?.message || e);
   }
@@ -1150,6 +1202,7 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
     consolidating,
     generationBusy,
     planStep,
+    beatCounter,
     modelList,
     fetchingModels,
     fetchModels,
@@ -1162,6 +1215,7 @@ export const usePlotPlannerStore = defineStore('plotPlanner', () => {
     latestNpcByName,
     setSummaryProvider,
     setGenerationBusy,
+    refreshBeatListener,
     invalidateCoverage,
     resetForNewChat,
     updateSettings,

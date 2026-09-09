@@ -2,13 +2,6 @@
   <div class="plot-workbench">
     <!-- 统计卡行 -->
     <div class="stat-row">
-      <div class="stat-card" :class="{ 'stat-card--live': !!store.storyState?.currentGoal }">
-        <div class="stat-card__icon">🧭</div>
-        <div class="stat-card__body">
-          <div class="stat-card__value">{{ store.storyState ? store.storyState.stage + '·' + store.storyState.sequence : '—' }}</div>
-          <div class="stat-card__label">当前节拍</div>
-        </div>
-      </div>
       <div class="stat-card" :class="{ 'stat-card--warn': latestPlanStale }">
         <div class="stat-card__icon">📖</div>
         <div class="stat-card__body">
@@ -98,6 +91,7 @@
           <div class="adv-sec__title">⚡ 自动化</div>
           <label class="switch-row"><input type="checkbox" :checked="store.settings.autoGenerate" @change="onAutoGenerateToggle" /><span>每 {{ store.settings.autoInterval }} 楼自动规划</span><input v-model.number="store.settings.autoInterval" @change="onSettingsChange" type="number" min="5" max="100" class="inp inp--num inp--tail" /></label>
           <label class="switch-row"><input type="checkbox" :checked="store.settings.autoAdvance" @change="onAutoAdvanceToggle" /><span>每 {{ store.settings.advanceInterval }} 楼自动推进</span><input v-model.number="store.settings.advanceInterval" @change="onSettingsChange" type="number" min="1" max="20" class="inp inp--num inp--tail" /></label>
+          <label class="switch-row"><input type="checkbox" :checked="store.settings.autoBeat !== false" @change="onSettingToggle2('autoBeat', $event)" /><span>每 {{ store.settings.beatInterval }} 楼自动校准节拍（起承转合切换）</span><input v-model.number="store.settings.beatInterval" @change="onSettingsChange" type="number" min="1" max="50" class="inp inp--num inp--tail" /></label>
         </div>
         <div class="adv-sec">
           <div class="adv-sec__title">📥 注入与联动</div>
@@ -285,7 +279,7 @@ async function onGenerateAdvance() {
 async function onFetchModels() { await store.fetchModels(); }
 
 function onSettingsChange() { store.updateSettings(); }
-function onSettingToggle(key: 'beatSyncEnabled' | 'useSummaryContext', e: Event) {
+function onSettingToggle(key: 'beatSyncEnabled' | 'useSummaryContext' | 'autoBeat', e: Event) {
   store.updateSettings({ [key]: (e.target as HTMLInputElement).checked });
 }
 function onInjectAllToggle(e: Event) {
@@ -324,7 +318,7 @@ function formatTime(ts: number) {
 /* ── 统计卡 ── */
 .stat-row {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
 }
 .stat-card {
