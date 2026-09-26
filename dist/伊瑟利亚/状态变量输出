@@ -459,7 +459,10 @@ else {
     if (d.所在地) line += ` | 所在地: ${d.所在地}`;
     line += ` | 好感度: ${d.好感度 ?? 0}`;
     const _plan = d.培养计划 || {};
-    if (_plan.方向) line += ` | 培养中: ${_plan.方向}(${_plan.每期投入 ?? 0}铜盾/月, 进度${_plan.成长进度 ?? 0}/12)`;
+    if (_plan.方向) line += ` | 培养中: ${_plan.方向}${_plan.期望职业 ? '（期望职业:' + _plan.期望职业 + '）' : ''}`;
+    if (d.技能 && Object.keys(d.技能).length) {
+      line += ` | 技能: ${Object.entries(d.技能).map(([sk, sv]) => `${sk}Lv.${sv?.等级 ?? 1}`).join('/')}`;
+    }
     line += '）';
     print(line + '\n');
     if (d.描述) print(`    描述: ${d.描述}\n`);
