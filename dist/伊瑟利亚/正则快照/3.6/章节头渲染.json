@@ -1,0 +1,17 @@
+{
+ "id": "e9ebe38a-7c59-460e-bab6-7cd3b880b702",
+ "scriptName": "章节头渲染",
+ "disabled": false,
+ "runOnEdit": true,
+ "findRegex": "/<章节>([\\s\\S]*?)<\\/章节>/g",
+ "replaceString": "<div class=\"pt-chapter\"><span class=\"orn\">✦</span><span class=\"nm\">$1</span><span class=\"orn\">✦</span></div>",
+ "trimStrings": [],
+ "placement": [
+  2
+ ],
+ "substituteRegex": 0,
+ "minDepth": null,
+ "maxDepth": null,
+ "markdownOnly": true,
+ "promptOnly": false
+}

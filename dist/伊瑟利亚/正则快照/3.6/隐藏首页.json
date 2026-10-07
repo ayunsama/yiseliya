@@ -1,0 +1,17 @@
+{
+ "id": "cfc22a1c-00d8-4f68-911e-7c9ebb2ed023",
+ "scriptName": "隐藏首页",
+ "disabled": false,
+ "runOnEdit": true,
+ "findRegex": "<首页>",
+ "replaceString": "",
+ "trimStrings": [],
+ "placement": [
+  2
+ ],
+ "substituteRegex": 0,
+ "minDepth": null,
+ "maxDepth": null,
+ "markdownOnly": false,
+ "promptOnly": true
+}

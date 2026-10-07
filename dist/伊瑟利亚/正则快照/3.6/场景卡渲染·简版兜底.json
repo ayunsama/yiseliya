@@ -1,0 +1,17 @@
+{
+ "id": "e9ebe38a-7c59-460e-bab6-7cd3b880b705",
+ "scriptName": "场景卡渲染·简版兜底",
+ "disabled": false,
+ "runOnEdit": true,
+ "findRegex": "/<scene\\s+location=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/scene>/g",
+ "replaceString": "<div class=\"pt-scene\"><div class=\"no\"></div><div class=\"bd\"><div class=\"loc\">$1</div><div class=\"ex\">$2</div></div></div>",
+ "trimStrings": [],
+ "placement": [
+  2
+ ],
+ "substituteRegex": 0,
+ "minDepth": null,
+ "maxDepth": null,
+ "markdownOnly": true,
+ "promptOnly": false
+}

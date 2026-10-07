@@ -1,0 +1,36 @@
+<%
+// 信仰神术控制器（蓝灯常驻）：按 主角.基础信息.信仰 从禁用条目「神明术式库」截取该神的神术特征与术列表。
+// 匹配三级规则：①信仰串与库内【神名】完全相等 → ②互相包含（"圣光神"命中【圣光神·索利昂】，反之亦然）
+// → ③多命中时优先「·」前缀相等的（区分 大蛇母·希索拉 / 暗鳞灵·希索拉），仍多则取库内第一个。
+const _faFaith = String(getvar('stat_data.主角.基础信息.信仰', { defaults: '无信仰' }) || '无信仰').trim();
+if (_faFaith && _faFaith !== '无信仰') {
+  let _faLib = '';
+  if (typeof getwi === 'function') { try { _faLib = String(await getwi('神明术式库') || ''); } catch (e) {} }
+  const _faHeads = [];
+  const _faRe = /【([^【】\n]+)】/g;
+  let _faM;
+  while ((_faM = _faRe.exec(_faLib)) !== null) {
+    const _faH = _faM[1].trim();
+    if (_faH && _faH !== '神名') _faHeads.push(_faH); // 跳过开头说明行里的【神名】占位
+  }
+  let _faName = _faHeads.find(h => h === _faFaith) || '';
+  if (!_faName) {
+    const _faHits = _faHeads.filter(h => h.includes(_faFaith) || _faFaith.includes(h));
+    if (_faHits.length > 0) {
+      _faName = _faHits.find(h => h.split('·')[0] === _faFaith.split('·')[0]) || _faHits[0];
+    }
+  }
+  let _faSec = '';
+  if (_faName) {
+    const _faTag = '【' + _faName + '】';
+    const _faS = _faLib.indexOf(_faTag);
+    let _faE = _faLib.indexOf('【', _faS + _faTag.length);
+    if (_faE < 0) _faE = _faLib.length;
+    _faSec = _faLib.slice(_faS + _faTag.length, _faE).trim();
+  }
+%>
+<信仰神术>
+你信仰【<%= _faName || _faFaith %>】。神术机制（信仰之池/型与量）见【体系·神术】；该神的池状态与活跃度见神明速览。你的神术请求按以下术式显现：
+<%= _faSec || '（术式库暂无该神的现成术列表：结合其神明条目中的性质与神术特征、按【体系·神术】的型/量规则即兴裁定术式，勿使用其他神明的术式名。）' %>
+</信仰神术>
+<% } %>

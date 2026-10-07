@@ -1,0 +1,21 @@
+{
+ "id": "0fd1f473-8f96-4d53-9194-df61e128f2e3",
+ "scriptName": "去档案",
+ "disabled": false,
+ "runOnEdit": true,
+ "findRegex": "<Memory>[\\s\\S]*?</Memory>",
+ "replaceString": "",
+ "trimStrings": [
+  "<",
+  ">"
+ ],
+ "placement": [
+  1,
+  2
+ ],
+ "substituteRegex": 0,
+ "minDepth": null,
+ "maxDepth": null,
+ "markdownOnly": true,
+ "promptOnly": true
+}

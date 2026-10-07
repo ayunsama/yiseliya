@@ -1,0 +1,18 @@
+{
+ "id": "7abdaadd-a5d4-4ed7-82a0-69a608002c5c",
+ "scriptName": "心里话",
+ "disabled": false,
+ "runOnEdit": true,
+ "findRegex": "<pp>([\\s\\S]*?)</pp>",
+ "replaceString": "<b style=\"color:#6b4e31;font-style:italic;\">$1</b>",
+ "trimStrings": [],
+ "placement": [
+  1,
+  2
+ ],
+ "substituteRegex": 0,
+ "minDepth": null,
+ "maxDepth": null,
+ "markdownOnly": true,
+ "promptOnly": false
+}

@@ -1,0 +1,18 @@
+{
+ "id": "9929b3af-5bd6-4d2d-9488-544da07edbc9",
+ "scriptName": "初始变量移除",
+ "disabled": false,
+ "runOnEdit": true,
+ "findRegex": "<initvar>[\\s\\S]*?</initvar>",
+ "replaceString": "",
+ "trimStrings": [],
+ "placement": [
+  1,
+  2
+ ],
+ "substituteRegex": 0,
+ "minDepth": null,
+ "maxDepth": null,
+ "markdownOnly": true,
+ "promptOnly": false
+}

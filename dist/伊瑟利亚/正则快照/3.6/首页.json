@@ -1,0 +1,17 @@
+{
+ "id": "cf7fec9f-dd27-4d39-a94d-1755b518873e",
+ "scriptName": "首页",
+ "disabled": true,
+ "runOnEdit": true,
+ "findRegex": "<首页>",
+ "replaceString": "```html\n<!DOCTYPE html>\n<html><head><style>html,body{margin:0;padding:0;background:transparent;overflow:hidden}</style></head><body>\n<div style=\"padding:40px;text-align:center;color:#8b7355;font-size:14px\">⏳ 正在加载界面…</div>\n<script type=\"module\">\ntry {\n  const SRC = ['https://cdn.jsdelivr.net/gh/ayunsama/iseria-ui@ac6d25f/%E9%A6%96%E9%A1%B5.html',\n             'https://raw.githubusercontent.com/ayunsama/iseria-ui/main/%E9%A6%96%E9%A1%B5.html',\n             'https://cdn.jsdelivr.net/gh/ayunsama/iseria-ui@main/%E9%A6%96%E9%A1%B5.html'];\n  let t = null;\n  for (const u of SRC) {\n    try { const r = await fetch(u, { cache: 'no-store' }); if (!r.ok) throw new Error('HTTP ' + r.status); t = await r.text(); break; } catch (e0) {}\n  }\n  if (!t) throw new Error('全部界面源加载失败');\n  const doc = new DOMParser().parseFromString(t, 'text/html');\n  doc.querySelectorAll('head style, head link[rel=stylesheet]').forEach(s => { document.head.appendChild(s.cloneNode(true)); });\n  document.body.innerHTML = '';\n  [...doc.body.childNodes].forEach(n => { if (n.tagName === 'SCRIPT') return; document.body.appendChild(n.cloneNode(true)); });\n  doc.querySelectorAll('script').forEach(old => { const s = document.createElement('script'); [...old.attributes].forEach(a => s.setAttribute(a.name, a.value)); s.textContent = old.textContent; document.body.appendChild(s); });\n} catch(e) { document.body.innerHTML = '<div style=\"padding:40px;color:#c0392b;text-align:center\">⚠ CDN加载失败: '+(e.message||e)+'</div>'; }\n</script></body></html>\n```\n",
+ "trimStrings": [],
+ "placement": [
+  2
+ ],
+ "substituteRegex": 0,
+ "minDepth": null,
+ "maxDepth": null,
+ "markdownOnly": true,
+ "promptOnly": false
+}
